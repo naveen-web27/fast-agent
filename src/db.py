@@ -1,6 +1,6 @@
 """Runtime SQLite setup for conversation history, ratings, products, and orders.
 
-Tenant/client configuration is maintained separately in data/clients.csv.
+Tenant/client configuration is maintained separately in config/clients.csv.
 """
 from contextlib import asynccontextmanager
 from pathlib import Path

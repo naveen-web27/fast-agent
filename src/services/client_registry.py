@@ -6,7 +6,7 @@ from pathlib import Path
 
 from src.models import Business
 
-CLIENTS_FILE = Path(__file__).resolve().parents[2] / "data" / "clients.csv"
+CLIENTS_FILE = Path(__file__).resolve().parents[2] / "config" / "clients.csv"
 
 
 class ClientRegistryError(Exception):
