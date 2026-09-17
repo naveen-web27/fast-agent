@@ -7,7 +7,7 @@ and never cares whether business.data_mode is "hosted" or "api".
 - "api": call the client's own backend/e-commerce API using business.client_api_base_url +
   business.client_api_key (sent as a Bearer token).
 
-ratings and conversations are ALWAYS stored in our own database regardless of data_mode.
+ratings and conversations are ALWAYS stored in our own runtime database regardless of data_mode.
 """
 import logging
 from decimal import Decimal

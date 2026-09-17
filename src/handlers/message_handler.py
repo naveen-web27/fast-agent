@@ -6,14 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.handlers.intent_handler import handle_intent
 from src.models import Business, Conversation
+from src.services.client_registry import get_business_by_phone_number_id as get_csv_business
 from src.services import llm_agent, whatsapp_client
 
 logger = logging.getLogger(__name__)
 
 
 async def get_business_by_phone_number_id(db: AsyncSession, phone_number_id: str) -> Business | None:
-    result = await db.execute(select(Business).where(Business.whatsapp_phone_number_id == phone_number_id))
-    return result.scalars().first()
+    return get_csv_business(phone_number_id)
 
 
 async def handle_incoming_message(db: AsyncSession, business: Business, phone_number_id: str, message: dict) -> None:

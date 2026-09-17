@@ -1,6 +1,6 @@
-"""Local SQLite database setup: async SQLAlchemy engine + session factory.
+"""Runtime SQLite setup for conversation history, ratings, products, and orders.
 
-The database lives as a single file inside this project folder (see DATABASE_URL in .env.example).
+Tenant/client configuration is maintained separately in data/clients.csv.
 """
 from contextlib import asynccontextmanager
 from pathlib import Path
