@@ -3,7 +3,7 @@
 Message flow overview:
 1. Customer sends a WhatsApp message -> Meta posts to POST /webhook (src/routes/webhook.py).
 2. src/handlers/message_handler.py identifies the business, persists/loads conversation history.
-3. src/services/llm_agent.py classifies intent via OpenAI.
+3. src/services/llm_agent.py classifies intent locally with Python rules.
 4. src/handlers/intent_handler.py fetches real data via src/services/data_access.py (never the LLM)
    and sends the reply via src/services/whatsapp_client.py.
 """

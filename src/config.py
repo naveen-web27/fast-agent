@@ -10,10 +10,6 @@ class Settings(BaseSettings):
     # Local SQLite file, stored inside this project folder -> override in .env if needed.
     database_url: str = "sqlite+aiosqlite:///./data/app.db"
 
-    # OpenAI credentials -> plug in real value in .env / Render dashboard.
-    openai_api_key: str = ""
-    openai_model: str = "gpt-4o-mini"
-
     # Meta WhatsApp Cloud API credentials -> plug in real value in .env / Render dashboard.
     whatsapp_token: str = ""
     whatsapp_verify_token: str = ""
