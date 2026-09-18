@@ -32,6 +32,15 @@ _STAR_PATTERN = re.compile(r"\b([1-5])\s*(?:star|stars|/\s*5)\b|\b([1-5])\s*/\s*
 async def classify_intent(message: str, history: list[dict]) -> dict:
     """Classify a message locally; history is used for short follow-up messages."""
     text = _normalize(message)
+    if "python render" in text:
+        return {
+            "intent": "general_question",
+            "category": None,
+            "order_id": None,
+            "product_name": None,
+            "stars": None,
+            "reply_hint": "python_render_goodbye",
+        }
     scores = {intent: _keyword_score(text, keywords) for intent, keywords in _KEYWORDS.items()}
 
     if _has_keyword(text, _KEYWORDS["talk_to_human"]):

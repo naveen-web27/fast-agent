@@ -11,6 +11,11 @@ logger = logging.getLogger(__name__)
 
 
 async def handle_intent(db: AsyncSession, business: Business, phone_number_id: str, customer_phone: str, intent_data: dict) -> str:
+    if intent_data.get("reply_hint") == "python_render_goodbye":
+        reply = "Goodbye!"
+        await whatsapp_client.send_text_message(phone_number_id, customer_phone, reply)
+        return reply
+
     intent = intent_data["intent"]
 
     if intent == "browse_products":

@@ -29,7 +29,7 @@ async def verify_webhook(request: Request):
 @router.post("/webhook")
 async def receive_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     payload = await request.json()
-    logger.info("Incoming webhook: %s", payload)
+    logger.info("Incoming WhatsApp webhook received")
 
     try:
         entry = payload["entry"][0]
@@ -49,6 +49,8 @@ async def receive_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     if not business:
         logger.warning("No business registered for phone_number_id=%s", phone_number_id)
         return {"status": "ignored"}
+
+    logger.info("Webhook matched business=%s message_count=%s", business.name, len(messages))
 
     for message in messages:
         await handle_incoming_message(db, business, phone_number_id, message)

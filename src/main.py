@@ -15,6 +15,7 @@ from src.db import init_db
 from src.routes import admin, health, webhook
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("whatsapp_agent")
 
 app = FastAPI(title="WhatsApp AI Business Agent")
 
@@ -23,6 +24,7 @@ app = FastAPI(title="WhatsApp AI Business Agent")
 async def on_startup():
     """Create the local SQLite tables if they don't exist yet."""
     await init_db()
+    logger.info("WhatsApp agent started")
 
 
 app.include_router(health.router)

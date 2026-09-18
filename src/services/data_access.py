@@ -43,6 +43,7 @@ async def _get_products_hosted(db: AsyncSession, business: Business, category: s
         stmt = stmt.where(Product.category.ilike(f"%{category}%"))
     result = await db.execute(stmt)
     products = result.scalars().all()
+    logger.info("Hosted product lookup business=%s category=%s count=%s", business.name, category, len(products))
     return [
         {
             "id": str(p.id),
