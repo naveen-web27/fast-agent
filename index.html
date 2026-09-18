@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="NAVE AI Solutions builds WhatsApp AI agents, billing software, automation, and custom AI systems.">
+  <title>NAVE AI Solutions | Practical AI for business</title>
+  <style>
+    :root{--ink:#10241d;--muted:#5d7068;--paper:#f4f7f1;--white:#fff;--green:#16845c;--dark:#0d5d43;--lime:#d7ef86;--line:#dbe6dc;--shadow:0 24px 70px rgba(22,73,54,.12)}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);background:var(--paper);font-family:"Avenir Next",Avenir,"Segoe UI",sans-serif;line-height:1.5}a{color:inherit;text-decoration:none}.wrap{width:min(1160px,calc(100% - 40px));margin:auto}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:22px 0;border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.03em}.mark{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;color:#fff;background:var(--green);font-weight:900}nav{display:flex;gap:28px;color:var(--muted);font-size:.92rem}nav a:hover{color:var(--dark)}
+    .button{display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border:1px solid var(--dark);border-radius:8px;color:#fff;background:var(--dark);font-weight:700}.button:hover{background:var(--green)}.light{color:var(--dark);background:transparent;border-color:var(--line)}
+    .hero{display:grid;grid-template-columns:1.04fr .96fr;gap:70px;align-items:center;padding:86px 0 92px}.eyebrow{color:var(--green);font-weight:800;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase}h1,h2,h3{margin:0;line-height:1.06}h1{margin-top:18px;font-size:clamp(3rem,7vw,6rem);letter-spacing:-.055em}h1 em{color:var(--green);font-family:Georgia,serif;font-weight:400}.hero p{max-width:590px;margin:24px 0 30px;color:var(--muted);font-size:1.12rem}.actions{display:flex;flex-wrap:wrap;gap:12px}
+    .visual{position:relative;min-height:470px;overflow:hidden;border-radius:26px;background:linear-gradient(135deg,rgba(5,45,31,.9),rgba(22,132,92,.55)),url("https://images.unsplash.com/photo-1526948128573-703ee1aeb6fa?auto=format&fit=crop&w=1000&q=85") center/cover;box-shadow:var(--shadow)}.chat{position:absolute;right:28px;bottom:28px;width:min(285px,calc(100% - 56px));padding:18px;border-radius:18px;background:rgba(255,255,255,.95);box-shadow:0 20px 50px rgba(0,0,0,.2)}.chat-head{display:flex;justify-content:space-between;padding-bottom:14px;color:var(--dark);font-size:.82rem;font-weight:800}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#50c878}.bubble{width:85%;margin:8px 0;padding:11px 13px;border-radius:4px 14px 14px 14px;background:#edf5e9;font-size:.87rem}.reply{margin-left:auto!important;border-radius:14px 4px 14px 14px!important;color:#fff;background:var(--green)!important}
+    section{padding:82px 0}.heading{display:flex;justify-content:space-between;gap:30px;align-items:end;margin-bottom:34px}h2{max-width:620px;font-size:clamp(2.2rem,4vw,4rem);letter-spacing:-.045em}.note{max-width:330px;color:var(--muted)}.services{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.service{min-height:275px;padding:25px;border:1px solid var(--line);border-radius:14px;background:#fff;transition:.25s}.service:hover{transform:translateY(-5px);box-shadow:var(--shadow)}.featured{color:#fff;background:var(--dark);border-color:var(--dark)}.icon{display:grid;place-items:center;width:46px;height:46px;margin-bottom:52px;border-radius:50%;color:var(--dark);background:var(--lime);font-size:1.3rem;font-weight:900}.service h3{margin-bottom:12px;font-size:1.35rem}.service p{margin:0;color:var(--muted);font-size:.93rem}.featured p{color:#d7e9df}
+    .process{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}.step{padding-top:20px;border-top:2px solid var(--green)}.number{color:var(--green);font-weight:800;font-size:.82rem}.step h3{margin:18px 0 10px;font-size:1.4rem}.step p{margin:0;color:var(--muted)}.cta{display:flex;align-items:center;justify-content:space-between;gap:30px;padding:48px;border-radius:22px;color:#fff;background:var(--dark)}.cta h2{max-width:610px}.cta .button{color:var(--dark);background:var(--lime);border-color:var(--lime)}footer{padding:28px 0 38px;color:var(--muted);font-size:.86rem}
+    .menu-toggle{display:none;padding:9px 11px;border:1px solid var(--line);border-radius:8px;color:var(--dark);background:transparent;font:inherit;font-weight:700;cursor:pointer}.chat-demo{display:flex;gap:6px;margin-top:14px}.chat-demo input{min-width:0;flex:1;padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:.78rem}.chat-demo button{padding:9px 10px;border:0;border-radius:8px;color:#fff;background:var(--dark);font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}.chat-demo button:hover{background:var(--green)}.reveal{opacity:0;transform:translateY(20px);transition:opacity .7s ease,transform .7s ease}.reveal.visible{opacity:1;transform:none}.active-link{color:var(--dark);font-weight:800}
+    @media(max-width:900px){.hero{grid-template-columns:1fr;gap:42px;padding-top:60px}.visual{min-height:400px}.services{grid-template-columns:repeat(2,1fr)}}@media(max-width:620px){.wrap{width:calc(100% - 28px)}.topbar{position:relative}.menu-toggle{display:block}nav{display:none;position:absolute;z-index:5;top:78px;right:0;left:0;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--white);box-shadow:var(--shadow)}nav.open{display:grid;gap:0}nav a{padding:12px}.hero{padding-bottom:58px}h1{font-size:clamp(2.75rem,16vw,4.5rem)}.visual{min-height:360px}section{padding:60px 0}.heading,.cta{display:block}.note{margin-top:16px}.services,.process{grid-template-columns:1fr}.service{min-height:230px}.icon{margin-bottom:36px}.cta .button{margin-top:24px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}}
+  </style>
+</head>
+<body>
+  <header class="wrap topbar"><a class="brand" href="#top"><span class="mark">N</span><span>NAVE AI SOLUTIONS</span></a><nav id="site-nav"><a href="#services">Services</a><a href="#process">How we work</a><a href="#contact">Contact</a></nav><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button><a class="button light" href="#contact">Start a project</a></header>
+  <main id="top">
+    <section class="wrap hero"><div class="reveal"><div class="eyebrow">Practical AI for growing businesses</div><h1>Make every customer conversation <em>work harder.</em></h1><p>NAVE AI Solutions builds useful digital systems that answer customers, simplify operations, and turn repetitive work into reliable workflows.</p><div class="actions"><a class="button" href="#contact">Build your solution →</a><a class="button light" href="#services">Explore services</a></div></div><div class="visual reveal"><div class="chat"><div class="chat-head"><span>AI support agent</span><span><i class="dot"></i> online</span></div><div class="bubble">Hi, I need to track my order.</div><div class="bubble reply" id="demo-reply">I found it. Your order is out for delivery today.</div><div class="bubble">Perfect, thank you!</div><form class="chat-demo" id="chat-demo"><input id="chat-input" aria-label="Try the AI demo" placeholder="Try: show shirts" autocomplete="off"><button type="submit">Send</button></form></div></div></section>
+    <section id="services" class="wrap reveal"><div class="heading"><h2>Systems that remove friction from the day.</h2><p class="note">Focused software for teams that want less manual follow-up and more time for customers.</p></div><div class="services"><article class="service featured"><div class="icon">◌</div><h3>WhatsApp AI agents</h3><p>Customer support and sales agents that browse products, track orders, handle common issues, and hand off to a human.</p></article><article class="service"><div class="icon">▣</div><h3>Billing software</h3><p>Simple billing workflows for invoices, payments, customer records, and everyday business visibility.</p></article><article class="service"><div class="icon">↗</div><h3>Business automation</h3><p>Connect your tools and automate repetitive tasks across sales, support, inventory, and operations.</p></article><article class="service"><div class="icon">✦</div><h3>Custom AI solutions</h3><p>Purpose-built AI systems around your process, your data, and the way your team actually works.</p></article></div></section>
+    <section id="process" class="wrap reveal"><div class="heading"><h2>Clear from first conversation to launch.</h2><p class="note">Understand the work, build the useful part, then improve it with real usage.</p></div><div class="process"><article class="step"><div class="number">01 / DISCOVER</div><h3>Find the bottleneck</h3><p>We identify the repetitive work worth solving first.</p></article><article class="step"><div class="number">02 / BUILD</div><h3>Make it useful</h3><p>We create a focused solution that fits your existing tools.</p></article><article class="step"><div class="number">03 / IMPROVE</div><h3>Keep it moving</h3><p>We refine the system around real business needs.</p></article></div></section>
+    <section id="contact" class="wrap reveal"><div class="cta"><h2>Have a process that should be simpler?</h2><a class="button" href="mailto:hello@naveaisolutions.com">Talk to NAVE AI →</a></div></section>
+  </main>
+  <footer class="wrap">© 2026 NAVE AI Solutions. Practical software, thoughtfully built.</footer>
+  <script>
+    const menuButton = document.querySelector('.menu-toggle');
+    const nav = document.querySelector('#site-nav');
+    menuButton.addEventListener('click', () => {
+      const isOpen = nav.classList.toggle('open');
+      menuButton.setAttribute('aria-expanded', String(isOpen));
+      menuButton.textContent = isOpen ? 'Close' : 'Menu';
+    });
+
+    nav.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
+      nav.classList.remove('open');
+      menuButton.setAttribute('aria-expanded', 'false');
+      menuButton.textContent = 'Menu';
+    }));
+
+    const revealItems = document.querySelectorAll('.reveal');
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries, currentObserver) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            currentObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.14 });
+      revealItems.forEach((item) => observer.observe(item));
+    } else {
+      revealItems.forEach((item) => item.classList.add('visible'));
+    }
+
+    const sections = document.querySelectorAll('main section[id]');
+    const links = document.querySelectorAll('nav a');
+    const sectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          links.forEach((link) => link.classList.toggle('active-link', link.getAttribute('href') === `#${entry.target.id}`));
+        }
+      });
+    }, { rootMargin: '-35% 0px -55% 0px' });
+    sections.forEach((section) => sectionObserver.observe(section));
+
+    document.querySelector('#chat-demo').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const input = document.querySelector('#chat-input');
+      const reply = document.querySelector('#demo-reply');
+      const text = input.value.toLowerCase();
+      reply.textContent = text.includes('order') ? 'I can check the latest order status for you.' : 'I can help customers browse products, check stock, and get support.';
+      input.value = '';
+    });
+  </script>
+</body>
+</html>
