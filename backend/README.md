@@ -10,10 +10,11 @@
 
 ## Local Setup
 
-1. Create `backend/.env` from `backend/.env.example` and add the real Supabase database URL.
-2. Install dependencies: `python3 -m pip install -r backend/requirements.txt`.
-3. Start the API: `python3 -m uvicorn app.main:app --app-dir backend --reload`.
-4. Open `http://127.0.0.1:8000/docs`.
+1. Use Python 3.12.8 (pinned in the repository's `.python-version`).
+2. Create `backend/.env` from `backend/.env.example` and add the real Supabase database URL.
+3. Install dependencies: `python3 -m pip install -r backend/requirements.txt`.
+4. Start the API: `python3 -m uvicorn app.main:app --app-dir backend --reload`.
+5. Open `http://127.0.0.1:8000/docs`.
 
 ## Authentication Boundary
 
