@@ -1,0 +1,1 @@
+"""RightConnect FastAPI application package."""

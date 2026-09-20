@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Create a RightConnect account as a customer, expert, or company.">
+  <title>Join RightConnect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --navy:#101b31; --ink:#172033; --muted:#687386; --line:#e2e8f0; --paper:#f4f6fa; --teal:#088a82; --teal-dark:#05746d; --mint:#e5f6f2; --amber:#d79212; --white:#fff; --shadow:0 22px 65px rgba(23,32,51,.14); }
+    * { box-sizing:border-box; } body { min-height:100svh; margin:0; color:var(--ink); background:var(--paper); font:14px/1.45 Manrope,sans-serif; } button,input,select,textarea { font:inherit; } button { cursor:pointer; } .shell { min-height:100svh; display:grid; grid-template-columns:minmax(360px,.85fr) minmax(460px,1.15fr); } .story { position:relative; display:flex; flex-direction:column; justify-content:space-between; min-height:100%; padding:38px clamp(30px,5vw,74px); overflow:hidden; color:#edf5ff; background:var(--navy); }.story::after { content:""; position:absolute; right:-150px; bottom:-150px; width:440px; height:440px; border:1px solid rgba(128,224,205,.26); border-radius:50%; box-shadow:0 0 0 60px rgba(128,224,205,.035),0 0 0 120px rgba(128,224,205,.025); }.brand { position:relative; z-index:1; display:flex; align-items:center; gap:11px; color:#fff; font-weight:800; font-size:17px; }.brand img { width:34px; height:34px; border-radius:10px; }.story-copy { position:relative; z-index:1; max-width:470px; margin:auto 0; padding:80px 0; }.eyebrow { color:#82dec9; font:10px "DM Mono",monospace; text-transform:uppercase; letter-spacing:.13em; }.story h1 { max-width:490px; margin:16px 0; font-size:clamp(37px,4.4vw,61px); line-height:1.04; letter-spacing:-.06em; }.story p { max-width:410px; margin:0; color:#b9c7dd; font-size:16px; }.promise { position:relative; z-index:1; display:grid; gap:12px; padding:17px; border:1px solid rgba(255,255,255,.12); border-radius:11px; background:rgba(255,255,255,.055); }.promise-item { display:flex; align-items:center; gap:9px; color:#e6effd; font-size:12px; }.check { display:grid; place-items:center; width:19px; height:19px; color:#082e2a; border-radius:50%; background:#7ee0ca; font-size:11px; font-weight:800; }
+    .auth { display:flex; align-items:center; justify-content:center; padding:34px; background:linear-gradient(120deg,#fafbfd 0%,#f1f5fa 100%); }.auth-card { width:min(100%,510px); }.auth-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:32px; }.back { color:#506079; border:0; background:transparent; font-weight:700; }.help { color:var(--muted); font-size:12px; }.help a { color:var(--teal); font-weight:800; text-decoration:none; }.step { display:none; }.step.active { display:block; animation:up .32s ease; } @keyframes up { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }.step h2 { margin:0; font-size:27px; letter-spacing:-.045em; }.step > p { margin:7px 0 22px; color:var(--muted); }.roles { display:grid; gap:11px; }.role { position:relative; display:grid; grid-template-columns:44px 1fr auto; align-items:center; gap:12px; min-height:83px; padding:14px; color:var(--ink); border:1px solid var(--line); border-radius:11px; background:var(--white); text-align:left; transition:.18s; }.role:hover { border-color:#92d8cb; transform:translateY(-1px); box-shadow:0 10px 23px rgba(9,53,72,.08); }.role-icon { display:grid; place-items:center; width:42px; height:42px; color:var(--teal); border-radius:9px; background:var(--mint); font-size:19px; }.role.company .role-icon { color:#385dae; background:#edf1ff; }.role.expert .role-icon { color:#a66b00; background:#fff4db; }.role strong { display:block; font-size:13px; }.role small { display:block; margin-top:2px; color:var(--muted); font-size:11px; }.arrow { color:#8a98ad; font-size:19px; }.sign-in { display:grid; gap:10px; }.oauth,.outline,.continue { display:flex; align-items:center; justify-content:center; gap:9px; min-height:47px; padding:0 14px; border-radius:8px; font-weight:800; }.oauth,.outline { color:#26344b; border:1px solid var(--line); background:var(--white); }.oauth:hover,.outline:hover { border-color:#a9b7ca; }.continue { width:100%; color:#fff; border:1px solid var(--teal); background:var(--teal); box-shadow:0 8px 17px rgba(8,138,130,.2); }.continue:hover { background:var(--teal-dark); }.divider { display:flex; align-items:center; gap:10px; margin:10px 0; color:#94a0b3; font:10px "DM Mono",monospace; text-transform:uppercase; }.divider::before,.divider::after { content:""; height:1px; flex:1; background:var(--line); }.google-g { display:grid; place-items:center; width:18px; height:18px; color:#4285f4; border-radius:50%; background:conic-gradient(#4285f4 0 25%,#34a853 0 50%,#fbbc05 0 75%,#ea4335 0); font-size:0; }.whatsapp { color:#0a8e68; }.form { display:grid; gap:14px; }.field { display:grid; gap:6px; }.field label { color:#42516a; font-size:11px; font-weight:800; }.field input,.field select,.field textarea { width:100%; min-height:44px; padding:0 12px; color:var(--ink); border:1px solid var(--line); border-radius:7px; outline:0; background:#fff; }.field textarea { min-height:78px; padding:10px 12px; resize:vertical; }.field input:focus,.field select:focus,.field textarea:focus { border-color:var(--teal); box-shadow:0 0 0 3px rgba(8,138,130,.12); }.two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }.terms { color:var(--muted); font-size:10px; line-height:1.5; }.terms a { color:var(--teal); font-weight:800; }.otp-sent { display:none; padding:15px; color:#17655c; border:1px solid #bae7dc; border-radius:8px; background:#effaf7; font-size:12px; }.otp-sent.visible { display:block; }.otp { display:flex; gap:8px; }.otp input { width:45px; height:49px; padding:0; text-align:center; font-size:19px; font-weight:800; }.form-note { margin:0; color:var(--muted); font-size:11px; text-align:center; }.success { padding:28px 0; text-align:center; }.success-mark { display:grid; place-items:center; width:59px; height:59px; margin:0 auto 15px; color:#075f58; border-radius:50%; background:#dff7ef; font-size:25px; }.success h2 { font-size:25px; }.success p { max-width:340px; margin:9px auto 20px; color:var(--muted); }
+    @media (max-width:800px) { .shell { display:block; }.story { min-height:235px; padding:22px 22px 26px; }.story-copy { margin:28px 0 0; padding:0; }.story h1 { margin:9px 0; font-size:30px; }.story p,.promise { display:none; }.auth { min-height:calc(100svh - 235px); align-items:start; padding:24px 18px 36px; }.auth-card { max-width:480px; }.auth-top { margin-bottom:24px; }.step h2 { font-size:25px; }.role { min-height:76px; }.two { grid-template-columns:1fr; gap:14px; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="story"><div class="brand"><img src="../assets/rightconnect-mark.svg" alt="RightConnect"><span>RightConnect</span></div><div class="story-copy"><span class="eyebrow">A better way to choose</span><h1>Start with the right connection.</h1><p>RightConnect brings customers, independent experts, and companies into one clear, accountable conversation.</p></div><div class="promise"><div class="promise-item"><i class="check">✓</i> Identity and credentials are reviewed</div><div class="promise-item"><i class="check">✓</i> Reviews follow a verified interaction</div><div class="promise-item"><i class="check">✓</i> You decide who joins your request</div></div></section>
+    <section class="auth"><div class="auth-card">
+      <div class="auth-top"><button class="back" id="back" hidden>← Back</button><span class="help">Already have an account? <a href="#sign-in" id="sign-in-link">Sign in</a></span></div>
+      <section class="step active" id="role-step"><span class="eyebrow" style="color:#088a82">Join RightConnect</span><h2>What brings you here?</h2><p>Your choice controls the setup questions and the tools you see after sign-in.</p><div class="roles"><button class="role" data-role="customer"><span class="role-icon">⌕</span><span><strong>I need help choosing</strong><small>Find, compare, and contact trusted experts or companies.</small></span><span class="arrow">›</span></button><button class="role expert" data-role="expert"><span class="role-icon">✦</span><span><strong>I am an expert</strong><small>Offer guidance and build a verified professional profile.</small></span><span class="arrow">›</span></button><button class="role company" data-role="company"><span class="role-icon">▣</span><span><strong>I represent a company</strong><small>Receive qualified requests and manage your organization.</small></span><span class="arrow">›</span></button></div></section>
+      <section class="step" id="auth-step"><span class="eyebrow" style="color:#088a82" id="role-label">Customer account</span><h2>Secure your account.</h2><p>Continue with Google to test the live authentication flow.</p><div class="sign-in"><button class="oauth" id="google-button"><i class="google-g"></i> Continue with Google</button><div class="divider">or</div><button class="outline whatsapp" id="whatsapp-button">◉ WhatsApp verification - coming next</button></div><div class="otp-sent" id="otp-notice">WhatsApp OTP needs an approved messaging or OTP provider. It is intentionally not enabled in this staging build.</div></section>
+      <section class="step" id="phone-step"><span class="eyebrow" style="color:#088a82">WhatsApp verification</span><h2>Verify your number.</h2><p>We will send a one-time code in WhatsApp. This prototype does not send a real message.</p><form class="form" id="phone-form"><div class="field"><label for="phone">WhatsApp number</label><input id="phone" type="tel" inputmode="tel" placeholder="+91 98765 43210" required></div><button class="continue" type="submit">Send verification code</button></form></section>
+      <section class="step" id="otp-step"><span class="eyebrow" style="color:#088a82">WhatsApp verification</span><h2>Enter your six-digit code.</h2><p>For this prototype, enter any six digits to continue.</p><form class="form" id="otp-form"><div class="otp"> <input inputmode="numeric" maxlength="1" required autofocus><input inputmode="numeric" maxlength="1" required><input inputmode="numeric" maxlength="1" required><input inputmode="numeric" maxlength="1" required><input inputmode="numeric" maxlength="1" required><input inputmode="numeric" maxlength="1" required></div><button class="continue" type="submit">Verify and continue</button></form><p class="form-note">Did not receive a code? <a href="#resend" id="resend">Resend it</a></p></section>
+      <section class="step" id="details-step"><span class="eyebrow" style="color:#088a82" id="details-label">Customer profile</span><h2 id="details-title">A few details, then you can start.</h2><p id="details-copy">This helps experts and companies respond with the right context.</p><form class="form" id="details-form"><div class="field"><label for="name">Your name</label><input id="name" placeholder="Your full name" required></div><div class="two"><div class="field"><label for="city">City</label><input id="city" placeholder="Chennai"></div><div class="field"><label for="language">Preferred language</label><select id="language"><option>English</option><option>Tamil</option><option>Hindi</option><option>Telugu</option></select></div></div><div class="role-fields" id="expert-fields" hidden><div class="two"><div class="field"><label for="service">Primary service</label><input id="service" placeholder="Health insurance"></div><div class="field"><label for="experience">Years of experience</label><input id="experience" type="number" min="0" placeholder="5"></div></div><div class="field"><label for="credential">Credential or licence number</label><input id="credential" placeholder="Add for verification"></div></div><div class="role-fields" id="company-fields" hidden><div class="field"><label for="company">Company name</label><input id="company" placeholder="Your registered business name"></div><div class="two"><div class="field"><label for="work-email">Business email</label><input id="work-email" type="email" placeholder="name@company.com"></div><div class="field"><label for="website">Website</label><input id="website" type="url" placeholder="https://"></div></div><div class="field"><label for="registration">Business registration or licence</label><input id="registration" placeholder="Add for verification"></div></div><p class="terms">By continuing, you agree to the RightConnect <a href="#terms">Terms</a> and <a href="#privacy">Privacy Policy</a>. Experts and companies agree to verification before appearing in search.</p><button class="continue" type="submit" id="details-submit">Create account</button></form></section>
+      <section class="step" id="success-step"><div class="success"><div class="success-mark">✓</div><span class="eyebrow" style="color:#088a82">Account created</span><h2 id="success-title">You are ready to explore.</h2><p id="success-copy">Start comparing verified people and companies when you are ready.</p><a class="continue" href="marketplace.html" style="text-decoration:none">Open RightConnect</a></div></section>
+    </div></section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const steps = document.querySelectorAll('.step');
+    const back = document.querySelector('#back');
+    let current = 'role-step';
+    let role = 'customer';
+    let authClient = null;
+    let authSession = null;
+    const roleNames = { customer: 'Customer', expert: 'Expert', company: 'Company' };
+    const apiBase = '/api/v1';
+    let show = (id) => { steps.forEach((step) => step.classList.toggle('active', step.id === id)); current = id; back.hidden = ['role-step', 'success-step'].includes(id); };
+    document.querySelectorAll('[data-role]').forEach((button) => button.addEventListener('click', () => { role = button.dataset.role; sessionStorage.setItem('rightconnect-role', role); document.querySelector('#role-label').textContent = `${roleNames[role]} account`; show('auth-step'); }));
+    document.querySelector('#google-button').addEventListener('click', async () => {
+      if (!authClient) { alert('Google sign-in is not configured yet. Add Supabase URL and publishable key in Render.'); return; }
+      const { error } = await authClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/pages/auth.html` } });
+      if (error) alert(error.message);
+    });
+    document.querySelector('#whatsapp-button').addEventListener('click', () => { document.querySelector('#otp-notice').classList.add('visible'); });
+    document.querySelector('#phone-form').addEventListener('submit', (event) => { event.preventDefault(); show('otp-step'); });
+    document.querySelector('#otp-form').addEventListener('submit', (event) => { event.preventDefault(); show('details-step'); });
+    document.querySelectorAll('.otp input').forEach((input, index, inputs) => input.addEventListener('input', () => { if (input.value && inputs[index + 1]) inputs[index + 1].focus(); }));
+    document.querySelector('#resend').addEventListener('click', (event) => { event.preventDefault(); alert('In production, a new WhatsApp OTP would be sent after rate-limit checks.'); });
+    document.querySelector('#details-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!authSession) { show('auth-step'); return; }
+      const payload = {
+        full_name: document.querySelector('#name').value,
+        email: authSession.user.email,
+        role: role === 'company' ? 'company_admin' : role,
+        city: document.querySelector('#city').value || null,
+        preferred_language: document.querySelector('#language').value || null,
+        primary_service: document.querySelector('#service').value || null,
+        years_experience: Number(document.querySelector('#experience').value) || null,
+        credential_number: document.querySelector('#credential').value || null,
+        company_name: document.querySelector('#company').value || null,
+        work_email: document.querySelector('#work-email').value || null,
+        website: document.querySelector('#website').value || null,
+        business_registration: document.querySelector('#registration').value || null,
+      };
+      const response = await fetch(`${apiBase}/auth/onboarding`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authSession.access_token}` }, body: JSON.stringify(payload) });
+      if (response.status === 409) { show('success-step'); return; }
+      if (!response.ok) { const body = await response.json().catch(() => ({})); alert(body.detail || 'Could not create your account.'); return; }
+      show('success-step');
+    });
+    document.querySelector('#sign-in-link').addEventListener('click', (event) => { event.preventDefault(); role = 'customer'; show('auth-step'); });
+    back.addEventListener('click', () => { const previous = { 'auth-step':'role-step', 'phone-step':'auth-step', 'otp-step':'phone-step', 'details-step':'auth-step' }; show(previous[current] || 'role-step'); });
+    const detailTitle = document.querySelector('#details-title');
+    const detailCopy = document.querySelector('#details-copy');
+    const detailLabel = document.querySelector('#details-label');
+    const expertFields = document.querySelector('#expert-fields');
+    const companyFields = document.querySelector('#company-fields');
+    const detailsStep = document.querySelector('#details-step');
+    const originalShow = show;
+    show = (id) => { originalShow(id); if (id === 'details-step') { detailLabel.textContent = `${roleNames[role]} profile`; expertFields.hidden = role !== 'expert'; companyFields.hidden = role !== 'company'; detailTitle.textContent = role === 'customer' ? 'A few details, then you can start.' : role === 'expert' ? 'Set up your professional profile.' : 'Set up your company profile.'; detailCopy.textContent = role === 'customer' ? 'This helps experts and companies respond with the right context.' : role === 'expert' ? 'You can complete credentials now; our team verifies them before you appear in search.' : 'Your business stays private until your organization and representative are verified.'; } if (id === 'success-step') { document.querySelector('#success-title').textContent = role === 'customer' ? 'You are ready to explore.' : role === 'expert' ? 'Your expert profile is started.' : 'Your company profile is started.'; document.querySelector('#success-copy').textContent = role === 'customer' ? 'Start comparing verified people and companies when you are ready.' : 'We will let you know when verification is complete. You can finish the remaining profile details next.'; } };
+    (async () => {
+      const savedRole = sessionStorage.getItem('rightconnect-role');
+      if (savedRole && roleNames[savedRole]) role = savedRole;
+      if (!['http:', 'https:'].includes(window.location.protocol)) return;
+      try {
+        const configResponse = await fetch(`${apiBase}/auth/provider-config`);
+        const config = await configResponse.json();
+        if (config.supabase_url && config.supabase_publishable_key) {
+          authClient = window.supabase.createClient(config.supabase_url, config.supabase_publishable_key);
+          const { data } = await authClient.auth.getSession();
+          authSession = data.session;
+          if (authSession) show('details-step');
+        }
+      } catch (_) {
+        // Local file previews work without a server; Google sign-in is enabled after deployment.
+      }
+    })();
+  </script>
+</body>
+</html>

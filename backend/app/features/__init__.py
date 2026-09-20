@@ -1,0 +1,1 @@
+"""Independent product features, each owning its API and application logic."""
