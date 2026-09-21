@@ -8,7 +8,14 @@ from app.core.config import get_settings
 settings = get_settings()
 
 if settings.database_url:
-    engine = create_async_engine(settings.database_url, pool_pre_ping=True)
+    engine = create_async_engine(
+        settings.database_url,
+        pool_pre_ping=True,
+        # Supabase's pooler (pgbouncer, transaction mode) doesn't support asyncpg's
+        # prepared-statement cache; disabling it keeps the driver compatible with
+        # both the pooler and a direct connection.
+        connect_args={"statement_cache_size": 0},
+    )
     SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 else:
     engine = None

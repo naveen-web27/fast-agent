@@ -31,6 +31,12 @@ There is no custom JWT code in this backend — access tokens are issued and ver
 2. Set **Time-box user sessions** (or **Access token (JWT) expiry** under Auth settings, depending on Supabase version) to `86400` seconds (1 day).
 3. Save. New sign-ins will expire after 1 day; the frontend's `supabase-js` client already refreshes/rejects tokens automatically based on this setting — no frontend code change needed.
 
+## Troubleshooting: 500 error / connection failure on Render
+
+If requests that touch the database fail with a 500 and the traceback ends inside `asyncpg`'s SSL `create_connection` (no clear app error), `DATABASE_URL` is pointing at Supabase's **direct** host (`db.PROJECT.supabase.co`). That host is IPv6-only, and Render does not support outbound IPv6, so the connection just hangs/fails.
+
+Fix: in Supabase, go to **Settings -> Database -> Connection pooling** and copy the pooler connection string instead (`aws-0-<region>.pooler.supabase.com`, port `6543` for transaction mode or `5432` for session mode). Update the `DATABASE_URL` env var on Render to that value and redeploy.
+
 ## Marketplace profiles
 
 `GET /api/v1/profiles?q=&city=&kind=` searches the `profiles` table (joined with `services`) and is what `frontend/pages/marketplace.html` now calls for live discover results, replacing the old hardcoded cards. Seed data for local testing lives in `db/seed.sql`.
