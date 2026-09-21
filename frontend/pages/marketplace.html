@@ -66,7 +66,7 @@
       <div class="page">
         <section class="view active" id="discover">
           <div class="page-title"><div><span class="section-tag">Find trusted help</span><h1>Choose the right person for the decision.</h1><p>Compare verified specialists and companies before you commit.</p></div><button class="primary" id="match-button">✦ Get matched</button></div>
-          <div class="search-panel"><label class="search-field">⌕ <input id="search-input" placeholder="What do you need help with?"></label><button class="select">Any location <span>⌄</span></button><button class="select">Expert or company <span>⌄</span></button><button class="primary" id="search-button">Search</button></div>
+          <div class="search-panel"><label class="search-field">⌕ <input id="search-input" placeholder="What do you need help with?"></label><button class="select">Any location <span>⌄</span></button><select class="select" id="kind-filter"><option value="">Expert or company</option><option value="expert">Experts only</option><option value="company">Companies only</option></select><button class="primary" id="search-button">Search</button></div>
           <div class="dashboard-grid"><div><div class="filter-row"><h2 id="result-count">Loading profiles…</h2><div class="filter-pills"><button class="pill selected">Top match</button><button class="pill">Verified only</button><button class="pill">Available today</button></div></div><div class="results" id="results"></div></div><aside><div class="insight-card"><span class="section-tag">RightConnect match</span><h2>Tell us your need. We will coordinate the right introduction.</h2><p>Share your requirements once. We keep the conversation clear between you, the expert, and the company.</p><div class="match-list" id="match-list"></div></div><div class="stat-grid"><div class="stat"><small>Verified reviews</small><strong id="stat-reviews">–</strong></div><div class="stat"><small>Average first response</small><strong id="stat-response">–</strong></div></div></aside></div>
         </section>
         <section class="view" id="profile">
@@ -246,10 +246,12 @@
 
     async function loadProfiles() {
       const query = document.querySelector('#search-input').value.trim();
+      const kind = document.querySelector('#kind-filter').value;
       resultCount.textContent = 'Loading profiles…';
       try {
         const params = new URLSearchParams();
         if (query) params.set('q', query);
+        if (kind) params.set('kind', kind);
         const response = await fetch(`${apiBase}/profiles?${params.toString()}`);
         if (!response.ok) throw new Error('Request failed');
         const data = await response.json();
@@ -268,12 +270,13 @@
 
     document.querySelector('#search-button').addEventListener('click', () => { recordSearchInterest(document.querySelector('#search-input').value); loadProfiles(); });
     document.querySelector('#search-input').addEventListener('keydown', (event) => { if (event.key === 'Enter') { recordSearchInterest(document.querySelector('#search-input').value); loadProfiles(); } });
+    document.querySelector('#kind-filter').addEventListener('change', loadProfiles);
     document.querySelectorAll('.pill').forEach((pill) => pill.addEventListener('click', () => pill.classList.toggle('selected')));
 
     document.querySelector('#requests').innerHTML = `
       <div class="page-title"><div><span class="section-tag">My requests</span><h1>One place for every moving part.</h1><p>Track the people, answers, and decisions around your request.</p></div><button class="primary" data-view="discover">+ New request</button></div>
       <div class="request-layout">
-        <aside class="request-panel"><span class="section-tag">Active requests</span><h2 id="requests-count">0 in progress</h2><div id="requests-list"><p style="color:var(--muted);font-size:12px;margin:0">Sign in to see your requests.</p></div></aside>
+        <aside class="request-panel"><span class="section-tag">Active requests</span><h2 id="requests-count">0 in progress</h2><div style="display:flex;gap:6px;margin-bottom:10px"><button class="pill selected" type="button" id="requests-tab-received">Received</button><button class="pill" type="button" id="requests-tab-sent">Sent</button></div><div id="requests-list"><p style="color:var(--muted);font-size:12px;margin:0">Sign in to see your requests.</p></div></aside>
         <section class="request-panel coordination">
           <div class="coordination-head"><div><span class="section-tag" id="request-detail-tag">No request selected</span><h2 id="request-detail-title">Coordination timeline</h2></div><span class="pill selected" id="request-detail-status">–</span></div>
           <div class="timeline" id="request-timeline"><p style="color:var(--muted);font-size:12px;margin:0">Select a request from the left to see its timeline.</p></div>
@@ -286,6 +289,16 @@
 
     let requestsCache = [];
     let selectedRequestId = null;
+    let requestsTab = 'received';
+
+    function setRequestsTab(tab) {
+      requestsTab = tab;
+      document.querySelector('#requests-tab-received').classList.toggle('selected', tab === 'received');
+      document.querySelector('#requests-tab-sent').classList.toggle('selected', tab === 'sent');
+      renderRequestsList();
+    }
+    document.querySelector('#requests-tab-received').addEventListener('click', () => setRequestsTab('received'));
+    document.querySelector('#requests-tab-sent').addEventListener('click', () => setRequestsTab('sent'));
 
     async function loadRequests() {
       const listBox = document.querySelector('#requests-list');
@@ -303,10 +316,14 @@
 
     function renderRequestsList() {
       const listBox = document.querySelector('#requests-list');
-      document.querySelector('#requests-count').textContent = `${requestsCache.length} in progress`;
-      if (requestsCache.length === 0) { listBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">No requests yet. Find someone on Discover and request a consultation.</p>'; return; }
+      const filtered = requestsCache.filter((request) => (requestsTab === 'sent' ? request.my_role === 'customer' : request.my_role !== 'customer'));
+      document.querySelector('#requests-count').textContent = `${filtered.length} in progress`;
+      if (filtered.length === 0) {
+        listBox.innerHTML = `<p style="color:var(--muted);font-size:12px;margin:0">${requestsTab === 'sent' ? 'You have not sent any requests yet.' : 'No incoming requests yet.'}</p>`;
+        return;
+      }
       listBox.innerHTML = '';
-      requestsCache.forEach((request) => {
+      filtered.forEach((request) => {
         const item = document.createElement('div');
         item.className = `request-item${request.id === selectedRequestId ? ' active' : ''}`;
         item.innerHTML = `<strong>${request.title}</strong><span>${request.counterpart_name} · ${request.status.replace('_', ' ')}</span>`;
@@ -365,7 +382,11 @@
       loadRequests();
     });
 
-    document.querySelector('.nav-button[data-view="requests"]').addEventListener('click', loadRequests);
+    document.querySelector('.nav-button[data-view="requests"]').addEventListener('click', () => {
+      const acting = JSON.parse(sessionStorage.getItem('rightconnect-acting-as') || '{"type":"customer"}');
+      setRequestsTab(acting.type === 'customer' ? 'sent' : 'received');
+      loadRequests();
+    });
 
     document.querySelector('#request-cancel').addEventListener('click', closeModals);
     document.querySelector('#request-form').addEventListener('submit', async (event) => {
@@ -467,6 +488,15 @@
       workspaceLabel.textContent = label;
       workspaceMenu.hidden = true;
       renderWorkspaceMenu();
+      applyActingAsDefaultView(type);
+    }
+
+    function applyActingAsDefaultView(type) {
+      // Experts and companies come here to see customer leads, not to browse other profiles.
+      if (type === 'customer') { showView('discover'); return; }
+      setRequestsTab('received');
+      showView('requests');
+      loadRequests();
     }
 
     function renderWorkspaceMenu() {
@@ -611,6 +641,8 @@
 
       await loadIdentities();
       await loadRequests();
+      const acting = JSON.parse(sessionStorage.getItem('rightconnect-acting-as') || '{"type":"customer","label":"Customer"}');
+      applyActingAsDefaultView(acting.type);
     })();
 
     loadProfiles();
