@@ -1,4 +1,5 @@
 """Validation models owned by the marketplace discovery feature."""
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
@@ -28,3 +29,20 @@ class ProfileListResponse(BaseModel):
 
     results: list[ProfileSummary]
     total: int
+
+
+class ReviewSummary(BaseModel):
+    """A single review shown on a profile's detail page."""
+
+    reviewer_name: str
+    rating: int
+    body: str
+    created_at: datetime
+
+
+class ProfileDetail(ProfileSummary):
+    """Full profile detail including bio and reviews, for the profile preview page."""
+
+    bio: str | None
+    reviews: list[ReviewSummary]
+

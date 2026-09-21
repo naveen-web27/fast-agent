@@ -1,10 +1,12 @@
 """HTTP endpoints for browsing live marketplace profiles."""
-from fastapi import APIRouter, Depends, Query
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.features.marketplace.schemas import ProfileListResponse
-from app.features.marketplace.service import search_profiles
+from app.features.marketplace.schemas import ProfileDetail, ProfileListResponse
+from app.features.marketplace.service import get_profile_detail, search_profiles
 
 router = APIRouter()
 
@@ -18,3 +20,12 @@ async def list_profiles(
 ) -> ProfileListResponse:
     """Search verified experts and companies stored in the database."""
     return await search_profiles(session, query=q, city=city, kind=kind)
+
+
+@router.get("/profiles/{profile_id}", response_model=ProfileDetail)
+async def get_profile(profile_id: UUID, session: AsyncSession = Depends(get_db)) -> ProfileDetail:
+    """Return the full profile detail, including reviews, for the profile preview page."""
+    detail = await get_profile_detail(session, profile_id)
+    if detail is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+    return detail
