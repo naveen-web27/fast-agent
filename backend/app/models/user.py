@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import StrEnum
 
 from sqlalchemy import DateTime, Enum, String, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -33,6 +33,7 @@ class User(Base):
     full_name: Mapped[str] = mapped_column(String, nullable=False)
     email: Mapped[str] = mapped_column(String, nullable=False, unique=True, index=True)
     phone: Mapped[str | None] = mapped_column(String, unique=True)
+    interests: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False, default=list)
     role: Mapped[UserRole] = mapped_column(
         Enum(
             UserRole,

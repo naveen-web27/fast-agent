@@ -15,6 +15,8 @@ from app.features.auth.schemas import (
     ExpertProfileRequest,
     ExpertProfileSummary,
     IdentitiesResponse,
+    InterestRequest,
+    InterestsResponse,
     OnboardingRequest,
     UserResponse,
 )
@@ -26,9 +28,11 @@ from app.features.auth.service import (
     OrganizationAccessError,
     add_company,
     add_expert_profile,
+    add_interest,
     create_user_profile,
     get_identities,
     get_user_profile,
+    remove_interest,
     send_domain_otp,
     verify_domain_otp,
 )
@@ -147,3 +151,31 @@ async def confirm_domain_otp(
     except InvalidOtpError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return {"status": "verified"}
+
+
+@router.post("/interests", response_model=InterestsResponse)
+async def save_interest(
+    payload: InterestRequest,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> InterestsResponse:
+    """Add an area of interest, seeded at onboarding or captured from a marketplace search."""
+    try:
+        interests = await add_interest(session, auth_user_id, payload.interest)
+    except IdentityNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return InterestsResponse(interests=interests)
+
+
+@router.delete("/interests", response_model=InterestsResponse)
+async def delete_interest(
+    interest: str,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> InterestsResponse:
+    """Remove an area of interest from the caller's saved list (used by the settings editor)."""
+    try:
+        interests = await remove_interest(session, auth_user_id, interest)
+    except IdentityNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return InterestsResponse(interests=interests)

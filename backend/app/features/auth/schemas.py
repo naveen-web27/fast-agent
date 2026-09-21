@@ -16,6 +16,7 @@ class OnboardingRequest(BaseModel):
     role: Role
     city: str | None = Field(default=None, max_length=100)
     preferred_language: str | None = Field(default=None, max_length=50)
+    interest: str | None = Field(default=None, max_length=120)
     primary_service: str | None = Field(default=None, max_length=120)
     years_experience: int | None = Field(default=None, ge=0, le=80)
     credential_number: str | None = Field(default=None, max_length=160)
@@ -32,6 +33,7 @@ class UserResponse(BaseModel):
     full_name: str
     email: EmailStr
     role: Role
+    interests: list[str]
     onboarding_status: Literal["complete", "verification_pending"]
 
 
@@ -89,3 +91,11 @@ class DomainOtpVerifyRequest(BaseModel):
     organization_id: UUID
     email: EmailStr
     code: str = Field(min_length=6, max_length=6)
+
+
+class InterestRequest(BaseModel):
+    interest: str = Field(min_length=1, max_length=120)
+
+
+class InterestsResponse(BaseModel):
+    interests: list[str]

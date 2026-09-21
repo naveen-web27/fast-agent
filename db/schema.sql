@@ -16,6 +16,7 @@ CREATE TABLE users (
     email TEXT NOT NULL UNIQUE,
     phone TEXT UNIQUE,
     role user_role NOT NULL DEFAULT 'customer',
+    interests TEXT[] NOT NULL DEFAULT '{}',
     subscription_tier subscription_tier NOT NULL DEFAULT 'free',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

@@ -64,6 +64,7 @@ async def get_user_profile(session: AsyncSession, auth_user_id: UUID) -> UserRes
         full_name=user.full_name,
         email=user.email,
         role=user.role.value,
+        interests=user.interests,
         onboarding_status=onboarding_status,
     )
 
@@ -87,6 +88,7 @@ async def create_user_profile(
         email=str(payload.email),
         phone=payload.phone,
         role=role,
+        interests=[payload.interest] if payload.interest else [],
     )
     session.add(user)
     await session.flush()
@@ -135,6 +137,7 @@ async def create_user_profile(
         full_name=user.full_name,
         email=user.email,
         role=payload.role,
+        interests=user.interests,
         onboarding_status=onboarding_status,
     )
 
@@ -181,7 +184,12 @@ async def get_identities(session: AsyncSession, auth_user_id: UUID) -> Identitie
     onboarding_status = "complete" if user.role is UserRole.CUSTOMER else "verification_pending"
     return IdentitiesResponse(
         user=UserResponse(
-            id=user.id, full_name=user.full_name, email=user.email, role=user.role.value, onboarding_status=onboarding_status
+            id=user.id,
+            full_name=user.full_name,
+            email=user.email,
+            role=user.role.value,
+            interests=user.interests,
+            onboarding_status=onboarding_status,
         ),
         expert_profile=expert_profile,
         companies=companies,
@@ -326,3 +334,30 @@ async def verify_domain_otp(session: AsyncSession, auth_user_id: UUID, organizat
     if organization is not None:
         organization.email_domain_verified = True
     await session.commit()
+
+
+async def add_interest(session: AsyncSession, auth_user_id: UUID, interest: str) -> list[str]:
+    """Add an area of interest (e.g. from onboarding or a marketplace search), de-duplicated case-insensitively."""
+    user = await session.scalar(select(User).where(User.auth_user_id == auth_user_id))
+    if user is None:
+        raise IdentityNotFoundError("Complete onboarding before saving an interest")
+
+    normalized = interest.strip()
+    if normalized and not any(existing.lower() == normalized.lower() for existing in user.interests):
+        user.interests = [*user.interests, normalized]
+        await session.commit()
+        await session.refresh(user)
+    return user.interests
+
+
+async def remove_interest(session: AsyncSession, auth_user_id: UUID, interest: str) -> list[str]:
+    """Remove an area of interest from the caller's saved list."""
+    user = await session.scalar(select(User).where(User.auth_user_id == auth_user_id))
+    if user is None:
+        raise IdentityNotFoundError("Complete onboarding before editing interests")
+
+    normalized = interest.strip().lower()
+    user.interests = [existing for existing in user.interests if existing.lower() != normalized]
+    await session.commit()
+    await session.refresh(user)
+    return user.interests
