@@ -19,13 +19,18 @@
     .profile-layout { display:grid; grid-template-columns:minmax(0,1fr) 322px; gap:22px; }.profile-hero { padding:27px; border:1px solid var(--line); border-radius:11px; background:#fff; }.profile-summary { display:flex; gap:21px; }.profile-summary .portrait { width:116px; height:116px; border-radius:10px; }.profile-summary h1 { margin:4px 0 5px; font-size:27px; letter-spacing:-.04em; }.profile-summary p { margin:0; color:var(--muted); }.trust-bar { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px; margin-top:25px; overflow:hidden; border:1px solid var(--line); border-radius:8px; }.trust-item { padding:13px; background:#fbfcfe; }.trust-item + .trust-item { border-left:1px solid var(--line); }.trust-item small { display:block; color:var(--muted); font-size:10px; }.trust-item strong { display:block; margin-top:3px; font-size:16px; }.content-card { margin-top:17px; padding:22px; border:1px solid var(--line); border-radius:10px; background:#fff; }.content-card h2 { margin:0 0 10px; font-size:16px; }.content-card p { margin:0; color:#556278; font-size:13px; }.review { display:grid; gap:4px; padding:14px 0; border-top:1px solid var(--line); }.review:first-of-type { margin-top:8px; }.review strong { font-size:12px; }.review span { color:var(--muted); font-size:11px; }.booking { position:sticky; top:18px; padding:20px; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:var(--shadow); }.booking h2 { margin:7px 0; font-size:17px; }.booking p { color:var(--muted); font-size:12px; }.booking .primary { width:100%; margin-top:14px; }.assurance { display:flex; gap:8px; margin-top:14px; color:var(--muted); font-size:10px; }
     .request-layout { display:grid; grid-template-columns:250px minmax(0,1fr) 280px; gap:16px; min-height:640px; }.request-panel { padding:17px; border:1px solid var(--line); border-radius:10px; background:#fff; }.request-panel h2 { margin:4px 0 14px; font-size:15px; }.request-item { display:grid; gap:5px; padding:11px 0; border-top:1px solid var(--line); }.request-item:first-of-type { border-top:0; }.request-item strong { font-size:12px; }.request-item span { color:var(--muted); font-size:10px; }.request-item.active { margin:0 -9px; padding:11px 9px; border:0; border-radius:7px; background:#e9f8f5; }.coordination { display:flex; flex-direction:column; padding:0; overflow:hidden; }.coordination-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:17px; border-bottom:1px solid var(--line); }.participants { display:flex; align-items:center; }.participants .avatar { width:27px; height:27px; margin-left:-5px; border:2px solid #fff; font-size:10px; }.timeline { flex:1; padding:22px; }.event { position:relative; padding:0 0 19px 28px; }.event::before { content:""; position:absolute; left:6px; top:15px; bottom:0; width:1px; background:var(--line); }.event:last-child::before { display:none; }.event-dot { position:absolute; left:0; top:3px; width:13px; height:13px; border:3px solid #fff; border-radius:50%; background:var(--teal); box-shadow:0 0 0 1px #b7e5dc; }.event time { color:var(--muted); font:10px "DM Mono", monospace; }.event strong { display:block; margin-top:2px; font-size:12px; }.event p { margin:3px 0 0; color:var(--muted); font-size:11px; }.note-box { margin:0 17px 17px; padding:11px; color:#56647b; border:1px solid var(--line); border-radius:7px; background:#fbfcfe; font-size:11px; }.meeting { padding:13px; border-radius:8px; background:#edf8f5; }.meeting strong { display:block; color:#17655c; font-size:12px; }.meeting span { display:block; margin-top:2px; color:#368279; font-size:11px; }.checklist { display:grid; gap:11px; }.check { display:flex; gap:9px; color:#56647b; font-size:11px; }.check i { display:grid; place-items:center; width:17px; height:17px; flex:none; color:#08736c; border-radius:50%; background:#e4f6f1; font-style:normal; font-size:10px; }
     .empty { padding:70px 20px; text-align:center; border:1px dashed #cbd5e2; border-radius:10px; background:rgba(255,255,255,.55); }.empty h2 { margin:10px 0 5px; }.empty p { margin:0; color:var(--muted); }.mobile-menu { display:none; }
+    [hidden] { display:none !important; }
+    .user-chip { position:relative; }.user-chip-button { display:flex; align-items:center; gap:8px; padding:0; color:inherit; border:0; background:transparent; cursor:pointer; }.user-menu { position:absolute; top:calc(100% + 8px); right:0; min-width:170px; padding:6px; border:1px solid var(--line); border-radius:9px; background:#fff; box-shadow:var(--shadow); z-index:30; }.user-menu a,.user-menu button { display:block; width:100%; padding:8px 10px; color:var(--ink); border:0; border-radius:6px; background:transparent; font-size:12px; font-weight:700; text-align:left; text-decoration:none; }.user-menu a:hover,.user-menu button:hover { background:#f0f3f8; }
+    .sidebar-scrim { display:none; }
+    @media (max-width:720px) { .sidebar.open { display:flex; position:fixed; z-index:60; width:240px; } .sidebar.open .brand span:last-child,.sidebar.open .workspace,.sidebar.open .nav-button span:last-child,.sidebar.open .side-bottom { display:block; } .sidebar.open .brand { justify-content:flex-start; } .sidebar.open .nav-button { justify-content:flex-start; } .sidebar-scrim.open { display:block; position:fixed; inset:0; z-index:55; background:rgba(16,27,49,.45); } }
     @media (max-width:1050px) { .app { grid-template-columns:72px 1fr; }.sidebar { width:72px; padding:20px 10px; }.brand span:last-child,.workspace,.nav-button span:last-child,.side-bottom { display:none; }.brand { justify-content:center; padding:0 0 27px; }.nav-button { justify-content:center; padding:11px; }.nav-icon { font-size:17px; }.dashboard-grid,.profile-layout { grid-template-columns:1fr; }.profile-score { min-width:100px; }.booking { position:static; }.request-layout { grid-template-columns:210px minmax(0,1fr); }.request-layout > :last-child { grid-column:1/-1; }.main { min-width:0; } }
     @media (max-width:720px) { .app { display:block; }.main { grid-column:auto; }.sidebar { display:none; }.topbar { padding:12px 16px; }.mobile-menu { display:grid; }.page { padding:22px 16px; }.page-title { align-items:start; }.page-title h1 { font-size:25px; }.page-title > .primary { display:none; }.search-panel { grid-template-columns:1fr; }.search-panel .primary { width:100%; }.dashboard-grid,.request-layout { grid-template-columns:1fr; }.profile-card { grid-template-columns:55px minmax(0,1fr); gap:12px; }.portrait { width:55px; height:55px; }.profile-score { grid-column:2; text-align:left; }.profile-score .secondary { margin-top:7px; }.profile-summary { display:block; }.profile-summary .portrait { width:88px; height:88px; margin-bottom:14px; }.trust-bar { grid-template-columns:1fr; }.trust-item + .trust-item { border-top:1px solid var(--line); border-left:0; }.top-actions .secondary,.user-chip span:last-child { display:none; }.request-layout > :last-child { grid-column:auto; } }
   </style>
 </head>
 <body>
   <div class="app">
-    <aside class="sidebar">
+    <div class="sidebar-scrim" id="sidebar-scrim"></div>
+    <aside class="sidebar" id="sidebar">
       <div class="brand"><span class="brand-mark"><img src="../assets/rightconnect-mark.svg" alt=""></span><span>RightConnect</span></div>
       <div class="workspace"><small>Workspace</small><strong>Marketplace</strong></div>
       <nav class="navigation" aria-label="Primary navigation">
@@ -37,12 +42,12 @@
       <div class="side-bottom" id="side-bottom" hidden><span class="section-tag">Signed in as</span><div class="profile-mini"><span class="avatar" id="sidebar-avatar">?</span><span id="sidebar-name"></span></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="top-actions"><button class="icon-button mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="crumb"><strong>RightConnect</strong> / Marketplace</div></div><div class="top-actions"><a class="secondary" href="auth.html" id="sign-in-link">Sign in or join</a><button class="secondary" id="request-expert">Become an expert</button><button class="icon-button" aria-label="Notifications">◌</button><div class="user-chip" id="user-chip" hidden><span class="avatar" id="chip-avatar">?</span><span id="chip-name"></span></div></div></header>
+      <header class="topbar"><div class="top-actions"><button class="icon-button mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="crumb"><strong>RightConnect</strong> / Marketplace</div></div><div class="top-actions"><a class="secondary" href="auth.html" id="sign-in-link">Sign in or join</a><button class="secondary" id="request-expert">Become an expert</button><button class="icon-button" aria-label="Notifications">◌</button><div class="user-chip" id="user-chip" hidden><button class="user-chip-button" id="user-menu-button"><span class="avatar" id="chip-avatar">?</span><span id="chip-name"></span></button><div class="user-menu" id="user-menu" hidden><button id="sign-out-button">Sign out</button></div></div></div></header>
       <div class="page">
         <section class="view active" id="discover">
           <div class="page-title"><div><span class="section-tag">Find trusted help</span><h1>Choose the right person for the decision.</h1><p>Compare verified specialists and companies before you commit.</p></div><button class="primary" id="match-button">✦ Get matched</button></div>
           <div class="search-panel"><label class="search-field">⌕ <input id="search-input" placeholder="What do you need help with?" value="Health insurance"></label><button class="select">Any location <span>⌄</span></button><button class="select">Expert or company <span>⌄</span></button><button class="primary" id="search-button">Search</button></div>
-          <div class="dashboard-grid"><div><div class="filter-row"><h2 id="result-count">Loading profiles…</h2><div class="filter-pills"><button class="pill selected">Top match</button><button class="pill">Verified only</button><button class="pill">Available today</button></div></div><div class="results" id="results"></div></div><aside><div class="insight-card"><span class="section-tag">RightConnect match</span><h2>Tell us your need. We will coordinate the right introduction.</h2><p>Share your requirements once. We keep the conversation clear between you, the expert, and the company.</p><div class="match-list"><div class="match"><span class="avatar">RM</span><div><strong>Personal advisor</strong><span>Explains choices without pressure</span></div><span class="score">4.9</span></div><div class="match"><span class="avatar">CW</span><div><strong>Provider team</strong><span>Shares clear next steps</span></div><span class="score">4.7</span></div></div></div><div class="stat-grid"><div class="stat"><small>Verified consultations</small><strong>1,208 <em>this month</em></strong></div><div class="stat"><small>Average first response</small><strong>34 min</strong></div></div></aside></div>
+          <div class="dashboard-grid"><div><div class="filter-row"><h2 id="result-count">Loading profiles…</h2><div class="filter-pills"><button class="pill selected">Top match</button><button class="pill">Verified only</button><button class="pill">Available today</button></div></div><div class="results" id="results"></div></div><aside><div class="insight-card"><span class="section-tag">RightConnect match</span><h2>Tell us your need. We will coordinate the right introduction.</h2><p>Share your requirements once. We keep the conversation clear between you, the expert, and the company.</p><div class="match-list" id="match-list"></div></div><div class="stat-grid"><div class="stat"><small>Verified reviews</small><strong id="stat-reviews">–</strong></div><div class="stat"><small>Average first response</small><strong id="stat-response">–</strong></div></div></aside></div>
         </section>
         <section class="view" id="profile">
           <div class="page-title"><div><span class="section-tag">Profile preview</span><h1>Trusted information, before the conversation.</h1></div><button class="secondary" data-view="discover">← Back to discover</button></div>
@@ -56,6 +61,7 @@
       </div>
     </main>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const buttons = document.querySelectorAll('[data-view]');
     const views = document.querySelectorAll('.view');
@@ -63,13 +69,20 @@
     function showView(viewId) {
       views.forEach((view) => view.classList.toggle('active', view.id === viewId));
       navButtons.forEach((button) => button.classList.toggle('active', button.dataset.view === viewId));
+      closeSidebar();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     buttons.forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
     document.querySelector('#book-button').addEventListener('click', () => showView('requests'));
     document.querySelector('#match-button').addEventListener('click', () => { document.querySelector('#search-input').focus(); });
     document.querySelector('#request-expert').addEventListener('click', () => { window.location.href = 'auth.html'; });
-    document.querySelector('#mobile-menu').addEventListener('click', () => showView('discover'));
+
+    const sidebar = document.querySelector('#sidebar');
+    const sidebarScrim = document.querySelector('#sidebar-scrim');
+    function openSidebar() { sidebar.classList.add('open'); sidebarScrim.classList.add('open'); }
+    function closeSidebar() { sidebar.classList.remove('open'); sidebarScrim.classList.remove('open'); }
+    document.querySelector('#mobile-menu').addEventListener('click', openSidebar);
+    sidebarScrim.addEventListener('click', closeSidebar);
 
     const apiBase = '/api/v1';
     const resultsList = document.querySelector('#results');
@@ -102,6 +115,20 @@
       return article;
     }
 
+    function renderInsights(profiles) {
+      const matchList = document.querySelector('#match-list');
+      matchList.innerHTML = profiles.slice(0, 2).map((profile) => {
+        const initials = profile.display_name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase();
+        return `<div class="match"><span class="avatar">${initials}</span><div><strong>${profile.display_name}</strong><span>${profile.headline}</span></div><span class="score">${profile.average_rating.toFixed(1)}</span></div>`;
+      }).join('') || '<p style="color:#b9c7dd;font-size:12px;margin:0">No profiles yet.</p>';
+
+      const totalReviews = profiles.reduce((sum, profile) => sum + profile.review_count, 0);
+      const responseTimes = profiles.map((profile) => profile.response_minutes).filter((value) => typeof value === 'number');
+      const avgResponse = responseTimes.length ? Math.round(responseTimes.reduce((sum, value) => sum + value, 0) / responseTimes.length) : null;
+      document.querySelector('#stat-reviews').textContent = totalReviews ? totalReviews.toLocaleString() : '–';
+      document.querySelector('#stat-response').textContent = avgResponse ? `${avgResponse} min` : '–';
+    }
+
     async function loadProfiles() {
       const query = document.querySelector('#search-input').value.trim();
       resultCount.textContent = 'Loading profiles…';
@@ -112,6 +139,7 @@
         if (!response.ok) throw new Error('Request failed');
         const data = await response.json();
         resultsList.innerHTML = '';
+        renderInsights(data.results);
         if (data.results.length === 0) {
           resultCount.textContent = `No profiles yet for ${query || 'your search'}`;
           return;
@@ -127,7 +155,19 @@
     document.querySelector('#search-input').addEventListener('keydown', (event) => { if (event.key === 'Enter') loadProfiles(); });
     document.querySelectorAll('.pill').forEach((pill) => pill.addEventListener('click', () => pill.classList.toggle('selected')));
 
-    (function renderSignedInUser() {
+    let authClient = null;
+    const userMenuButton = document.querySelector('#user-menu-button');
+    const userMenu = document.querySelector('#user-menu');
+    userMenuButton.addEventListener('click', (event) => { event.stopPropagation(); userMenu.hidden = !userMenu.hidden; });
+    document.addEventListener('click', () => { userMenu.hidden = true; });
+    document.querySelector('#sign-out-button').addEventListener('click', async () => {
+      if (authClient) await authClient.auth.signOut();
+      sessionStorage.removeItem('rightconnect-user');
+      sessionStorage.removeItem('rightconnect-role');
+      window.location.href = 'auth.html';
+    });
+
+    (async function renderSignedInUser() {
       const raw = sessionStorage.getItem('rightconnect-user');
       if (!raw) return;
       const user = JSON.parse(raw);
@@ -139,6 +179,15 @@
       document.querySelector('#chip-name').innerHTML = `${user.full_name}<br><small>${user.role.replace('_', ' ')}</small>`;
       document.querySelector('#user-chip').hidden = false;
       document.querySelector('#sign-in-link').hidden = true;
+      try {
+        const configResponse = await fetch(`${apiBase}/auth/provider-config`);
+        const config = await configResponse.json();
+        if (config.supabase_url && config.supabase_publishable_key) {
+          authClient = window.supabase.createClient(config.supabase_url, config.supabase_publishable_key);
+        }
+      } catch (_) {
+        // Sign-out still clears local session state even if the Supabase client can't be created.
+      }
     })();
 
     loadProfiles();
