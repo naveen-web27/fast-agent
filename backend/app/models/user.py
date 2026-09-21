@@ -17,6 +17,12 @@ class UserRole(StrEnum):
     PLATFORM_ADMIN = "platform_admin"
 
 
+class SubscriptionTier(StrEnum):
+    FREE = "free"
+    PRO = "pro"
+    ENTERPRISE = "enterprise"
+
+
 class User(Base):
     """Application profile associated with one external auth identity."""
 
@@ -35,5 +41,16 @@ class User(Base):
             values_callable=lambda roles: [role.value for role in roles],
         ),
         nullable=False,
+    )
+    subscription_tier: Mapped[SubscriptionTier] = mapped_column(
+        Enum(
+            SubscriptionTier,
+            name="subscription_tier",
+            create_type=False,
+            values_callable=lambda tiers: [tier.value for tier in tiers],
+        ),
+        nullable=False,
+        default=SubscriptionTier.FREE,
+        server_default=SubscriptionTier.FREE.value,
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

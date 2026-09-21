@@ -7,6 +7,7 @@ CREATE TYPE user_role AS ENUM ('customer', 'expert', 'company_admin', 'platform_
 CREATE TYPE profile_kind AS ENUM ('expert', 'company');
 CREATE TYPE request_status AS ENUM ('submitted', 'accepted', 'meeting_booked', 'provider_invited', 'completed', 'cancelled');
 CREATE TYPE verification_status AS ENUM ('pending', 'verified', 'rejected');
+CREATE TYPE subscription_tier AS ENUM ('free', 'pro', 'enterprise');
 
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -15,6 +16,7 @@ CREATE TABLE users (
     email TEXT NOT NULL UNIQUE,
     phone TEXT UNIQUE,
     role user_role NOT NULL DEFAULT 'customer',
+    subscription_tier subscription_tier NOT NULL DEFAULT 'free',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -26,6 +28,7 @@ CREATE TABLE organizations (
     website_url TEXT,
     city TEXT,
     verification verification_status NOT NULL DEFAULT 'pending',
+    subscription_tier subscription_tier NOT NULL DEFAULT 'free',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

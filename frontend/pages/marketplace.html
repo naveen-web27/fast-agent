@@ -27,7 +27,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="brand"><span class="brand-mark"><img src="../assets/rightconnect-mark.svg" alt=""></span><span>RightConnect</span></div>
-      <div class="workspace"><small>Workspace</small><strong>Marketplace demo</strong></div>
+      <div class="workspace"><small>Workspace</small><strong>Marketplace</strong></div>
       <nav class="navigation" aria-label="Primary navigation">
         <button class="nav-button active" data-view="discover"><span class="nav-icon">⌕</span><span>Discover</span></button>
         <button class="nav-button" data-view="requests"><span class="nav-icon">◫</span><span>My requests</span></button>
@@ -42,11 +42,7 @@
         <section class="view active" id="discover">
           <div class="page-title"><div><span class="section-tag">Find trusted help</span><h1>Choose the right person for the decision.</h1><p>Compare verified specialists and companies before you commit.</p></div><button class="primary" id="match-button">✦ Get matched</button></div>
           <div class="search-panel"><label class="search-field">⌕ <input id="search-input" placeholder="What do you need help with?" value="Health insurance"></label><button class="select">Any location <span>⌄</span></button><button class="select">Expert or company <span>⌄</span></button><button class="primary" id="search-button">Search</button></div>
-          <div class="dashboard-grid"><div><div class="filter-row"><h2 id="result-count">Recommended for health insurance</h2><div class="filter-pills"><button class="pill selected">Top match</button><button class="pill">Verified only</button><button class="pill">Available today</button></div></div><div class="results" id="results">
-            <article class="profile-card" data-name="Dr. Riya Menon health insurance advisor"><div class="portrait"><img src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=180&q=80" alt="Riya Menon"></div><div><div class="profile-head"><h3>Dr. Riya Menon</h3><span class="verified">● Verified advisor</span></div><div class="profile-role">Independent health insurance advisor · Bengaluru</div><div class="profile-meta">9 years experience · English, Hindi, Tamil</div><div class="tags"><span class="tag">Family cover</span><span class="tag">Policy comparison</span><span class="tag">Claims guidance</span></div></div><div class="profile-score"><div class="score">★ <strong>4.9</strong></div><div class="review-count">142 verified reviews</div><button class="secondary profile-open">View profile</button></div></article>
-            <article class="profile-card" data-name="Coverwise Insurance company"><div class="portrait"><img src="https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=180&q=80" alt="Coverwise team"></div><div><div class="profile-head"><h3>Coverwise Insurance</h3><span class="verified">● Verified company</span></div><div class="profile-role">Insurance advisory company · India-wide</div><div class="profile-meta">41 licensed advisors · replies in under 25 minutes</div><div class="tags"><span class="tag">Corporate cover</span><span class="tag">Claims desk</span><span class="tag">Online consultation</span></div></div><div class="profile-score"><div class="score">★ <strong>4.7</strong></div><div class="review-count">387 verified reviews</div><button class="secondary profile-open">View profile</button></div></article>
-            <article class="profile-card" data-name="Arun Prasad employee benefits expert"><div class="portrait"><img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=180&q=80" alt="Arun Prasad"></div><div><div class="profile-head"><h3>Arun Prasad</h3><span class="verified">● Verified expert</span></div><div class="profile-role">Employee benefits consultant · Chennai</div><div class="profile-meta">12 years experience · English, Tamil, Telugu</div><div class="tags"><span class="tag">Senior citizen cover</span><span class="tag">Small business</span><span class="tag">Renewals</span></div></div><div class="profile-score"><div class="score">★ <strong>4.8</strong></div><div class="review-count">96 verified reviews</div><button class="secondary profile-open">View profile</button></div></article>
-          </div></div><aside><div class="insight-card"><span class="section-tag">RightConnect match</span><h2>Tell us your need. We will coordinate the right introduction.</h2><p>Share your requirements once. We keep the conversation clear between you, the expert, and the company.</p><div class="match-list"><div class="match"><span class="avatar">RM</span><div><strong>Personal advisor</strong><span>Explains choices without pressure</span></div><span class="score">4.9</span></div><div class="match"><span class="avatar">CW</span><div><strong>Provider team</strong><span>Shares clear next steps</span></div><span class="score">4.7</span></div></div></div><div class="stat-grid"><div class="stat"><small>Verified consultations</small><strong>1,208 <em>this month</em></strong></div><div class="stat"><small>Average first response</small><strong>34 min</strong></div></div></aside></div>
+          <div class="dashboard-grid"><div><div class="filter-row"><h2 id="result-count">Loading profiles…</h2><div class="filter-pills"><button class="pill selected">Top match</button><button class="pill">Verified only</button><button class="pill">Available today</button></div></div><div class="results" id="results"></div></div><aside><div class="insight-card"><span class="section-tag">RightConnect match</span><h2>Tell us your need. We will coordinate the right introduction.</h2><p>Share your requirements once. We keep the conversation clear between you, the expert, and the company.</p><div class="match-list"><div class="match"><span class="avatar">RM</span><div><strong>Personal advisor</strong><span>Explains choices without pressure</span></div><span class="score">4.9</span></div><div class="match"><span class="avatar">CW</span><div><strong>Provider team</strong><span>Shares clear next steps</span></div><span class="score">4.7</span></div></div></div><div class="stat-grid"><div class="stat"><small>Verified consultations</small><strong>1,208 <em>this month</em></strong></div><div class="stat"><small>Average first response</small><strong>34 min</strong></div></div></aside></div>
         </section>
         <section class="view" id="profile">
           <div class="page-title"><div><span class="section-tag">Profile preview</span><h1>Trusted information, before the conversation.</h1></div><button class="secondary" data-view="discover">← Back to discover</button></div>
@@ -70,19 +66,68 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     buttons.forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
-    document.querySelectorAll('.profile-open').forEach((button) => button.addEventListener('click', () => showView('profile')));
     document.querySelector('#book-button').addEventListener('click', () => showView('requests'));
     document.querySelector('#match-button').addEventListener('click', () => { document.querySelector('#search-input').focus(); });
-    document.querySelector('#request-expert').addEventListener('click', () => alert('Expert onboarding will be the next workflow.'));
-    document.querySelector('#search-button').addEventListener('click', () => {
-      const query = document.querySelector('#search-input').value.trim().toLowerCase();
-      const cards = document.querySelectorAll('.profile-card');
-      let count = 0;
-      cards.forEach((card) => { const visible = !query || card.dataset.name.includes(query) || query.includes('health'); card.style.display = visible ? 'grid' : 'none'; if (visible) count += 1; });
-      document.querySelector('#result-count').textContent = `${count} recommended profile${count === 1 ? '' : 's'} for ${query || 'your need'}`;
-    });
+    document.querySelector('#request-expert').addEventListener('click', () => { window.location.href = 'auth.html'; });
+    document.querySelector('#mobile-menu').addEventListener('click', () => showView('discover'));
+
+    const apiBase = '/api/v1';
+    const resultsList = document.querySelector('#results');
+    const resultCount = document.querySelector('#result-count');
+
+    function renderProfileCard(profile) {
+      const article = document.createElement('article');
+      article.className = 'profile-card';
+      article.dataset.profileId = profile.id;
+      const roleLine = profile.kind === 'company'
+        ? profile.headline
+        : `${profile.headline}${profile.city ? ` · ${profile.city}` : ''}`;
+      const metaLine = profile.kind === 'expert'
+        ? `${profile.years_experience ? `${profile.years_experience} years experience` : ''}${profile.languages.length ? ` · ${profile.languages.join(', ')}` : ''}`
+        : (profile.response_minutes ? `Replies in under ${profile.response_minutes} minutes` : '');
+      article.innerHTML = `
+        <div class="portrait">${profile.avatar_url ? `<img src="${profile.avatar_url}" alt="${profile.display_name}">` : ''}</div>
+        <div>
+          <div class="profile-head"><h3>${profile.display_name}</h3>${profile.verified ? `<span class="verified">● Verified ${profile.kind}</span>` : ''}</div>
+          <div class="profile-role">${roleLine}</div>
+          <div class="profile-meta">${metaLine}</div>
+          <div class="tags">${profile.tags.map((tag) => `<span class="tag">${tag}</span>`).join('')}</div>
+        </div>
+        <div class="profile-score">
+          <div class="score">★ <strong>${profile.average_rating.toFixed(1)}</strong></div>
+          <div class="review-count">${profile.review_count} verified reviews</div>
+          <button class="secondary profile-open">View profile</button>
+        </div>`;
+      article.querySelector('.profile-open').addEventListener('click', () => showView('profile'));
+      return article;
+    }
+
+    async function loadProfiles() {
+      const query = document.querySelector('#search-input').value.trim();
+      resultCount.textContent = 'Loading profiles…';
+      try {
+        const params = new URLSearchParams();
+        if (query) params.set('q', query);
+        const response = await fetch(`${apiBase}/profiles?${params.toString()}`);
+        if (!response.ok) throw new Error('Request failed');
+        const data = await response.json();
+        resultsList.innerHTML = '';
+        if (data.results.length === 0) {
+          resultCount.textContent = `No profiles yet for ${query || 'your search'}`;
+          return;
+        }
+        data.results.forEach((profile) => resultsList.appendChild(renderProfileCard(profile)));
+        resultCount.textContent = `${data.total} recommended profile${data.total === 1 ? '' : 's'}${query ? ` for ${query}` : ''}`;
+      } catch (error) {
+        resultCount.textContent = 'Could not load live profiles. Check that the API and database are running.';
+      }
+    }
+
+    document.querySelector('#search-button').addEventListener('click', loadProfiles);
+    document.querySelector('#search-input').addEventListener('keydown', (event) => { if (event.key === 'Enter') loadProfiles(); });
     document.querySelectorAll('.pill').forEach((pill) => pill.addEventListener('click', () => pill.classList.toggle('selected')));
-    document.querySelector('#mobile-menu').addEventListener('click', () => alert('Use the discover, requests, saved, and profile controls in this prototype.'));
+
+    loadProfiles();
   </script>
 </body>
 </html>
