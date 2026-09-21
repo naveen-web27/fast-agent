@@ -68,8 +68,10 @@
         business_registration: document.querySelector('#registration').value || null,
       };
       const response = await fetch(`${apiBase}/auth/onboarding`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authSession.access_token}` }, body: JSON.stringify(payload) });
-      if (response.status === 409) { show('success-step'); return; }
+      if (response.status === 409) { sessionStorage.setItem('rightconnect-user', JSON.stringify({ full_name: payload.full_name, email: payload.email, role: payload.role })); show('success-step'); return; }
       if (!response.ok) { const body = await response.json().catch(() => ({})); alert(body.detail || 'Could not create your account.'); return; }
+      const created = await response.json();
+      sessionStorage.setItem('rightconnect-user', JSON.stringify(created));
       show('success-step');
     });
     document.querySelector('#sign-in-link').addEventListener('click', (event) => { event.preventDefault(); role = 'customer'; show('auth-step'); });
@@ -93,7 +95,15 @@
           authClient = window.supabase.createClient(config.supabase_url, config.supabase_publishable_key);
           const { data } = await authClient.auth.getSession();
           authSession = data.session;
-          if (authSession) show('details-step');
+          if (authSession) {
+            const meResponse = await fetch(`${apiBase}/auth/me`, { headers: { Authorization: `Bearer ${authSession.access_token}` } });
+            if (meResponse.ok) {
+              sessionStorage.setItem('rightconnect-user', JSON.stringify(await meResponse.json()));
+              window.location.href = 'marketplace.html';
+              return;
+            }
+            show('details-step');
+          }
         }
       } catch (_) {
         // Local file previews work without a server; Google sign-in is enabled after deployment.

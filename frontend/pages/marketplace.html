@@ -34,10 +34,10 @@
         <button class="nav-button" data-view="saved"><span class="nav-icon">♡</span><span>Saved</span></button>
         <button class="nav-button" data-view="profile"><span class="nav-icon">◉</span><span>Profile preview</span></button>
       </nav>
-      <div class="side-bottom"><span class="section-tag">Signed in as</span><div class="profile-mini"><span class="avatar">NK</span><span>Naveen Kumar</span></div></div>
+      <div class="side-bottom" id="side-bottom" hidden><span class="section-tag">Signed in as</span><div class="profile-mini"><span class="avatar" id="sidebar-avatar">?</span><span id="sidebar-name"></span></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="top-actions"><button class="icon-button mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="crumb"><strong>RightConnect</strong> / Marketplace</div></div><div class="top-actions"><a class="secondary" href="auth.html">Sign in or join</a><button class="secondary" id="request-expert">Become an expert</button><button class="icon-button" aria-label="Notifications">◌</button><div class="user-chip"><span class="avatar">NK</span><span>Naveen Kumar<br><small>Customer</small></span></div></div></header>
+      <header class="topbar"><div class="top-actions"><button class="icon-button mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="crumb"><strong>RightConnect</strong> / Marketplace</div></div><div class="top-actions"><a class="secondary" href="auth.html" id="sign-in-link">Sign in or join</a><button class="secondary" id="request-expert">Become an expert</button><button class="icon-button" aria-label="Notifications">◌</button><div class="user-chip" id="user-chip" hidden><span class="avatar" id="chip-avatar">?</span><span id="chip-name"></span></div></div></header>
       <div class="page">
         <section class="view active" id="discover">
           <div class="page-title"><div><span class="section-tag">Find trusted help</span><h1>Choose the right person for the decision.</h1><p>Compare verified specialists and companies before you commit.</p></div><button class="primary" id="match-button">✦ Get matched</button></div>
@@ -126,6 +126,20 @@
     document.querySelector('#search-button').addEventListener('click', loadProfiles);
     document.querySelector('#search-input').addEventListener('keydown', (event) => { if (event.key === 'Enter') loadProfiles(); });
     document.querySelectorAll('.pill').forEach((pill) => pill.addEventListener('click', () => pill.classList.toggle('selected')));
+
+    (function renderSignedInUser() {
+      const raw = sessionStorage.getItem('rightconnect-user');
+      if (!raw) return;
+      const user = JSON.parse(raw);
+      const initials = user.full_name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase();
+      document.querySelector('#sidebar-avatar').textContent = initials;
+      document.querySelector('#sidebar-name').textContent = user.full_name;
+      document.querySelector('#side-bottom').hidden = false;
+      document.querySelector('#chip-avatar').textContent = initials;
+      document.querySelector('#chip-name').innerHTML = `${user.full_name}<br><small>${user.role.replace('_', ' ')}</small>`;
+      document.querySelector('#user-chip').hidden = false;
+      document.querySelector('#sign-in-link').hidden = true;
+    })();
 
     loadProfiles();
   </script>

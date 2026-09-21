@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.features.auth.schemas import OnboardingRequest, UserResponse
-from app.features.auth.service import OnboardingConflictError, create_user_profile
+from app.features.auth.service import OnboardingConflictError, create_user_profile, get_user_profile
 from app.security.dependencies import get_current_auth_user_id
 
 router = APIRouter()
@@ -22,6 +22,18 @@ async def get_provider_config() -> dict[str, str]:
         "supabase_url": settings.supabase_url,
         "supabase_publishable_key": settings.supabase_publishable_key,
     }
+
+
+@router.get("/me", response_model=UserResponse)
+async def get_current_user(
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> UserResponse:
+    """Return the caller's onboarded profile, or 404 if onboarding hasn't happened yet."""
+    profile = await get_user_profile(session, auth_user_id)
+    if profile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Onboarding not completed")
+    return profile
 
 
 @router.post("/onboarding", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
