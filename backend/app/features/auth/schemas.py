@@ -4,7 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field
 
-Role = Literal["customer", "expert", "company_admin"]
+Role = Literal["customer", "expert", "company_admin", "platform_admin"]
+OnboardingRole = Literal["customer", "expert", "company_admin"]
 
 
 class OnboardingRequest(BaseModel):
@@ -13,7 +14,7 @@ class OnboardingRequest(BaseModel):
     full_name: str = Field(min_length=2, max_length=120)
     email: EmailStr
     phone: str | None = Field(default=None, max_length=30)
-    role: Role
+    role: OnboardingRole
     city: str | None = Field(default=None, max_length=100)
     preferred_language: str | None = Field(default=None, max_length=50)
     interest: str | None = Field(default=None, max_length=120)

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RightConnect · Admin review</title>
+  <meta name="description" content="Internal tool for verifying expert and company marketplace profiles.">
+  <style>
+    :root { --teal:#0f9d8f; --ink:#132033; --muted:#63708a; --line:#e4e9f2; --shadow:0 18px 40px rgba(19,32,51,.08); }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:#f5f7fb; color:var(--ink); }
+    header { padding:20px 28px; background:#101b31; color:#fff; display:flex; align-items:center; justify-content:space-between; }
+    header strong { font-size:15px; }
+    main { max-width:960px; margin:0 auto; padding:28px; }
+    .tabs { display:flex; gap:8px; margin-bottom:18px; }
+    .tabs button { padding:8px 14px; border:1px solid var(--line); border-radius:999px; background:#fff; font-weight:700; font-size:12px; color:var(--muted); cursor:pointer; }
+    .tabs button.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+    .card { background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); padding:16px 18px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:14px; }
+    .card .info strong { display:block; font-size:14px; }
+    .card .info small { color:var(--muted); font-size:12px; }
+    .card .meta { font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+    .actions { display:flex; gap:8px; flex-shrink:0; }
+    button.primary { background:var(--teal); color:#fff; border:0; padding:8px 14px; border-radius:7px; font-weight:700; cursor:pointer; }
+    button.reject { background:#fff; color:#c0392b; border:1px solid #f0c4bd; padding:8px 14px; border-radius:7px; font-weight:700; cursor:pointer; }
+    .empty, .notice { padding:40px; text-align:center; color:var(--muted); background:#fff; border-radius:12px; border:1px solid var(--line); }
+    .notice.error { color:#c0392b; }
+  </style>
+</head>
+<body>
+  <header><strong>RightConnect admin · Profile verification</strong><span id="whoami"></span></header>
+  <main>
+    <div class="tabs">
+      <button data-status="pending" class="active">Pending</button>
+      <button data-status="verified">Verified</button>
+      <button data-status="rejected">Rejected</button>
+    </div>
+    <div id="list"><p class="notice">Loading…</p></div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const apiBase = '/api/v1';
+    const list = document.querySelector('#list');
+    let accessToken = null;
+    let status = 'pending';
+
+    function authHeaders() { return accessToken ? { Authorization: `Bearer ${accessToken}` } : {}; }
+
+    async function loadProfiles() {
+      list.innerHTML = '<p class="notice">Loading…</p>';
+      const response = await fetch(`${apiBase}/admin/profiles?verification=${status}`, { headers: authHeaders() });
+      if (response.status === 403) { list.innerHTML = '<p class="notice error">Admin access required. Ask an existing admin to grant your account the platform_admin role.</p>'; return; }
+      if (!response.ok) { list.innerHTML = '<p class="notice error">Could not load profiles.</p>'; return; }
+      const profiles = await response.json();
+      if (profiles.length === 0) { list.innerHTML = `<p class="empty">No ${status} profiles.</p>`; return; }
+      list.innerHTML = '';
+      profiles.forEach((profile) => list.appendChild(renderCard(profile)));
+    }
+
+    function renderCard(profile) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const showActions = status === 'pending';
+      card.innerHTML = `
+        <div class="info">
+          <strong>${profile.display_name}</strong>
+          <small>${profile.headline}${profile.city ? ' · ' + profile.city : ''}</small>
+          <div class="meta">${profile.kind}${profile.owner_email ? ' · ' + profile.owner_email : ''}</div>
+        </div>
+        ${showActions ? '<div class="actions"><button class="primary" data-action="verified">Verify</button><button class="reject" data-action="rejected">Reject</button></div>' : ''}`;
+      if (showActions) {
+        card.querySelectorAll('button[data-action]').forEach((button) => {
+          button.addEventListener('click', () => decide(profile.id, button.dataset.action));
+        });
+      }
+      return card;
+    }
+
+    async function decide(profileId, decision) {
+      const response = await fetch(`${apiBase}/admin/profiles/${profileId}/verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ status: decision }),
+      });
+      if (!response.ok) { alert('Could not update this profile.'); return; }
+      loadProfiles();
+    }
+
+    document.querySelectorAll('.tabs button').forEach((button) => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.tabs button').forEach((other) => other.classList.remove('active'));
+        button.classList.add('active');
+        status = button.dataset.status;
+        loadProfiles();
+      });
+    });
+
+    (async () => {
+      try {
+        const configResponse = await fetch(`${apiBase}/auth/provider-config`);
+        const config = await configResponse.json();
+        if (!config.supabase_url || !config.supabase_publishable_key) { list.innerHTML = '<p class="notice error">Supabase is not configured.</p>'; return; }
+        const authClient = window.supabase.createClient(config.supabase_url, config.supabase_publishable_key);
+        const { data } = await authClient.auth.getSession();
+        if (!data.session) { list.innerHTML = '<p class="notice error">Sign in at <a href="auth.html">auth.html</a> with an admin account first.</p>'; return; }
+        accessToken = data.session.access_token;
+        document.querySelector('#whoami').textContent = data.session.user.email || '';
+      } catch (_) {
+        list.innerHTML = '<p class="notice error">Could not reach the API.</p>';
+        return;
+      }
+      loadProfiles();
+    })();
+  </script>
+</body>
+</html>
