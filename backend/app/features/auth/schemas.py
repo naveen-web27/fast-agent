@@ -33,3 +33,59 @@ class UserResponse(BaseModel):
     email: EmailStr
     role: Role
     onboarding_status: Literal["complete", "verification_pending"]
+
+
+class ExpertProfileRequest(BaseModel):
+    """Fields needed to add a personal expert listing to an existing account."""
+
+    headline: str = Field(min_length=2, max_length=160)
+    bio: str | None = Field(default=None, max_length=2000)
+    city: str | None = Field(default=None, max_length=100)
+    primary_service: str | None = Field(default=None, max_length=120)
+    years_experience: int | None = Field(default=None, ge=0, le=80)
+    languages: list[str] = Field(default_factory=list)
+
+
+class ExpertProfileSummary(BaseModel):
+    id: UUID
+    headline: str
+    verification: Literal["pending", "verified", "rejected"]
+    average_rating: float
+    review_count: int
+
+
+class CompanyRequest(BaseModel):
+    """Fields needed to register a new company and become its first admin."""
+
+    company_name: str = Field(min_length=2, max_length=160)
+    work_email: EmailStr
+    website: str | None = Field(default=None, max_length=255)
+    city: str | None = Field(default=None, max_length=100)
+    business_registration: str | None = Field(default=None, max_length=160)
+
+
+class CompanyMembership(BaseModel):
+    organization_id: UUID
+    name: str
+    member_role: Literal["admin", "staff"]
+    verification: Literal["pending", "verified", "rejected"]
+    email_domain_verified: bool
+
+
+class IdentitiesResponse(BaseModel):
+    """Everything this auth identity can act as: customer, expert, and/or company admin."""
+
+    user: UserResponse
+    expert_profile: ExpertProfileSummary | None
+    companies: list[CompanyMembership]
+
+
+class DomainOtpSendRequest(BaseModel):
+    organization_id: UUID
+    email: EmailStr
+
+
+class DomainOtpVerifyRequest(BaseModel):
+    organization_id: UUID
+    email: EmailStr
+    code: str = Field(min_length=6, max_length=6)

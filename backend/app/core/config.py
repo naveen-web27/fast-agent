@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:8000,http://127.0.0.1:8000"
     supabase_url: str = ""
     supabase_publishable_key: str = ""
+    resend_api_key: str = ""
+    resend_from_email: str = "RightConnect <onboarding@resend.dev>"
 
     @property
     def cors_origin_list(self) -> list[str]:

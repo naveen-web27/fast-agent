@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import ARRAY, DateTime, Enum, ForeignKey, Numeric, SmallInteger, String, Text, func
+from sqlalchemy import ARRAY, Boolean, DateTime, Enum, ForeignKey, Numeric, SmallInteger, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -40,6 +40,7 @@ class Organization(Base):
     verification: Mapped[VerificationStatus] = mapped_column(
         _enum(VerificationStatus, "verification_status"), nullable=False, default=VerificationStatus.PENDING
     )
+    email_domain_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     subscription_tier: Mapped[SubscriptionTier] = mapped_column(
         _enum(SubscriptionTier, "subscription_tier"), nullable=False, default=SubscriptionTier.FREE
     )

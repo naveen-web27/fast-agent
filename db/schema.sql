@@ -28,9 +28,32 @@ CREATE TABLE organizations (
     website_url TEXT,
     city TEXT,
     verification verification_status NOT NULL DEFAULT 'pending',
+    email_domain_verified BOOLEAN NOT NULL DEFAULT FALSE,
     subscription_tier subscription_tier NOT NULL DEFAULT 'free',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE organization_members (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    member_role TEXT NOT NULL DEFAULT 'admin' CHECK (member_role IN ('admin', 'staff')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (organization_id, user_id)
+);
+
+CREATE TABLE email_verifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT NOT NULL,
+    purpose TEXT NOT NULL DEFAULT 'company_domain',
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    code_hash TEXT NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    verified_at TIMESTAMPTZ,
+    attempts SMALLINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX email_verifications_email_idx ON email_verifications(email, purpose);
 
 CREATE TABLE profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -51,6 +74,8 @@ CREATE TABLE profiles (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CHECK ((kind = 'expert' AND user_id IS NOT NULL) OR (kind = 'company' AND organization_id IS NOT NULL))
 );
+
+CREATE UNIQUE INDEX profiles_user_expert_unique_idx ON profiles(user_id) WHERE kind = 'expert';
 
 CREATE TABLE services (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
