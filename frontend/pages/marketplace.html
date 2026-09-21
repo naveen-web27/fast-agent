@@ -122,6 +122,16 @@
       <div class="modal-actions"><button type="button" class="secondary" id="interests-cancel">Close</button><button type="submit" class="primary">Add</button></div>
     </form>
   </div>
+  <div class="modal" id="request-modal" hidden>
+    <h2>Request a consultation</h2>
+    <p class="modal-note" id="request-modal-target"></p>
+    <form id="request-form">
+      <div class="field"><label for="request-title">What do you need?</label><input id="request-title" placeholder="e.g. Health insurance advice" required></div>
+      <div class="field"><label for="request-requirements">Details</label><textarea id="request-requirements" rows="4" placeholder="Share context so they can respond usefully" required></textarea></div>
+      <div class="field"><label for="request-city">City</label><input id="request-city" placeholder="Chennai"></div>
+      <div class="modal-actions"><button type="button" class="secondary" id="request-cancel">Cancel</button><button type="submit" class="primary">Send request</button></div>
+    </form>
+  </div>
   <script>
     const buttons = document.querySelectorAll('[data-view]');
     const views = document.querySelectorAll('.view');
@@ -133,7 +143,14 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     buttons.forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
-    document.querySelector('#book-button').addEventListener('click', () => showView('requests'));
+    let currentProfileId = null;
+    let currentProfileName = null;
+    document.querySelector('#book-button').addEventListener('click', () => {
+      if (!accessToken) { window.location.href = 'auth.html'; return; }
+      if (!currentProfileId) return;
+      document.querySelector('#request-modal-target').textContent = currentProfileName ? `This goes to ${currentProfileName}.` : '';
+      openModal('request-modal');
+    });
     document.querySelector('#match-button').addEventListener('click', () => { document.querySelector('#search-input').focus(); });
     document.querySelector('#request-expert').addEventListener('click', () => {
       if (accessToken) { openModal('expert-modal'); } else { window.location.href = 'auth.html'; }
@@ -178,6 +195,7 @@
     }
 
     async function openProfile(profileId) {
+      currentProfileId = profileId;
       showView('profile');
       const reviewsBox = document.querySelector('#profile-reviews');
       reviewsBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Loading…</p>';
@@ -191,6 +209,7 @@
     }
 
     function renderProfileDetail(profile) {
+      currentProfileName = profile.display_name;
       document.querySelector('#profile-portrait').innerHTML = profile.avatar_url ? `<img src="${profile.avatar_url}" alt="${profile.display_name}">` : '';
       document.querySelector('#profile-verified').hidden = !profile.verified;
       document.querySelector('#profile-name').textContent = profile.display_name;
@@ -253,8 +272,120 @@
 
     document.querySelector('#requests').innerHTML = `
       <div class="page-title"><div><span class="section-tag">My requests</span><h1>One place for every moving part.</h1><p>Track the people, answers, and decisions around your request.</p></div><button class="primary" data-view="discover">+ New request</button></div>
-      <div class="empty"><span class="section-tag">No requests yet</span><h2>You haven't started a request.</h2><p>Find someone on Discover and request a consultation to start a shared request workspace.</p><button class="primary" style="margin-top:18px" data-view="discover">Discover profiles</button></div>`;
+      <div class="request-layout">
+        <aside class="request-panel"><span class="section-tag">Active requests</span><h2 id="requests-count">0 in progress</h2><div id="requests-list"><p style="color:var(--muted);font-size:12px;margin:0">Sign in to see your requests.</p></div></aside>
+        <section class="request-panel coordination">
+          <div class="coordination-head"><div><span class="section-tag" id="request-detail-tag">No request selected</span><h2 id="request-detail-title">Coordination timeline</h2></div><span class="pill selected" id="request-detail-status">–</span></div>
+          <div class="timeline" id="request-timeline"><p style="color:var(--muted);font-size:12px;margin:0">Select a request from the left to see its timeline.</p></div>
+          <button class="primary" id="request-accept-button" hidden style="margin:10px 0">Accept request</button>
+          <form id="request-message-form" style="display:flex;gap:8px;margin-top:10px"><input id="request-message-input" placeholder="Add a question or note for everyone in this request..." style="flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:7px;font:inherit" disabled><button class="primary" type="submit" id="request-message-send" disabled>Send</button></form>
+        </section>
+        <aside class="request-panel"><span class="section-tag">People in this request</span><h2>Participants</h2><div class="participants" id="request-participants"><span style="color:var(--muted);font-size:12px">Select a request to see its participants.</span></div></aside>
+      </div>`;
     document.querySelectorAll('#requests [data-view]').forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
+
+    let requestsCache = [];
+    let selectedRequestId = null;
+
+    async function loadRequests() {
+      const listBox = document.querySelector('#requests-list');
+      if (!accessToken) { listBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Sign in to see your requests.</p>'; document.querySelector('#requests-count').textContent = '0 in progress'; return; }
+      listBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Loading…</p>';
+      try {
+        const response = await fetch(`${apiBase}/requests`, { headers: authHeaders() });
+        if (!response.ok) throw new Error('Request failed');
+        requestsCache = (await response.json()).results;
+        renderRequestsList();
+      } catch (_) {
+        listBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Could not load your requests.</p>';
+      }
+    }
+
+    function renderRequestsList() {
+      const listBox = document.querySelector('#requests-list');
+      document.querySelector('#requests-count').textContent = `${requestsCache.length} in progress`;
+      if (requestsCache.length === 0) { listBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">No requests yet. Find someone on Discover and request a consultation.</p>'; return; }
+      listBox.innerHTML = '';
+      requestsCache.forEach((request) => {
+        const item = document.createElement('div');
+        item.className = `request-item${request.id === selectedRequestId ? ' active' : ''}`;
+        item.innerHTML = `<strong>${request.title}</strong><span>${request.counterpart_name} · ${request.status.replace('_', ' ')}</span>`;
+        item.addEventListener('click', () => selectRequest(request.id));
+        listBox.appendChild(item);
+      });
+    }
+
+    async function selectRequest(requestId) {
+      selectedRequestId = requestId;
+      renderRequestsList();
+      const timeline = document.querySelector('#request-timeline');
+      timeline.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Loading…</p>';
+      try {
+        const response = await fetch(`${apiBase}/requests/${requestId}`, { headers: authHeaders() });
+        if (!response.ok) throw new Error('Request failed');
+        renderRequestDetail(await response.json());
+      } catch (_) {
+        timeline.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Could not load this request.</p>';
+      }
+    }
+
+    function renderRequestDetail(detail) {
+      document.querySelector('#request-detail-tag').textContent = detail.counterpart_name;
+      document.querySelector('#request-detail-title').textContent = detail.title;
+      document.querySelector('#request-detail-status').textContent = detail.status.replace('_', ' ');
+      document.querySelector('#request-timeline').innerHTML = detail.events.length
+        ? detail.events.map((event) => `<div class="event"><i class="event-dot"></i><time>${new Date(event.created_at).toLocaleString()}</time><strong>${event.author_name || 'System'}</strong><p>${event.message}</p></div>`).join('')
+        : '<p style="color:var(--muted);font-size:12px;margin:0">No messages yet.</p>';
+      document.querySelector('#request-participants').innerHTML = detail.participants.length
+        ? detail.participants.map((participant) => `<span class="avatar" title="${participant.name}">${participant.name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase()}</span>`).join('')
+        : '<span style="color:var(--muted);font-size:12px">Awaiting a match</span>';
+      document.querySelector('#request-accept-button').hidden = !(detail.my_role !== 'customer' && detail.status === 'submitted');
+      document.querySelector('#request-message-input').disabled = false;
+      document.querySelector('#request-message-send').disabled = false;
+    }
+
+    document.querySelector('#request-accept-button').addEventListener('click', async () => {
+      if (!selectedRequestId) return;
+      const response = await fetch(`${apiBase}/requests/${selectedRequestId}/accept`, { method: 'POST', headers: authHeaders() });
+      if (!response.ok) { alert('Could not accept this request.'); return; }
+      renderRequestDetail(await response.json());
+      loadRequests();
+    });
+
+    document.querySelector('#request-message-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!selectedRequestId) return;
+      const input = document.querySelector('#request-message-input');
+      const message = input.value.trim();
+      if (!message) return;
+      const response = await fetch(`${apiBase}/requests/${selectedRequestId}/events`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ message }) });
+      if (!response.ok) { alert('Could not send your message.'); return; }
+      input.value = '';
+      renderRequestDetail(await response.json());
+      loadRequests();
+    });
+
+    document.querySelector('.nav-button[data-view="requests"]').addEventListener('click', loadRequests);
+
+    document.querySelector('#request-cancel').addEventListener('click', closeModals);
+    document.querySelector('#request-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!currentProfileId) return;
+      const payload = {
+        profile_id: currentProfileId,
+        title: document.querySelector('#request-title').value,
+        requirements: document.querySelector('#request-requirements').value,
+        city: document.querySelector('#request-city').value || null,
+      };
+      const response = await fetch(`${apiBase}/requests`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(payload) });
+      if (!response.ok) { const body = await response.json().catch(() => ({})); alert(body.detail || 'Could not send this request.'); return; }
+      const created = await response.json();
+      closeModals();
+      document.querySelector('#request-form').reset();
+      await loadRequests();
+      showView('requests');
+      selectRequest(created.id);
+    });
 
     let authClient = null;
     let accessToken = null;
@@ -479,6 +610,7 @@
       }
 
       await loadIdentities();
+      await loadRequests();
     })();
 
     loadProfiles();
