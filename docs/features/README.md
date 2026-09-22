@@ -17,7 +17,7 @@ Legend: ✅ Done · 🟡 Partial · ❌ Not started
 | 7 | Expert Profiles | 🟡 Partial (create done, edit/credentials missing) | [07-expert-profiles.md](07-expert-profiles.md) |
 | 8 | Customer / Expert / Company Dashboards | ❌ Not started (no dedicated endpoints/pages) | [08-dashboards.md](08-dashboards.md) |
 | 9 | Notifications & Billing | ❌ Not started (only OTP emails exist) | [09-notifications-billing.md](09-notifications-billing.md) |
-| 10 | Backlog: saved profiles, disputes, analytics, recommendations | ❌ Not started | [10-backlog.md](10-backlog.md) |
+| 10 | Backlog: recommendations, disputes, analytics (saved profiles & share links now done) | 🟡 Partial | [10-backlog.md](10-backlog.md) |
 
 ## How To Use These Docs
 

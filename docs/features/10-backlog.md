@@ -2,11 +2,15 @@
 
 Status: ❌ Not started. These are referenced in [PRODUCT.md](../../PRODUCT.md) or implied by the schema but have no backend or frontend work yet.
 
-## Saved Profiles / Comparison List
+## Saved Profiles / Comparison List — ✅ Completed (Sept 2026)
 
-- No table (`user_saved_profiles` needed: `user_id`, `profile_id`, `created_at`, unique pair).
-- Frontend already has an empty placeholder view in [marketplace.html](../../frontend/pages/marketplace.html) ("Your comparison list will live here").
-- Needed: `POST /profiles/{id}/save`, `DELETE /profiles/{id}/save`, `GET /me/saved-profiles`.
+- `saved_profiles` table ([005_saved_profiles.sql](../../db/migrations/005_saved_profiles.sql)), `SavedProfile` model, and endpoints `POST/DELETE /api/v1/profiles/{id}/save` + `GET /api/v1/profiles/saved` (paginated).
+- Frontend: Save/Unsave toggle on every profile card and the profile detail page; the "Saved" tab in [marketplace.html](../../frontend/pages/marketplace.html) now renders real bookmarked profiles instead of a static placeholder.
+
+## Shareable Profile Links — ✅ Completed (Sept 2026)
+
+- Opening a profile pushes `?profile=<id>` into the URL (`history.pushState`); loading that URL directly (e.g. shared after a YouTube mention) or hitting browser back/forward deep-links straight into the profile, unauthenticated.
+- Added a "Copy profile link" button on the profile detail page.
 
 ## Interest-Based Recommendations
 

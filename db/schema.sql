@@ -164,6 +164,14 @@ CREATE TABLE reviews (
     UNIQUE (request_id, reviewer_id, profile_id)
 );
 
+CREATE TABLE saved_profiles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (user_id, profile_id)
+);
+
 CREATE INDEX profiles_kind_verification_idx ON profiles(kind, verification);
 CREATE INDEX profiles_city_idx ON profiles(city);
 CREATE INDEX requests_customer_status_idx ON requests(customer_id, status);
