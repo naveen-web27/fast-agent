@@ -23,13 +23,9 @@ The `/api/v1/auth/onboarding` endpoint requires a Supabase access token and deri
 
 Google OAuth is best handled by Supabase Auth. WhatsApp OTP needs an approved WhatsApp provider or an OTP provider; its verification must happen server-side.
 
-### Session/JWT expiry (1 day)
+### Session persistence
 
-There is no custom JWT code in this backend — access tokens are issued and verified by Supabase Auth (`get_current_auth_user_id` just calls Supabase's `/auth/v1/user`). To make sessions expire after 1 day, set it in the Supabase dashboard:
-
-1. Supabase project → **Authentication** → **Sessions**.
-2. Set **Time-box user sessions** (or **Access token (JWT) expiry** under Auth settings, depending on Supabase version) to `86400` seconds (1 day).
-3. Save. New sign-ins will expire after 1 day; the frontend's `supabase-js` client already refreshes/rejects tokens automatically based on this setting — no frontend code change needed.
+There is no custom JWT code in this backend — access tokens are issued and verified by Supabase Auth (`get_current_auth_user_id` just calls Supabase's `/auth/v1/user`). Do **not** enable **Time-box user sessions** in the Supabase dashboard (Authentication → Sessions) — that forces every user to sign in with Google again once the box expires. Leave it disabled so `supabase-js`'s refresh token keeps the session alive indefinitely between visits; users only re-authenticate if they explicitly sign out or revoke access.
 
 ## Troubleshooting: 500 error / connection failure on Render
 

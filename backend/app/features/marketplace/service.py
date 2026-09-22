@@ -1,7 +1,7 @@
 """Query logic for searching live marketplace profiles."""
 from uuid import UUID
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.marketplace.schemas import ProfileDetail, ProfileListResponse, ProfileSummary, ReviewSummary
@@ -33,8 +33,10 @@ async def search_profiles(
     query: str | None = None,
     city: str | None = None,
     kind: str | None = None,
+    page: int = 1,
+    page_size: int = 12,
 ) -> ProfileListResponse:
-    """Return verified profiles matching the optional search filters."""
+    """Return a page of verified profiles matching the optional search filters."""
     stmt = select(Profile)
     if query:
         pattern = f"%{query}%"
@@ -43,11 +45,14 @@ async def search_profiles(
         stmt = stmt.where(Profile.city.ilike(f"%{city}%"))
     if kind:
         stmt = stmt.where(Profile.kind == kind)
-    stmt = stmt.order_by(Profile.average_rating.desc(), Profile.review_count.desc())
 
+    total = (await session.scalar(select(func.count()).select_from(stmt.subquery()))) or 0
+
+    stmt = stmt.order_by(Profile.average_rating.desc(), Profile.review_count.desc())
+    stmt = stmt.offset((page - 1) * page_size).limit(page_size)
     profiles = (await session.scalars(stmt)).all()
     results = [_to_summary(profile) for profile in profiles]
-    return ProfileListResponse(results=results, total=len(results))
+    return ProfileListResponse(results=results, total=total, page=page, page_size=page_size)
 
 
 async def get_profile_detail(session: AsyncSession, profile_id: UUID) -> ProfileDetail | None:

@@ -29,6 +29,8 @@ class ProfileListResponse(BaseModel):
 
     results: list[ProfileSummary]
     total: int
+    page: int
+    page_size: int
 
 
 class ReviewSummary(BaseModel):

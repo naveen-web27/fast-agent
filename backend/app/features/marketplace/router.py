@@ -16,10 +16,12 @@ async def list_profiles(
     q: str | None = Query(default=None, description="Free-text search across name and headline"),
     city: str | None = Query(default=None),
     kind: str | None = Query(default=None, pattern="^(expert|company)$"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=12, ge=1, le=50),
     session: AsyncSession = Depends(get_db),
 ) -> ProfileListResponse:
     """Search verified experts and companies stored in the database."""
-    return await search_profiles(session, query=q, city=city, kind=kind)
+    return await search_profiles(session, query=q, city=city, kind=kind, page=page, page_size=page_size)
 
 
 @router.get("/profiles/{profile_id}", response_model=ProfileDetail)
