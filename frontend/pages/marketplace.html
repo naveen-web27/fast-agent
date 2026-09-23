@@ -42,6 +42,12 @@
     .tag { display:inline-flex; align-items:center; gap:6px; padding:5px 8px; border-radius:999px; background:#eef2f8; font-size:12px; font-weight:700; color:#33415c; }
     .tag button { border:0; background:transparent; color:#7c8aa5; cursor:pointer; font-size:13px; line-height:1; padding:0; }
     .tag button:hover { color:#c0392b; }
+    .resolved-badge { display:inline-flex; align-items:center; gap:4px; margin-top:6px; color:var(--good); font-size:11px; font-weight:800; }
+    .toggle-row { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:12px 0; border-top:1px solid var(--line); }
+    .toggle-row:first-of-type { border-top:0; }
+    .toggle-row strong { display:block; font-size:12px; }
+    .toggle-row small { display:block; margin-top:2px; color:var(--muted); font-size:11px; }
+    .toggle-row input[type="checkbox"] { width:18px; height:18px; flex:0 0 auto; }
     .kind-toggle { display:flex; flex-wrap:wrap; align-items:center; gap:6px; flex:0 1 auto; }
     .pagination { display:flex; align-items:center; justify-content:center; gap:14px; margin-top:16px; }
     .pagination span { color:var(--muted); font-size:12px; font-weight:700; }
@@ -90,7 +96,7 @@
       <div class="side-bottom" id="side-bottom" hidden><span class="section-tag">Signed in as</span><div class="profile-mini"><span class="avatar" id="sidebar-avatar">?</span><span id="sidebar-name"></span></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="top-actions"><button class="icon-button mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="crumb"><strong>RightConnect</strong> / Marketplace</div></div><div class="top-actions"><a class="secondary" href="auth.html" id="sign-in-link">Sign in or join</a><button class="secondary" id="request-expert">Become an expert</button><div class="user-chip" id="user-chip" hidden><button class="user-chip-button" id="user-menu-button"><span class="avatar" id="chip-avatar">?</span><span id="chip-name"></span></button><div class="user-menu" id="user-menu" hidden><button id="manage-interests-button">Manage interests</button><button id="sign-out-button">Sign out</button></div></div></div></header>
+      <header class="topbar"><div class="top-actions"><button class="icon-button mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="crumb"><strong>RightConnect</strong> / Marketplace</div></div><div class="top-actions"><a class="secondary" href="auth.html" id="sign-in-link">Sign in or join</a><button class="secondary" id="request-expert">Become an expert</button><div class="user-chip" id="user-chip" hidden><button class="user-chip-button" id="user-menu-button"><span class="avatar" id="chip-avatar">?</span><span id="chip-name"></span></button><div class="user-menu" id="user-menu" hidden><button id="manage-interests-button">Manage interests</button><button id="profile-settings-button">Profile settings</button><button id="sign-out-button">Sign out</button></div></div></div></header>
       <div class="page">
         <section class="view active" id="discover">
           <div class="page-title"><div><span class="section-tag">Find trusted help</span><h1>Choose the right person for the decision.</h1><p>Compare verified specialists and companies before you commit.</p></div><button class="primary" id="match-button">✦ Get matched</button></div>
@@ -99,7 +105,7 @@
         </section>
         <section class="view" id="profile">
           <div class="page-title"><div><span class="section-tag">Profile preview</span><h1>Trusted information, before the conversation.</h1></div><button class="secondary" data-view="discover">← Back to discover</button></div>
-          <div class="profile-layout"><div><article class="profile-hero"><div class="profile-summary"><div class="portrait" id="profile-portrait"></div><div><span class="verified" id="profile-verified" hidden>● Identity and credentials verified</span><h1 id="profile-name">Select a profile</h1><p id="profile-subtitle"></p><div class="tags" id="profile-tags"></div></div></div><div class="trust-bar"><div class="trust-item"><small>Rating</small><strong id="profile-rating">–</strong></div><div class="trust-item"><small>Verified reviews</small><strong id="profile-review-count">–</strong></div><div class="trust-item"><small>Typical reply</small><strong id="profile-reply">–</strong></div></div></article><article class="content-card" id="profile-bio-card" hidden><h2 id="profile-bio-heading">About</h2><p id="profile-bio"></p></article><article class="content-card"><h2>Customer reviews</h2><div id="profile-reviews"><p style="color:var(--muted);font-size:12px;margin:0">Open a profile from Discover to see its reviews.</p></div></article></div><aside class="booking"><span class="section-tag">Request introduction</span><h2>Start with a 20-minute consultation.</h2><p>RightConnect creates a shared request only after you approve the introduction.</p><button class="primary" id="book-button">Request consultation</button><button class="secondary" id="detail-save-button" type="button" style="width:100%;margin-top:10px">♡ Save profile</button><button class="secondary" id="share-profile-button" type="button" style="width:100%;margin-top:8px">Copy profile link</button><div class="assurance">✓ No fee to submit a request</div><div class="assurance">✓ You control who can see your details</div></aside></div>
+          <div class="profile-layout"><div><article class="profile-hero"><div class="profile-summary"><div class="portrait" id="profile-portrait"></div><div><span class="verified" id="profile-verified" hidden>● Identity and credentials verified</span><h1 id="profile-name">Select a profile</h1><p id="profile-subtitle"></p><div class="tags" id="profile-tags"></div><div class="resolved-badge" id="profile-resolved" hidden></div></div></div><div class="trust-bar"><div class="trust-item"><small>Rating</small><strong id="profile-rating">–</strong></div><div class="trust-item"><small>Verified reviews</small><strong id="profile-review-count">–</strong></div><div class="trust-item"><small>Typical reply</small><strong id="profile-reply">–</strong></div></div></article><article class="content-card" id="profile-bio-card" hidden><h2 id="profile-bio-heading">About</h2><p id="profile-bio"></p></article><article class="content-card"><h2>Customer reviews</h2><div id="profile-reviews"><p style="color:var(--muted);font-size:12px;margin:0">Open a profile from Discover to see its reviews.</p></div></article></div><aside class="booking"><span class="section-tag">Request introduction</span><h2>Start with a 20-minute consultation.</h2><p>RightConnect creates a shared request only after you approve the introduction.</p><button class="primary" id="book-button">Request consultation</button><button class="secondary" id="detail-save-button" type="button" style="width:100%;margin-top:10px">♡ Save profile</button><button class="secondary" id="share-profile-button" type="button" style="width:100%;margin-top:8px">Copy profile link</button><div class="assurance">✓ No fee to submit a request</div><div class="assurance">✓ You control who can see your details</div></aside></div>
         </section>
         <section class="view" id="requests">
           <div class="page-title"><div><span class="section-tag">My requests</span><h1>One place for every moving part.</h1><p>Track the people, answers, and decisions around your request.</p></div><button class="primary" data-view="discover">+ New request</button></div>
@@ -163,12 +169,18 @@
       <div class="modal-actions"><button type="button" class="secondary" id="interests-cancel">Close</button><button type="submit" class="primary" id="interests-submit">Add</button></div>
     </form>
   </div>
+  <div class="modal" id="visibility-modal" hidden>
+    <h2>Profile settings</h2>
+    <p class="modal-note">Show how many customers you've successfully served on your card, so companies and customers can approach you with confidence. Toggle it off any time to keep it private.</p>
+    <div id="visibility-list"></div>
+    <div class="modal-actions"><button type="button" class="secondary" id="visibility-close">Close</button></div>
+  </div>
   <div class="modal" id="request-modal" hidden>
     <h2>Request a consultation</h2>
     <p class="modal-note" id="request-modal-target"></p>
     <form id="request-form">
-      <div class="field"><label for="request-title">What do you need?</label><input id="request-title" placeholder="e.g. Health insurance advice" required></div>
-      <div class="field"><label for="request-requirements">Details</label><textarea id="request-requirements" rows="4" placeholder="Share context so they can respond usefully" required></textarea></div>
+      <div class="field"><label for="request-title">What do you need?</label><input id="request-title" placeholder="e.g. Health insurance advice" minlength="3" maxlength="160" required></div>
+      <div class="field"><label for="request-requirements">Details</label><textarea id="request-requirements" rows="4" placeholder="Share context so they can respond usefully (at least 10 characters)" minlength="10" maxlength="4000" required></textarea></div>
       <div class="field"><label for="request-city">City</label><input id="request-city" placeholder="Chennai"></div>
       <div class="modal-actions"><button type="button" class="secondary" id="request-cancel">Cancel</button><button type="submit" class="primary" id="request-submit">Send request</button></div>
     </form>
@@ -243,6 +255,15 @@
         button.classList.remove('is-loading');
         if (button.dataset.originalHtml !== undefined) { button.innerHTML = button.dataset.originalHtml; delete button.dataset.originalHtml; }
       }
+    }
+
+    // FastAPI validation errors return `detail` as a list of {msg, loc} objects, not a string.
+    async function extractErrorMessage(response, fallback) {
+      const body = await response.json().catch(() => ({}));
+      const detail = body.detail;
+      if (typeof detail === 'string') return detail;
+      if (Array.isArray(detail)) return detail.map((item) => item.msg || fallback).join(' ');
+      return fallback;
     }
 
     let currentPage = 1;
@@ -324,7 +345,7 @@
     async function loadSavedProfileIds() {
       if (!accessToken) { savedProfileIds = new Set(); return; }
       try {
-        const response = await fetch(`${apiBase}/profiles/saved?page_size=100`, { headers: authHeaders() });
+        const response = await fetch(`${apiBase}/profiles/saved?page_size=50`, { headers: authHeaders() });
         if (!response.ok) return;
         const data = await response.json();
         savedProfileIds = new Set(data.results.map((profile) => profile.id));
@@ -401,6 +422,7 @@
           <div class="profile-role">${roleLine}</div>
           <div class="profile-meta">${metaLine}</div>
           <div class="tags">${profile.tags.map((tag) => `<span class="tag">${tag}</span>`).join('')}</div>
+          ${profile.resolved_clients_count != null ? `<div class="resolved-badge">✓ ${profile.resolved_clients_count} client${profile.resolved_clients_count === 1 ? '' : 's'} resolved</div>` : ''}
         </div>
         <div class="profile-score">
           <div class="score">★ <strong>${profile.average_rating.toFixed(1)}</strong></div>
@@ -464,6 +486,13 @@
       document.querySelector('#profile-name').textContent = profile.display_name;
       document.querySelector('#profile-subtitle').textContent = `${profile.headline}${profile.city ? ` · ${profile.city}` : ''}`;
       document.querySelector('#profile-tags').innerHTML = profile.tags.map((tag) => `<span class="tag">${tag}</span>`).join('');
+      const detailResolvedBadge = document.querySelector('#profile-resolved');
+      if (profile.resolved_clients_count != null) {
+        detailResolvedBadge.hidden = false;
+        detailResolvedBadge.textContent = `✓ ${profile.resolved_clients_count} client${profile.resolved_clients_count === 1 ? '' : 's'} resolved`;
+      } else {
+        detailResolvedBadge.hidden = true;
+      }
       document.querySelector('#profile-rating').textContent = profile.average_rating ? `★ ${profile.average_rating.toFixed(1)}` : '–';
       document.querySelector('#profile-review-count').textContent = profile.review_count || '0';
       document.querySelector('#profile-reply').textContent = profile.response_minutes ? `${profile.response_minutes} min` : '–';
@@ -678,7 +707,7 @@
       setButtonLoading(submitButton, true, 'Sending\u2026');
       const response = await fetch(`${apiBase}/requests`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(payload) });
       setButtonLoading(submitButton, false);
-      if (!response.ok) { const body = await response.json().catch(() => ({})); showToast(body.detail || 'Could not send this request.', 'error'); return; }
+      if (!response.ok) { showToast(await extractErrorMessage(response, 'Could not send this request.'), 'error'); return; }
       const created = await response.json();
       closeModals();
       document.querySelector('#request-form').reset();
@@ -721,6 +750,7 @@
     document.querySelector('#company-cancel').addEventListener('click', closeModals);
     document.querySelector('#otp-cancel').addEventListener('click', closeModals);
     document.querySelector('#interests-cancel').addEventListener('click', closeModals);
+    document.querySelector('#visibility-close').addEventListener('click', closeModals);
 
     const interestsList = document.querySelector('#interests-list');
     function renderInterestsModal() {
@@ -751,6 +781,46 @@
     }
 
     document.querySelector('#manage-interests-button').addEventListener('click', () => { userMenu.hidden = true; renderInterestsModal(); openModal('interests-modal'); });
+    document.querySelector('#profile-settings-button').addEventListener('click', () => { userMenu.hidden = true; renderVisibilityModal(); openModal('visibility-modal'); });
+
+    function renderVisibilityModal() {
+      const list = document.querySelector('#visibility-list');
+      const rows = [];
+      if (identities?.expert_profile) {
+        const expert = identities.expert_profile;
+        rows.push({ profileId: expert.id, label: 'Expert profile', count: expert.resolved_clients_count, checked: expert.show_resolved_count });
+      }
+      (identities?.companies || []).forEach((company) => {
+        if (company.profile_id) rows.push({ profileId: company.profile_id, label: company.name, count: company.resolved_clients_count, checked: company.show_resolved_count });
+      });
+      list.innerHTML = rows.length
+        ? rows.map((row) => `<div class="toggle-row"><div><strong>${row.label}</strong><small>${row.count} client${row.count === 1 ? '' : 's'} resolved</small></div><input type="checkbox" data-profile-id="${row.profileId}" ${row.checked ? 'checked' : ''}></div>`).join('')
+        : '<p class="modal-note">Add an expert or company profile to manage this.</p>';
+      list.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+        checkbox.addEventListener('change', () => updateResolvedVisibility(checkbox.dataset.profileId, checkbox.checked, checkbox));
+      });
+    }
+
+    async function updateResolvedVisibility(profileId, show, checkbox) {
+      checkbox.disabled = true;
+      try {
+        const response = await fetch(`${apiBase}/profiles/${profileId}/visibility`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: JSON.stringify({ show_resolved_count: show }),
+        });
+        if (!response.ok) throw new Error('Request failed');
+        if (identities?.expert_profile?.id === profileId) identities.expert_profile.show_resolved_count = show;
+        const company = identities?.companies.find((item) => item.profile_id === profileId);
+        if (company) company.show_resolved_count = show;
+        showToast('Saved.', 'success');
+      } catch (error) {
+        checkbox.checked = !show;
+        showToast('Could not update this setting. Please try again.', 'error');
+      } finally {
+        checkbox.disabled = false;
+      }
+    }
     document.querySelector('#interests-form').addEventListener('submit', async (event) => {
       event.preventDefault();
       const input = document.querySelector('#interests-input');

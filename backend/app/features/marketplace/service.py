@@ -5,7 +5,9 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.marketplace.schemas import ProfileDetail, ProfileListResponse, ProfileSummary, ReviewSummary
-from app.models.profile import Profile, VerificationStatus
+from app.models.organization_member import MemberRole, OrganizationMember
+from app.models.profile import Profile, ProfileKind, VerificationStatus
+from app.models.request import Request, RequestParticipant, RequestStatus
 from app.models.review import Review
 from app.models.saved_profile import SavedProfile
 from app.models.user import User
@@ -19,6 +21,10 @@ class ProfileNotFoundError(Exception):
     """Raised when the target profile does not exist."""
 
 
+class ProfileAccessError(Exception):
+    """Raised when the caller doesn't manage the profile they're trying to change."""
+
+
 async def _get_user(session: AsyncSession, auth_user_id: UUID) -> User:
     user = await session.scalar(select(User).where(User.auth_user_id == auth_user_id))
     if user is None:
@@ -26,7 +32,24 @@ async def _get_user(session: AsyncSession, auth_user_id: UUID) -> User:
     return user
 
 
-def _to_summary(profile: Profile) -> ProfileSummary:
+async def count_resolved_clients(session: AsyncSession, profile: Profile) -> int:
+    """Count distinct customers whose request with this profile reached 'completed'."""
+    condition = (
+        RequestParticipant.user_id == profile.user_id
+        if profile.kind is ProfileKind.EXPERT
+        else RequestParticipant.organization_id == profile.organization_id
+    )
+    stmt = (
+        select(func.count(func.distinct(Request.customer_id)))
+        .select_from(Request)
+        .join(RequestParticipant, RequestParticipant.request_id == Request.id)
+        .where(condition, Request.status == RequestStatus.COMPLETED)
+    )
+    return (await session.scalar(stmt)) or 0
+
+
+async def _to_summary(session: AsyncSession, profile: Profile) -> ProfileSummary:
+    resolved_count = await count_resolved_clients(session, profile)
     return ProfileSummary(
         id=profile.id,
         kind=profile.kind.value,
@@ -41,6 +64,7 @@ def _to_summary(profile: Profile) -> ProfileSummary:
         review_count=profile.review_count,
         response_minutes=profile.response_minutes,
         tags=[service.name for service in profile.services],
+        resolved_clients_count=resolved_count if profile.show_resolved_count else None,
     )
 
 
@@ -67,7 +91,7 @@ async def search_profiles(
     stmt = stmt.order_by(Profile.average_rating.desc(), Profile.review_count.desc())
     stmt = stmt.offset((page - 1) * page_size).limit(page_size)
     profiles = (await session.scalars(stmt)).all()
-    results = [_to_summary(profile) for profile in profiles]
+    results = [await _to_summary(session, profile) for profile in profiles]
     return ProfileListResponse(results=results, total=total, page=page, page_size=page_size)
 
 
@@ -88,7 +112,8 @@ async def get_profile_detail(session: AsyncSession, profile_id: UUID) -> Profile
         ReviewSummary(reviewer_name=name, rating=review.rating, body=review.body, created_at=review.created_at)
         for review, name in review_rows
     ]
-    return ProfileDetail(**_to_summary(profile).model_dump(), bio=profile.bio, reviews=reviews)
+    summary = await _to_summary(session, profile)
+    return ProfileDetail(**summary.model_dump(), bio=profile.bio, reviews=reviews)
 
 
 async def save_profile(session: AsyncSession, auth_user_id: UUID, profile_id: UUID) -> None:
@@ -131,5 +156,34 @@ async def list_saved_profiles(
 
     stmt = stmt.offset((page - 1) * page_size).limit(page_size)
     profiles = (await session.scalars(stmt)).all()
-    results = [_to_summary(profile) for profile in profiles]
+    results = [await _to_summary(session, profile) for profile in profiles]
     return ProfileListResponse(results=results, total=total, page=page, page_size=page_size)
+
+
+async def update_resolved_visibility(
+    session: AsyncSession, auth_user_id: UUID, profile_id: UUID, show_resolved_count: bool
+) -> ProfileSummary:
+    """Let the expert owner or a company admin toggle their public resolved-clients badge."""
+    user = await _get_user(session, auth_user_id)
+    profile = await session.get(Profile, profile_id)
+    if profile is None:
+        raise ProfileNotFoundError("Profile not found")
+
+    if profile.kind is ProfileKind.EXPERT:
+        if profile.user_id != user.id:
+            raise ProfileAccessError("You do not manage this profile")
+    else:
+        member = await session.scalar(
+            select(OrganizationMember).where(
+                OrganizationMember.organization_id == profile.organization_id,
+                OrganizationMember.user_id == user.id,
+                OrganizationMember.member_role == MemberRole.ADMIN.value,
+            )
+        )
+        if member is None:
+            raise ProfileAccessError("You do not manage this company profile")
+
+    profile.show_resolved_count = show_resolved_count
+    await session.commit()
+    await session.refresh(profile)
+    return await _to_summary(session, profile)

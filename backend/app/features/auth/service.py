@@ -19,6 +19,7 @@ from app.features.auth.schemas import (
     OnboardingRequest,
     UserResponse,
 )
+from app.features.marketplace.service import count_resolved_clients
 from app.models.email_verification import EmailVerification
 from app.models.organization_member import MemberRole, OrganizationMember
 from app.models.profile import Organization, Profile, ProfileKind, VerificationStatus
@@ -158,6 +159,8 @@ async def get_identities(session: AsyncSession, auth_user_id: UUID) -> Identitie
             verification=expert_profile_row.verification.value,
             average_rating=float(expert_profile_row.average_rating),
             review_count=expert_profile_row.review_count,
+            resolved_clients_count=await count_resolved_clients(session, expert_profile_row),
+            show_resolved_count=expert_profile_row.show_resolved_count,
         )
         if expert_profile_row
         else None
@@ -170,16 +173,23 @@ async def get_identities(session: AsyncSession, auth_user_id: UUID) -> Identitie
             .where(OrganizationMember.user_id == user.id)
         )
     ).all()
-    companies = [
-        CompanyMembership(
-            organization_id=organization.id,
-            name=organization.name,
-            member_role=member.member_role,
-            verification=organization.verification.value,
-            email_domain_verified=organization.email_domain_verified,
+    companies = []
+    for member, organization in membership_rows:
+        company_profile = await session.scalar(
+            select(Profile).where(Profile.kind == ProfileKind.COMPANY, Profile.organization_id == organization.id)
         )
-        for member, organization in membership_rows
-    ]
+        companies.append(
+            CompanyMembership(
+                organization_id=organization.id,
+                profile_id=company_profile.id if company_profile else None,
+                name=organization.name,
+                member_role=member.member_role,
+                verification=organization.verification.value,
+                email_domain_verified=organization.email_domain_verified,
+                resolved_clients_count=await count_resolved_clients(session, company_profile) if company_profile else 0,
+                show_resolved_count=company_profile.show_resolved_count if company_profile else True,
+            )
+        )
 
     onboarding_status = "complete" if user.role is UserRole.CUSTOMER else "verification_pending"
     return IdentitiesResponse(
@@ -226,6 +236,8 @@ async def add_expert_profile(session: AsyncSession, auth_user_id: UUID, payload:
         verification=profile.verification.value,
         average_rating=float(profile.average_rating),
         review_count=profile.review_count,
+        resolved_clients_count=0,
+        show_resolved_count=profile.show_resolved_count,
     )
 
 
@@ -245,24 +257,27 @@ async def add_company(session: AsyncSession, auth_user_id: UUID, payload: Compan
     session.add(organization)
     await session.flush()
     session.add(OrganizationMember(organization_id=organization.id, user_id=user.id, member_role=MemberRole.ADMIN.value))
-    session.add(
-        Profile(
-            organization_id=organization.id,
-            kind=ProfileKind.COMPANY,
-            display_name=payload.company_name,
-            headline="Company",
-            city=payload.city,
-            verification=VerificationStatus.PENDING,
-        )
+    company_profile = Profile(
+        organization_id=organization.id,
+        kind=ProfileKind.COMPANY,
+        display_name=payload.company_name,
+        headline="Company",
+        city=payload.city,
+        verification=VerificationStatus.PENDING,
     )
+    session.add(company_profile)
     await session.commit()
     await session.refresh(organization)
+    await session.refresh(company_profile)
     return CompanyMembership(
         organization_id=organization.id,
+        profile_id=company_profile.id,
         name=organization.name,
         member_role=MemberRole.ADMIN.value,
         verification=organization.verification.value,
         email_domain_verified=organization.email_domain_verified,
+        resolved_clients_count=0,
+        show_resolved_count=company_profile.show_resolved_count,
     )
 
 

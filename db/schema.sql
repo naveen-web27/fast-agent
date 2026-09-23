@@ -72,6 +72,7 @@ CREATE TABLE profiles (
     average_rating NUMERIC(2,1) NOT NULL DEFAULT 0,
     review_count INTEGER NOT NULL DEFAULT 0,
     response_minutes INTEGER,
+    show_resolved_count BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CHECK ((kind = 'expert' AND user_id IS NOT NULL) OR (kind = 'company' AND organization_id IS NOT NULL))
 );

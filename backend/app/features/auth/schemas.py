@@ -55,6 +55,8 @@ class ExpertProfileSummary(BaseModel):
     verification: Literal["pending", "verified", "rejected"]
     average_rating: float
     review_count: int
+    resolved_clients_count: int
+    show_resolved_count: bool
 
 
 class CompanyRequest(BaseModel):
@@ -69,10 +71,13 @@ class CompanyRequest(BaseModel):
 
 class CompanyMembership(BaseModel):
     organization_id: UUID
+    profile_id: UUID | None
     name: str
     member_role: Literal["admin", "staff"]
     verification: Literal["pending", "verified", "rejected"]
     email_domain_verified: bool
+    resolved_clients_count: int
+    show_resolved_count: bool
 
 
 class IdentitiesResponse(BaseModel):

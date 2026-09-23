@@ -95,6 +95,8 @@ class Profile(Base):
     average_rating: Mapped[float] = mapped_column(Numeric(2, 1), nullable=False, default=0)
     review_count: Mapped[int] = mapped_column(nullable=False, default=0)
     response_minutes: Mapped[int | None] = mapped_column()
+    # Owner-controlled: whether the "N clients resolved" badge is shown publicly on this profile.
+    show_resolved_count: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     services: Mapped[list[Service]] = relationship(secondary=ProfileService.__table__, lazy="selectin")

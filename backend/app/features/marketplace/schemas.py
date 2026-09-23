@@ -22,6 +22,8 @@ class ProfileSummary(BaseModel):
     review_count: int
     response_minutes: int | None
     tags: list[str]
+    # None when the owner has hidden this badge (see ProfileVisibilityUpdate).
+    resolved_clients_count: int | None
 
 
 class ProfileListResponse(BaseModel):
@@ -47,4 +49,10 @@ class ProfileDetail(ProfileSummary):
 
     bio: str | None
     reviews: list[ReviewSummary]
+
+
+class ProfileVisibilityUpdate(BaseModel):
+    """Lets an expert or company admin toggle their public resolved-clients badge."""
+
+    show_resolved_count: bool
 

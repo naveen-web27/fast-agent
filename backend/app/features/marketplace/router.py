@@ -5,15 +5,17 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.features.marketplace.schemas import ProfileDetail, ProfileListResponse
+from app.features.marketplace.schemas import ProfileDetail, ProfileListResponse, ProfileSummary, ProfileVisibilityUpdate
 from app.features.marketplace.service import (
     IdentityNotFoundError,
+    ProfileAccessError,
     ProfileNotFoundError,
     get_profile_detail,
     list_saved_profiles,
     save_profile,
     search_profiles,
     unsave_profile,
+    update_resolved_visibility,
 )
 from app.security.dependencies import get_current_auth_user_id
 
@@ -73,6 +75,24 @@ async def unsave_profile_endpoint(
         await unsave_profile(session, auth_user_id, profile_id)
     except IdentityNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.patch("/profiles/{profile_id}/visibility", response_model=ProfileSummary)
+async def update_profile_visibility(
+    profile_id: UUID,
+    payload: ProfileVisibilityUpdate,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> ProfileSummary:
+    """Let the expert owner or a company admin show/hide the resolved-clients badge."""
+    try:
+        return await update_resolved_visibility(session, auth_user_id, profile_id, payload.show_resolved_count)
+    except IdentityNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except ProfileNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except ProfileAccessError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
 
 
 @router.get("/profiles/{profile_id}", response_model=ProfileDetail)
