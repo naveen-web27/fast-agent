@@ -2,19 +2,24 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.requests.schemas import (
+    ContactInfo,
     CreateRequestPayload,
+    DomainClientStat,
+    ExpertReferralInfo,
     RequestDetail,
     RequestEventOut,
     RequestParticipantOut,
     RequestSummary,
+    SocialLinkOut,
 )
-from app.models.organization_member import OrganizationMember
-from app.models.profile import Organization, Profile, ProfileKind
+from app.models.organization_member import MemberRole, OrganizationMember
+from app.models.profile import Organization, Profile, ProfileKind, Service, VerificationStatus
 from app.models.request import Request, RequestEvent, RequestParticipant, RequestStatus
+from app.models.social_link import SocialLink
 from app.models.user import User
 
 
@@ -34,6 +39,10 @@ class RequestAccessError(Exception):
     """Raised when the caller isn't a participant of the request."""
 
 
+class DuplicateInviteError(Exception):
+    """Raised when the invited company is already part of the request."""
+
+
 async def _get_user(session: AsyncSession, auth_user_id: UUID) -> User:
     user = await session.scalar(select(User).where(User.auth_user_id == auth_user_id))
     if user is None:
@@ -44,6 +53,87 @@ async def _get_user(session: AsyncSession, auth_user_id: UUID) -> User:
 async def _my_organization_ids(session: AsyncSession, user_id: UUID) -> set[UUID]:
     rows = await session.scalars(select(OrganizationMember.organization_id).where(OrganizationMember.user_id == user_id))
     return set(rows.all())
+
+
+async def _social_links_for_profile(session: AsyncSession, profile_id: UUID) -> list[SocialLinkOut]:
+    links = await session.scalars(select(SocialLink).where(SocialLink.profile_id == profile_id))
+    return [SocialLinkOut(platform=link.platform, url=link.url) for link in links.all()]
+
+
+async def _contact_info_for_user(session: AsyncSession, target_user: User) -> ContactInfo:
+    """Contact card for an individual (customer or expert), including their expert profile's social links."""
+    expert_profile = await session.scalar(
+        select(Profile).where(Profile.user_id == target_user.id, Profile.kind == ProfileKind.EXPERT)
+    )
+    social_links = await _social_links_for_profile(session, expert_profile.id) if expert_profile is not None else []
+    return ContactInfo(
+        full_name=target_user.full_name,
+        email=target_user.email,
+        phone=target_user.phone,
+        social_links=social_links,
+    )
+
+
+async def _contact_info_for_organization(session: AsyncSession, organization: Organization) -> ContactInfo:
+    """Contact card for a company: its primary admin's phone/email plus the company profile's social links."""
+    admin_member = await session.scalar(
+        select(OrganizationMember)
+        .where(OrganizationMember.organization_id == organization.id, OrganizationMember.member_role == MemberRole.ADMIN.value)
+        .order_by(OrganizationMember.created_at)
+    )
+    admin_user = await session.get(User, admin_member.user_id) if admin_member is not None else None
+    company_profile = await session.scalar(
+        select(Profile).where(Profile.organization_id == organization.id, Profile.kind == ProfileKind.COMPANY)
+    )
+    social_links = await _social_links_for_profile(session, company_profile.id) if company_profile is not None else []
+    return ContactInfo(
+        full_name=organization.name,
+        email=admin_user.email if admin_user is not None else None,
+        phone=admin_user.phone if admin_user is not None else None,
+        website_url=organization.website_url,
+        social_links=social_links,
+    )
+
+
+async def _expert_client_stats(session: AsyncSession, expert_user_id: UUID) -> list[DomainClientStat]:
+    """Distinct completed-request clients for this expert, grouped by the request's service domain."""
+    stmt = (
+        select(func.coalesce(Service.name, "General"), func.count(func.distinct(Request.customer_id)))
+        .select_from(Request)
+        .join(RequestParticipant, RequestParticipant.request_id == Request.id)
+        .outerjoin(Service, Service.id == Request.service_id)
+        .where(
+            RequestParticipant.user_id == expert_user_id,
+            RequestParticipant.participant_role == "expert",
+            Request.status == RequestStatus.COMPLETED,
+        )
+        .group_by(Service.name)
+    )
+    rows = (await session.execute(stmt)).all()
+    return [DomainClientStat(domain=domain, client_count=count) for domain, count in rows]
+
+
+async def _expert_referral_info(
+    session: AsyncSession, participants: list[RequestParticipant]
+) -> ExpertReferralInfo | None:
+    """Credibility snapshot of the expert on this request, so an invited company can vet them."""
+    expert_participant = next((p for p in participants if p.participant_role == "expert" and p.user_id is not None), None)
+    if expert_participant is None:
+        return None
+    profile = await session.scalar(
+        select(Profile).where(Profile.user_id == expert_participant.user_id, Profile.kind == ProfileKind.EXPERT)
+    )
+    if profile is None:
+        return None
+    return ExpertReferralInfo(
+        profile_id=profile.id,
+        display_name=profile.display_name,
+        headline=profile.headline,
+        verified=profile.verification == VerificationStatus.VERIFIED,
+        average_rating=float(profile.average_rating),
+        review_count=profile.review_count,
+        client_stats=await _expert_client_stats(session, expert_participant.user_id),
+    )
 
 
 async def _participant_display_name(session: AsyncSession, participant: RequestParticipant) -> str:
@@ -101,14 +191,47 @@ async def _build_detail(session: AsyncSession, request: Request, user: User, my_
     ).all()
     summary = await _build_summary(session, request, user, my_org_ids, list(participants))
 
+    # The customer never gets an explicit request_participants row, so synthesize their entry here.
+    # They're treated as always-accepted since they're the one who opened the request.
+    viewer_is_customer = request.customer_id == user.id
+    viewer_participant = next(
+        (
+            participant
+            for participant in participants
+            if participant.user_id == user.id
+            or (participant.organization_id is not None and participant.organization_id in my_org_ids)
+        ),
+        None,
+    )
+    viewer_accepted = viewer_is_customer or (viewer_participant is not None and viewer_participant.accepted_at is not None)
+
+    customer_user = await session.get(User, request.customer_id)
     participant_payload = [
         RequestParticipantOut(
-            participant_role=participant.participant_role,
-            name=await _participant_display_name(session, participant),
-            accepted_at=participant.accepted_at,
+            participant_role="customer",
+            name=customer_user.full_name if customer_user is not None else "Customer",
+            accepted_at=request.created_at,
+            contact=await _contact_info_for_user(session, customer_user) if viewer_accepted and customer_user is not None else None,
         )
-        for participant in participants
     ]
+    for participant in participants:
+        entry_accepted = participant.accepted_at is not None
+        contact = None
+        if entry_accepted and viewer_accepted:
+            if participant.user_id is not None:
+                participant_user = await session.get(User, participant.user_id)
+                contact = await _contact_info_for_user(session, participant_user) if participant_user is not None else None
+            elif participant.organization_id is not None:
+                organization = await session.get(Organization, participant.organization_id)
+                contact = await _contact_info_for_organization(session, organization) if organization is not None else None
+        participant_payload.append(
+            RequestParticipantOut(
+                participant_role=participant.participant_role,
+                name=await _participant_display_name(session, participant),
+                accepted_at=participant.accepted_at,
+                contact=contact,
+            )
+        )
 
     events = (
         await session.scalars(
@@ -128,7 +251,11 @@ async def _build_detail(session: AsyncSession, request: Request, user: User, my_
             )
         )
 
-    return RequestDetail(**summary.model_dump(), participants=participant_payload, events=event_payload)
+    expert_referral = await _expert_referral_info(session, list(participants))
+
+    return RequestDetail(
+        **summary.model_dump(), participants=participant_payload, events=event_payload, expert_referral=expert_referral
+    )
 
 
 def _is_participant(request: Request, user: User, my_org_ids: set[UUID], participants: list[RequestParticipant]) -> bool:
@@ -150,6 +277,7 @@ async def create_request(session: AsyncSession, auth_user_id: UUID, payload: Cre
 
     request = Request(
         customer_id=user.id,
+        service_id=payload.service_id,
         title=payload.title,
         requirements=payload.requirements,
         city=payload.city,
@@ -274,4 +402,49 @@ async def accept_request(session: AsyncSession, auth_user_id: UUID, request_id: 
     await session.commit()
     await session.refresh(request)
 
+    return await _build_detail(session, request, user, my_org_ids)
+
+
+async def invite_company(session: AsyncSession, auth_user_id: UUID, request_id: UUID, profile_id: UUID) -> RequestDetail:
+    """Let an expert who has accepted this request bring a company profile in as a co-participant."""
+    user = await _get_user(session, auth_user_id)
+    request = await session.get(Request, request_id)
+    if request is None:
+        raise RequestNotFoundError("Request not found")
+
+    participants = (
+        await session.scalars(select(RequestParticipant).where(RequestParticipant.request_id == request.id))
+    ).all()
+    mine = next(
+        (p for p in participants if p.participant_role == "expert" and p.user_id == user.id and p.accepted_at is not None),
+        None,
+    )
+    if mine is None:
+        raise RequestAccessError("Only an expert who has accepted this request can invite a company")
+
+    profile = await session.get(Profile, profile_id)
+    if profile is None or profile.kind is not ProfileKind.COMPANY:
+        raise ProfileTargetError("Choose a valid company profile to invite")
+
+    if any(p.organization_id == profile.organization_id for p in participants if p.organization_id is not None):
+        raise DuplicateInviteError("This company is already part of the request")
+
+    session.add(
+        RequestParticipant(request_id=request.id, organization_id=profile.organization_id, participant_role="company")
+    )
+    session.add(
+        RequestEvent(
+            request_id=request.id,
+            author_id=user.id,
+            event_type="system",
+            message=f"{profile.display_name} was invited into this request.",
+        )
+    )
+    if request.status in (RequestStatus.ACCEPTED, RequestStatus.SUBMITTED):
+        request.status = RequestStatus.PROVIDER_INVITED
+    request.updated_at = datetime.now(timezone.utc)
+    await session.commit()
+    await session.refresh(request)
+
+    my_org_ids = await _my_organization_ids(session, user.id)
     return await _build_detail(session, request, user, my_org_ids)

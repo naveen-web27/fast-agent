@@ -32,7 +32,7 @@ flowchart TD
   - `GET /profiles/{profile_id}/credentials`
   - `PATCH` / `DELETE /credentials/{credential_id}`
   - `POST /credentials/{credential_id}/verify` (admin)
-- **No social links endpoints** — `social_links` table exists (`platform`, `url`, `follower_count`) with no model or API:
+- **No social links endpoints** — `social_links` table exists (`platform`, `url`, `follower_count`) and now has an ORM model ([social_link.py](../../backend/app/models/social_link.py), Sept 2026, added to back the request-workspace contact reveal in [03-request-workspace.md](03-request-workspace.md)), but still no write API and no way for an owner to add their own rows:
   - `POST /profiles/{profile_id}/social-links`
   - `GET /profiles/{profile_id}/social-links`
   - `DELETE /profiles/{profile_id}/social-links/{id}`

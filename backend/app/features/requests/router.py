@@ -5,8 +5,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.features.requests.schemas import AddEventPayload, CreateRequestPayload, RequestDetail, RequestListResponse
+from app.features.requests.schemas import (
+    AddEventPayload,
+    CreateRequestPayload,
+    InviteCompanyPayload,
+    RequestDetail,
+    RequestListResponse,
+)
 from app.features.requests.service import (
+    DuplicateInviteError,
     IdentityNotFoundError,
     ProfileTargetError,
     RequestAccessError,
@@ -15,6 +22,7 @@ from app.features.requests.service import (
     add_event,
     create_request,
     get_request_detail,
+    invite_company,
     list_requests,
 )
 from app.security.dependencies import get_current_auth_user_id
@@ -100,3 +108,25 @@ async def accept(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except RequestAccessError as exc:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+
+
+@router.post("/{request_id}/invite-company", response_model=RequestDetail)
+async def invite_company_to_request(
+    request_id: UUID,
+    payload: InviteCompanyPayload,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> RequestDetail:
+    """Let an expert who has accepted this request bring a company profile in to help fulfil it."""
+    try:
+        return await invite_company(session, auth_user_id, request_id, payload.profile_id)
+    except IdentityNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except RequestNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except RequestAccessError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except ProfileTargetError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except DuplicateInviteError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc

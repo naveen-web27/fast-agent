@@ -185,6 +185,13 @@
       <div class="modal-actions"><button type="button" class="secondary" id="request-cancel">Cancel</button><button type="submit" class="primary" id="request-submit">Send request</button></div>
     </form>
   </div>
+  <div class="modal" id="invite-company-modal" hidden>
+    <h2>Invite a company</h2>
+    <p class="modal-note">Bring a verified company into this request. They'll see your profile and completed-client track record before deciding.</p>
+    <div class="field"><label for="invite-company-search">Search companies</label><input id="invite-company-search" placeholder="Company name"></div>
+    <div id="invite-company-results" style="max-height:220px;overflow:auto;margin-bottom:12px"></div>
+    <div class="modal-actions"><button type="button" class="secondary" id="invite-company-cancel">Cancel</button></div>
+  </div>
   <script>
     const buttons = document.querySelectorAll('[data-view]');
     const views = document.querySelectorAll('.view');
@@ -585,10 +592,16 @@
         <section class="request-panel coordination">
           <div class="coordination-head"><div><span class="section-tag" id="request-detail-tag">No request selected</span><h2 id="request-detail-title">Coordination timeline</h2></div><span class="pill selected" id="request-detail-status">–</span></div>
           <div class="timeline" id="request-timeline"><p style="color:var(--muted);font-size:12px;margin:0">Select a request from the left to see its timeline.</p></div>
-          <button class="primary" id="request-accept-button" hidden style="margin:10px 0">Accept request</button>
+          <div style="display:flex;gap:8px;margin:10px 0">
+            <button class="primary" id="request-accept-button" hidden>Accept request</button>
+            <button class="secondary" id="request-invite-company-button" hidden>+ Invite a company</button>
+          </div>
           <form id="request-message-form" style="display:flex;gap:8px;margin-top:10px"><input id="request-message-input" placeholder="Add a question or note for everyone in this request..." style="flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:7px;font:inherit" disabled><button class="primary" type="submit" id="request-message-send" disabled>Send</button></form>
         </section>
-        <aside class="request-panel"><span class="section-tag">People in this request</span><h2>Participants</h2><div class="participants" id="request-participants"><span style="color:var(--muted);font-size:12px">Select a request to see its participants.</span></div></aside>
+        <aside class="request-panel">
+          <div id="request-expert-referral"></div>
+          <span class="section-tag">People in this request</span><h2>Participants</h2><div id="request-participants"><span style="color:var(--muted);font-size:12px">Select a request to see its participants.</span></div>
+        </aside>
       </div>`;
     document.querySelectorAll('#requests [data-view]').forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
 
@@ -658,10 +671,39 @@
       document.querySelector('#request-timeline').innerHTML = detail.events.length
         ? detail.events.map((event) => `<div class="event"><i class="event-dot"></i><time>${new Date(event.created_at).toLocaleString()}</time><strong>${event.author_name || 'System'}</strong><p>${event.message}</p></div>`).join('')
         : '<p style="color:var(--muted);font-size:12px;margin:0">No messages yet.</p>';
+
       document.querySelector('#request-participants').innerHTML = detail.participants.length
-        ? detail.participants.map((participant) => `<span class="avatar" title="${participant.name}">${participant.name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase()}</span>`).join('')
+        ? detail.participants.map((participant) => {
+            const initials = participant.name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase();
+            const contact = participant.contact
+              ? `<div style="margin-top:4px;font-size:11px;color:var(--muted)">
+                  ${participant.contact.email ? `<div>✉ ${participant.contact.email}</div>` : ''}
+                  ${participant.contact.phone ? `<div>☎ ${participant.contact.phone}</div>` : ''}
+                  ${participant.contact.website_url ? `<div>🔗 ${participant.contact.website_url}</div>` : ''}
+                  ${(participant.contact.social_links || []).map((link) => `<div>${link.platform}: <a href="${link.url}" target="_blank" rel="noopener">${link.url}</a></div>`).join('')}
+                </div>`
+              : `<div style="margin-top:4px;font-size:11px;color:var(--muted)">Contact hidden until both sides accept</div>`;
+            return `<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)">
+                <span class="avatar" title="${participant.name}">${initials}</span>
+                <div><strong style="font-size:13px">${participant.name}</strong><span style="display:block;font-size:11px;color:var(--muted);text-transform:capitalize">${participant.participant_role}${participant.accepted_at ? '' : ' · pending'}</span>${contact}</div>
+              </div>`;
+          }).join('')
         : '<span style="color:var(--muted);font-size:12px">Awaiting a match</span>';
+
+      const referral = detail.expert_referral;
+      document.querySelector('#request-expert-referral').innerHTML = referral
+        ? `<span class="section-tag">Expert track record</span>
+           <h2 style="font-size:15px;margin:4px 0">${referral.display_name}${referral.verified ? ' ✓' : ''}</h2>
+           <p style="margin:0 0 6px;font-size:12px;color:var(--muted)">${referral.headline} · ★ ${referral.average_rating.toFixed(1)} (${referral.review_count})</p>
+           ${referral.client_stats.length
+              ? `<ul style="margin:0 0 12px;padding:0;list-style:none;font-size:12px">${referral.client_stats.map((stat) => `<li style="display:flex;justify-content:space-between;padding:3px 0"><span>${stat.domain}</span><strong>${stat.client_count} clients</strong></li>`).join('')}</ul>`
+              : '<p style="margin:0 0 12px;font-size:12px;color:var(--muted)">No completed clients recorded yet.</p>'}`
+        : '';
+
       document.querySelector('#request-accept-button').hidden = !(detail.my_role !== 'customer' && detail.status === 'submitted');
+      const iAccepted = detail.my_role === 'expert' && detail.status !== 'submitted' && detail.status !== 'cancelled';
+      const alreadyHasCompany = detail.participants.some((participant) => participant.participant_role === 'company');
+      document.querySelector('#request-invite-company-button').hidden = !(iAccepted && !alreadyHasCompany);
       document.querySelector('#request-message-input').disabled = false;
       document.querySelector('#request-message-send').disabled = false;
     }
@@ -672,6 +714,49 @@
       if (!response.ok) { alert('Could not accept this request.'); return; }
       renderRequestDetail(await response.json());
       loadRequests();
+    });
+
+    document.querySelector('#request-invite-company-button').addEventListener('click', () => {
+      if (!selectedRequestId) return;
+      document.querySelector('#invite-company-search').value = '';
+      document.querySelector('#invite-company-results').innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Search for a company by name.</p>';
+      openModal('invite-company-modal');
+    });
+    document.querySelector('#invite-company-cancel').addEventListener('click', closeModals);
+
+    let inviteCompanySearchTimer = null;
+    document.querySelector('#invite-company-search').addEventListener('input', (event) => {
+      clearTimeout(inviteCompanySearchTimer);
+      const query = event.target.value.trim();
+      inviteCompanySearchTimer = setTimeout(async () => {
+        const resultsBox = document.querySelector('#invite-company-results');
+        resultsBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0"><span class="spinner"></span>Searching…</p>';
+        try {
+          const url = new URL(`${apiBase}/profiles`);
+          url.searchParams.set('kind', 'company');
+          if (query) url.searchParams.set('q', query);
+          const response = await fetch(url, { headers: authHeaders() });
+          if (!response.ok) throw new Error('Search failed');
+          const { results } = await response.json();
+          resultsBox.innerHTML = results.length
+            ? results.map((profile) => `<div class="request-item" data-profile-id="${profile.id}" style="cursor:pointer"><strong>${profile.display_name}</strong><span>${profile.headline}</span></div>`).join('')
+            : '<p style="color:var(--muted);font-size:12px;margin:0">No companies matched.</p>';
+          resultsBox.querySelectorAll('[data-profile-id]').forEach((item) => item.addEventListener('click', async () => {
+            const response = await fetch(`${apiBase}/requests/${selectedRequestId}/invite-company`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', ...authHeaders() },
+              body: JSON.stringify({ profile_id: item.dataset.profileId }),
+            });
+            if (!response.ok) { showToast(await extractErrorMessage(response, 'Could not invite this company.'), 'error'); return; }
+            closeModals();
+            showToast('Company invited.', 'success');
+            renderRequestDetail(await response.json());
+            loadRequests();
+          }));
+        } catch (_) {
+          resultsBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Could not search companies.</p>';
+        }
+      }, 300);
     });
 
     document.querySelector('#request-message-form').addEventListener('submit', async (event) => {
