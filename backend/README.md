@@ -21,7 +21,7 @@
 
 The `/api/v1/auth/onboarding` endpoint requires a Supabase access token and derives `auth_user_id` from Supabase's authenticated `/auth/v1/user` response. It never accepts an auth identity from the request body.
 
-Google OAuth is best handled by Supabase Auth. WhatsApp OTP needs an approved WhatsApp provider or an OTP provider; its verification must happen server-side.
+Authentication is Google OAuth through Supabase Auth. WhatsApp OTP is disabled.
 
 ### Session persistence
 
@@ -39,7 +39,9 @@ Fix: in Supabase, go to **Settings -> Database -> Connection pooling** and copy 
 
 ## Subscriptions
 
-`users.subscription_tier` and `organizations.subscription_tier` default to `free` (see `db/migrations/002_subscription_tier.sql`). There is no billing/upgrade flow yet — every account starts on the free tier until that is built.
+`users.subscription_tier` and `organizations.subscription_tier` default to `free` (see `db/migrations/002_subscription_tier.sql`). Stripe Checkout upgrades users after a signed `checkout.session.completed` webhook.
+
+To enable billing, create recurring Pro and Enterprise Prices in Stripe, set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRO_PRICE_ID`, `STRIPE_ENTERPRISE_PRICE_ID`, and `APP_BASE_URL`, then register `POST /api/v1/payments/webhook` as a Stripe webhook endpoint for `checkout.session.completed`. Keep all Stripe secrets in Render environment variables; never place them in frontend code.
 
 ## Multi-role identities (customer + expert + company, same login)
 

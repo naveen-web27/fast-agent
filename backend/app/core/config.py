@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     supabase_publishable_key: str = ""
     resend_api_key: str = ""
     resend_from_email: str = "RightConnect <onboarding@resend.dev>"
+    stripe_secret_key: str = ""
+    stripe_webhook_secret: str = ""
+    stripe_pro_price_id: str = ""
+    stripe_enterprise_price_id: str = ""
+    app_base_url: str = "http://127.0.0.1:8000"
 
     @property
     def cors_origin_list(self) -> list[str]:

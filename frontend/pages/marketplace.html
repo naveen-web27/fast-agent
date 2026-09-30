@@ -3,6 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101b31">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="../manifest.webmanifest">
   <meta name="description" content="RightConnect helps customers find and coordinate with verified experts and companies.">
   <title>RightConnect | Expert marketplace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -76,7 +81,8 @@
     @media (max-width:1050px) { .plans-grid { grid-template-columns:1fr; } }
     @media (max-width:720px) { .sidebar.open { display:flex; position:fixed; z-index:60; width:240px; } .sidebar.open .brand span:last-child,.sidebar.open .workspace,.sidebar.open .nav-button span:last-child,.sidebar.open .side-bottom { display:block; } .sidebar.open .brand { justify-content:flex-start; } .sidebar.open .nav-button { justify-content:flex-start; } .sidebar-scrim.open { display:block; position:fixed; inset:0; z-index:55; background:rgba(16,27,49,.45); } }
     @media (max-width:1050px) { .app { grid-template-columns:72px 1fr; }.sidebar { width:72px; padding:20px 10px; }.brand span:last-child,.workspace small,#workspace-label,.nav-button span:last-child,.side-bottom { display:none; }.workspace-menu { position:fixed; left:76px; width:220px; }.brand { justify-content:center; padding:0 0 27px; }.nav-button { justify-content:center; padding:11px; }.nav-icon { font-size:17px; }.dashboard-grid,.profile-layout { grid-template-columns:1fr; }.profile-score { min-width:100px; }.booking { position:static; }.request-layout { grid-template-columns:210px minmax(0,1fr); }.request-layout > :last-child { grid-column:1/-1; }.main { min-width:0; } }
-    @media (max-width:720px) { .app { display:block; }.main { grid-column:auto; }.sidebar { display:none; }.topbar { padding:12px 16px; }.mobile-menu { display:grid; }.page { padding:22px 16px; }.page-title { align-items:start; }.page-title h1 { font-size:25px; }.page-title > .primary { display:none; }.search-panel { flex-direction:column; align-items:stretch; }.search-panel .search-field,.search-panel .select,.search-panel .kind-toggle,.search-panel .primary { flex:0 0 auto; width:100%; }.kind-toggle { justify-content:center; }.dashboard-grid,.request-layout { grid-template-columns:1fr; }.profile-card { grid-template-columns:55px minmax(0,1fr); gap:12px; }.portrait { width:55px; height:55px; }.profile-score { grid-column:2; text-align:left; align-items:flex-start; }.profile-score .secondary { margin-top:7px; }.profile-summary { display:block; }.profile-summary .portrait { width:88px; height:88px; margin-bottom:14px; }.trust-bar { grid-template-columns:1fr; }.trust-item + .trust-item { border-top:1px solid var(--line); border-left:0; }.top-actions #request-expert,.user-chip span:last-child { display:none; }.request-layout > :last-child { grid-column:auto; } }
+    .mobile-nav { display:none; }
+    @media (max-width:720px) { .app { display:block; padding-bottom:72px; }.main { grid-column:auto; }.sidebar { display:none; }.topbar { position:sticky; top:0; z-index:40; padding:12px 16px; }.mobile-menu { display:grid; }.page { padding:22px 16px 10px; }.page-title { align-items:start; }.page-title h1 { font-size:25px; }.page-title > .primary { display:none; }.search-panel { flex-direction:column; align-items:stretch; }.search-panel .search-field,.search-panel .select,.search-panel .kind-toggle,.search-panel .primary { flex:0 0 auto; width:100%; }.kind-toggle { justify-content:center; }.dashboard-grid,.request-layout { grid-template-columns:1fr; }.profile-card { grid-template-columns:55px minmax(0,1fr); gap:12px; }.portrait { width:55px; height:55px; }.profile-score { grid-column:2; text-align:left; align-items:flex-start; }.profile-score .secondary { margin-top:7px; }.profile-summary { display:block; }.profile-summary .portrait { width:88px; height:88px; margin-bottom:14px; }.trust-bar { grid-template-columns:1fr; }.trust-item + .trust-item { border-top:1px solid var(--line); border-left:0; }.top-actions #request-expert,.user-chip span:last-child { display:none; }.request-layout > :last-child { grid-column:auto; }.mobile-nav { position:fixed; inset:auto 0 0; z-index:50; display:grid; grid-template-columns:repeat(4,1fr); padding:8px 8px calc(8px + env(safe-area-inset-bottom)); border-top:1px solid rgba(227,232,240,.95); background:rgba(255,255,255,.94); box-shadow:0 -8px 24px rgba(22,35,58,.08); backdrop-filter:blur(18px); }.mobile-nav .nav-button { display:grid; justify-items:center; gap:2px; padding:4px 2px; color:var(--muted); border-radius:8px; text-align:center; font-size:10px; }.mobile-nav .nav-button.active { color:var(--teal); background:var(--mint); }.mobile-nav .nav-icon { width:auto; font-size:17px; } }
   </style>
 </head>
 <body>
@@ -120,13 +126,19 @@
           <div class="page-title"><div><span class="section-tag">Plans</span><h1>Choose the plan that fits your workspace.</h1><p>Upgrade to unlock full visibility across the marketplace.</p></div></div>
           <div class="plans-grid">
             <article class="plan-card"><span class="section-tag">Free</span><h2>₹0<small>/month</small></h2><ul><li>Search experts &amp; companies</li><li>Send and receive requests</li><li>Verified reviews</li></ul><button class="secondary" disabled>Current plan</button></article>
-            <article class="plan-card featured"><span class="section-tag">Pro</span><h2>Contact us<small>for pricing</small></h2><ul><li>Everything in Free</li><li>View other experts' &amp; companies' profiles</li><li>Priority placement in search</li></ul><button class="primary" id="plan-pro-button" type="button">Subscribe via WhatsApp</button></article>
-            <article class="plan-card"><span class="section-tag">Enterprise</span><h2>Contact us<small>for pricing</small></h2><ul><li>Everything in Pro</li><li>Team seats for your company</li><li>Dedicated account support</li></ul><button class="primary" id="plan-enterprise-button" type="button">Subscribe via WhatsApp</button></article>
+            <article class="plan-card featured"><span class="section-tag">Pro</span><h2>Upgrade<small>/month</small></h2><ul><li>Everything in Free</li><li>View other experts' &amp; companies' profiles</li><li>Priority placement in search</li></ul><button class="primary" id="plan-pro-button" type="button">Continue to secure checkout</button></article>
+            <article class="plan-card"><span class="section-tag">Enterprise</span><h2>Upgrade<small>/month</small></h2><ul><li>Everything in Pro</li><li>Team seats for your company</li><li>Dedicated account support</li></ul><button class="primary" id="plan-enterprise-button" type="button">Continue to secure checkout</button></article>
           </div>
         </section>
       </div>
     </main>
   </div>
+  <nav class="mobile-nav" aria-label="Mobile navigation">
+    <button class="nav-button active" data-view="discover" type="button"><span class="nav-icon">⌕</span><span>Discover</span></button>
+    <button class="nav-button" data-view="requests" type="button"><span class="nav-icon">◫</span><span>Requests</span></button>
+    <button class="nav-button" data-view="saved" type="button"><span class="nav-icon">♡</span><span>Saved</span></button>
+    <button class="nav-button" data-view="plans" type="button"><span class="nav-icon">◆</span><span>Plans</span></button>
+  </nav>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <div class="modal-scrim" id="modal-scrim" hidden></div>
   <div class="toast" id="toast" hidden></div>
@@ -193,6 +205,7 @@
     <div class="modal-actions"><button type="button" class="secondary" id="invite-company-cancel">Cancel</button></div>
   </div>
   <script>
+    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('../sw.js'));
     const buttons = document.querySelectorAll('[data-view]');
     const views = document.querySelectorAll('.view');
     const navButtons = document.querySelectorAll('.nav-button');
@@ -230,8 +243,13 @@
     const apiBase = '/api/v1';
     const resultsList = document.querySelector('#results');
     const resultCount = document.querySelector('#result-count');
-    const WHATSAPP_NUMBER = '916382595243';
-    function openWhatsapp(message) { window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank', 'noopener'); }
+    async function startCheckout(plan, button) {
+      if (!accessToken) { window.location.href = 'auth.html'; return; }
+      setButtonLoading(button, true, 'Opening checkout…');
+      const response = await fetch(`${apiBase}/payments/checkout?plan=${plan}`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` } });
+      if (!response.ok) { showToast(await extractErrorMessage(response, 'Payments are not available yet.'), 'error'); setButtonLoading(button, false); return; }
+      window.location.href = (await response.json()).checkout_url;
+    }
 
     let toastTimer = null;
     function showToast(message, variant) {
@@ -320,9 +338,9 @@
     });
     pagePrevButton.addEventListener('click', async () => { if (currentPage <= 1) return; currentPage -= 1; setButtonLoading(pagePrevButton, true, ''); await refreshDiscoverResults(); setButtonLoading(pagePrevButton, false); });
     pageNextButton.addEventListener('click', async () => { currentPage += 1; setButtonLoading(pageNextButton, true, ''); await refreshDiscoverResults(); setButtonLoading(pageNextButton, false); });
-    document.querySelector('#payment-nav-button').addEventListener('click', () => openWhatsapp('Hi RightConnect, I want to complete a payment / subscription.'));
-    document.querySelector('#plan-pro-button').addEventListener('click', () => openWhatsapp('Hi RightConnect, I want to subscribe to the Pro plan.'));
-    document.querySelector('#plan-enterprise-button').addEventListener('click', () => openWhatsapp('Hi RightConnect, I want to subscribe to the Enterprise plan.'));
+    document.querySelector('#payment-nav-button').addEventListener('click', () => showView('plans'));
+    document.querySelector('#plan-pro-button').addEventListener('click', (event) => startCheckout('pro', event.currentTarget));
+    document.querySelector('#plan-enterprise-button').addEventListener('click', (event) => startCheckout('enterprise', event.currentTarget));
 
     async function renderLeadsMode() {
       paginationBar.hidden = true;

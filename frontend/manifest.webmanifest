@@ -1,0 +1,19 @@
+{
+  "name": "RightConnect",
+  "short_name": "RightConnect",
+  "description": "Find and coordinate with trusted experts and companies.",
+  "start_url": "/pages/marketplace.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f4f6fa",
+  "theme_color": "#101b31",
+  "icons": [
+    {
+      "src": "/assets/rightconnect-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
