@@ -36,6 +36,8 @@ class UserResponse(BaseModel):
     role: Role
     interests: list[str]
     onboarding_status: Literal["complete", "verification_pending"]
+    subscription_tier: Literal["free", "pro", "enterprise"] = "free"
+    subscription_expires_at: str | None = None
 
 
 class ExpertProfileRequest(BaseModel):

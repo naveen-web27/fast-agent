@@ -39,9 +39,9 @@ Fix: in Supabase, go to **Settings -> Database -> Connection pooling** and copy 
 
 ## Subscriptions
 
-`users.subscription_tier` and `organizations.subscription_tier` default to `free` (see `db/migrations/002_subscription_tier.sql`). Stripe Checkout upgrades users after a signed `checkout.session.completed` webhook.
+`users.subscription_tier` defaults to `free`. The standalone plans page offers one-time Pro and Enterprise passes for 30 days, not recurring subscriptions. Razorpay hosts checkout through a Payment Link. A redirect is never considered proof of payment: only a signed `payment_link.paid` webhook with a matching link, captured payment, currency, and amount activates access. Access expires automatically after 30 days; purchasing again extends it.
 
-To enable billing, create recurring Pro and Enterprise Prices in Stripe, set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRO_PRICE_ID`, `STRIPE_ENTERPRISE_PRICE_ID`, and `APP_BASE_URL`, then register `POST /api/v1/payments/webhook` as a Stripe webhook endpoint for `checkout.session.completed`. Keep all Stripe secrets in Render environment variables; never place them in frontend code.
+Before deploying, run `db/migrations/008_razorpay_payments.sql` on the existing database. In Render set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `RAZORPAY_PRO_AMOUNT_PAISE`, `RAZORPAY_ENTERPRISE_AMOUNT_PAISE`, and `APP_BASE_URL` (the public HTTPS origin). Amounts are in paise, for example `49900` is INR 499; zero disables checkout for a plan. Configure a Razorpay webhook for `payment_link.paid` at `https://YOUR_HOST/api/v1/payments/webhook` with the same webhook secret. Use Razorpay **Test** mode first, with matching test API keys and a test webhook; verify the full redirect and webhook before enabling live keys. Keep secrets in Render, not frontend code. Refunds and recurring billing are not automated yet and must be managed manually in Razorpay.
 
 ## Multi-role identities (customer + expert + company, same login)
 

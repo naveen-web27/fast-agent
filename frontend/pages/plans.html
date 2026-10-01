@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#123735">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>Plans | RightConnect</title>
+  <style>
+    :root { --ink:#142928; --muted:#536665; --green:#086f61; --line:#d8e6df; --paper:#f2f7f3; --surface:#fff; }
+    * { box-sizing:border-box; } body { margin:0; color:var(--ink); background:radial-gradient(circle at 90% 0%,#dcefe0 0%,transparent 32%),var(--paper); font:14px/1.5 Manrope,sans-serif; }
+    button { font:inherit; cursor:pointer; } button:disabled { cursor:not-allowed; opacity:.55; } a { color:inherit; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:70px; padding:12px max(24px,calc((100vw - 1080px)/2)); border-bottom:1px solid var(--line); background:rgba(255,255,255,.82); backdrop-filter:blur(16px); }
+    .brand { display:flex; align-items:center; gap:10px; font-weight:800; text-decoration:none; }.brand img { width:32px; height:32px; }.back { font-size:12px; font-weight:700; text-decoration:none; }
+    main { max-width:1080px; margin:auto; padding:55px 24px 90px; }.eyebrow { color:var(--green); font:11px 'DM Mono',monospace; text-transform:uppercase; }.intro { max-width:660px; margin-bottom:38px; }.intro h1 { margin:9px 0; font-size:clamp(30px,4vw,44px); line-height:1.14; }.intro p { color:var(--muted); font-size:15px; }
+    .status { display:none; margin:0 0 24px; padding:13px 16px; border-left:3px solid var(--green); background:#e1f3e8; color:#225449; font-weight:700; }.status.show { display:block; }.status.error { border-color:#b64747; background:#fff0ed; color:#922d2d; }
+    .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }.plan { display:flex; flex-direction:column; min-width:0; padding:24px; border:1px solid var(--line); border-radius:8px; background:var(--surface); box-shadow:0 9px 24px rgba(20,60,48,.04); animation:rise .4s both; }.plan:nth-child(2) { animation-delay:.08s; border-color:#74bba3; }.plan:nth-child(3) { animation-delay:.16s; }.plan h2 { margin:14px 0 6px; font-size:20px; }.price { min-height:45px; font-size:30px; font-weight:800; }.period { color:var(--muted); font-size:12px; font-weight:600; }.plan p { margin:0 0 20px; color:var(--muted); font-size:12px; }.plan ul { display:grid; gap:12px; margin:0 0 26px; padding:0; list-style:none; }.plan li::before { content:'✓'; margin-right:9px; color:var(--green); font-weight:800; }.plan button { width:100%; min-height:46px; margin-top:auto; border:1px solid var(--green); border-radius:7px; background:var(--green); color:#fff; font-weight:800; }.plan button:hover:not(:disabled) { background:#054f46; }.plan.free button { border-color:var(--line); background:#fff; color:var(--ink); }
+    .fineprint { max-width:700px; margin-top:26px; color:var(--muted); font-size:12px; line-height:1.7; } @keyframes rise { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+    .login-dialog { width:min(420px,calc(100vw - 32px)); padding:26px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); box-shadow:0 20px 70px rgba(20,41,40,.24); }.login-dialog::backdrop { background:rgba(10,32,30,.55); }.login-dialog h2 { margin:0 0 8px; font-size:22px; }.login-dialog p { margin:0 0 22px; color:var(--muted); }.login-actions { display:grid; gap:10px; }.login-actions button,.login-actions a { display:grid; place-items:center; min-height:46px; border:1px solid var(--green); border-radius:7px; background:var(--green); color:#fff; font:800 14px Manrope,sans-serif; text-decoration:none; }.login-actions .cancel { border-color:var(--line); background:#fff; color:var(--ink); }
+    @media(max-width:760px) { .topbar { padding:12px 18px; }.back { max-width:110px; text-align:right; }.grid { grid-template-columns:1fr; }.plan { padding:21px; }.intro { margin-bottom:25px; } main { padding:28px 18px calc(40px + env(safe-area-inset-bottom)); }.price { min-height:0; }.plan ul { margin-bottom:20px; } }
+    @media(prefers-reduced-motion:reduce) { .plan { animation:none; } }
+  </style>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="marketplace.html"><img src="../assets/rightconnect-mark.svg" alt="">RightConnect</a><a class="back" href="marketplace.html">← Back to marketplace</a></header>
+  <main>
+    <div class="intro"><span class="eyebrow">Membership</span><h1>Choose your level of access.</h1><p>Pay securely on Razorpay. Access begins only after your payment is confirmed.</p></div>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+    <div class="grid">
+      <article class="plan free"><span class="eyebrow">Start here</span><h2>Free</h2><div class="price">₹0</div><p>Explore and connect at your own pace.</p><ul><li>Discover experts and companies</li><li>Send and receive requests</li><li>Save profiles</li></ul><button disabled type="button">Current base plan</button></article>
+      <article class="plan"><span class="eyebrow">For specialists</span><h2>Pro</h2><div class="price" id="pro-price">Loading…</div><p>One-time payment for 30 days. No automatic renewal.</p><ul><li>Everything in Free</li><li>View peer profiles</li><li>Expand your network</li></ul><button type="button" id="pro-button" disabled>Buy plan</button></article>
+      <article class="plan"><span class="eyebrow">For teams</span><h2>Enterprise</h2><div class="price" id="enterprise-price">Loading…</div><p>One-time payment for 30 days. No automatic renewal.</p><ul><li>Everything in Pro</li><li>Company workspace access</li><li>Manage incoming requests</li></ul><button type="button" id="enterprise-button" disabled>Buy plan</button></article>
+    </div>
+    <p class="fineprint">Payments are processed by Razorpay. Returning here does not confirm a payment; your access updates after the payment provider confirms it. No charge occurs until you review and pay on Razorpay.</p>
+  </main>
+  <dialog class="login-dialog" id="login-dialog" aria-labelledby="login-title">
+    <h2 id="login-title">Sign in or join</h2>
+    <p id="login-copy">Sign in with Google to buy this plan. You can review the payment before paying.</p>
+    <div class="login-actions"><button id="login-google" type="button">Continue with Google</button><a id="login-link" href="auth.html?return=plans">Create an account</a><button class="cancel" id="login-cancel" type="button">Not now</button></div>
+  </dialog>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const statusBox = document.querySelector('#status');
+    const buttons = { pro: document.querySelector('#pro-button'), enterprise: document.querySelector('#enterprise-button') };
+    const loginDialog = document.querySelector('#login-dialog');
+    document.querySelector('#login-cancel').addEventListener('click', () => loginDialog.close());
+    loginDialog.addEventListener('click', (event) => { if (event.target === loginDialog) loginDialog.close(); });
+    document.querySelector('#login-google').addEventListener('click', async () => {
+      if (!authClient) { message('Google sign-in is unavailable right now.', true); return; }
+      sessionStorage.setItem('rightconnect-auth-return', 'plans');
+      const { error } = await authClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${location.origin}/pages/auth.html` } });
+      if (error) message(error.message, true);
+    });
+    let authClient;
+    function message(text, error = false) { statusBox.textContent = text; statusBox.classList.toggle('error', error); statusBox.classList.add('show'); }
+    async function sessionToken() { return (await authClient.auth.getSession()).data.session?.access_token; }
+    async function load() {
+      if (new URLSearchParams(location.search).has('payment')) message('Returned from Razorpay. Confirming payment with the provider may take a moment.');
+      try {
+        const [configResponse, plansResponse] = await Promise.all([fetch('/api/v1/auth/provider-config'), fetch('/api/v1/payments/plans')]);
+        if (!configResponse.ok || !plansResponse.ok) throw new Error('Plans could not be loaded.');
+        const config = await configResponse.json();
+        const plans = (await plansResponse.json()).plans;
+        if (config.supabase_url && config.supabase_publishable_key) authClient = window.supabase.createClient(config.supabase_url, config.supabase_publishable_key);
+        for (const plan of plans) {
+          const price = document.querySelector(`#${plan.id}-price`);
+          if (!price || !buttons[plan.id]) continue;
+          price.textContent = plan.amount_paise ? new Intl.NumberFormat('en-IN', { style:'currency', currency:'INR', maximumFractionDigits:2 }).format(plan.amount_paise / 100) : 'Coming soon';
+          buttons[plan.id].disabled = !plan.available;
+          if (!plan.available) buttons[plan.id].textContent = 'Not available yet';
+        }
+        if (authClient && await sessionToken()) {
+          const response = await fetch('/api/v1/auth/me', { headers: { Authorization: `Bearer ${await sessionToken()}` } });
+          if (response.ok) {
+            const user = await response.json();
+            sessionStorage.setItem('rightconnect-user', JSON.stringify(user));
+            if (user.subscription_tier !== 'free') message(`${user.subscription_tier.toUpperCase()} access active until ${new Date(user.subscription_expires_at).toLocaleDateString('en-IN')}.`);
+          }
+        }
+      } catch (_) {
+        for (const plan of Object.keys(buttons)) document.querySelector(`#${plan}-price`).textContent = 'Unavailable';
+        message('Plans are unavailable. Please try again later.', true);
+      }
+    }
+    async function checkout(plan) {
+      const token = authClient ? await sessionToken() : null;
+      if (!token) {
+        document.querySelector('#login-copy').textContent = `Sign in or create an account to buy ${plan === 'pro' ? 'Pro' : 'Enterprise'}. You can review the payment before paying.`;
+        loginDialog.showModal();
+        return;
+      }
+      const button = buttons[plan];
+      button.disabled = true;
+      button.textContent = 'Opening Razorpay…';
+      try {
+        const response = await fetch(`/api/v1/payments/checkout?plan=${plan}`, { method:'POST', headers: { Authorization: `Bearer ${token}` } });
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(typeof body.detail === 'string' ? body.detail : 'Checkout is unavailable right now.');
+        }
+        location.assign((await response.json()).checkout_url);
+      } catch (error) { message(error.message, true); button.disabled = false; button.textContent = 'Buy plan'; }
+    }
+    Object.entries(buttons).forEach(([plan, button]) => button.addEventListener('click', () => checkout(plan)));
+    load();
+  </script>
+</body>
+</html>

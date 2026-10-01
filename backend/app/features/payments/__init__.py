@@ -1,1 +1,1 @@
-"""Stripe checkout and subscription webhook feature."""
+"""Razorpay payment links and webhook reconciliation."""

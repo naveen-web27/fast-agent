@@ -17,10 +17,11 @@ class Settings(BaseSettings):
     supabase_publishable_key: str = ""
     resend_api_key: str = ""
     resend_from_email: str = "RightConnect <onboarding@resend.dev>"
-    stripe_secret_key: str = ""
-    stripe_webhook_secret: str = ""
-    stripe_pro_price_id: str = ""
-    stripe_enterprise_price_id: str = ""
+    razorpay_key_id: str = ""
+    razorpay_key_secret: str = ""
+    razorpay_webhook_secret: str = ""
+    razorpay_pro_amount_paise: int = 0
+    razorpay_enterprise_amount_paise: int = 0
     app_base_url: str = "http://127.0.0.1:8000"
 
     @property

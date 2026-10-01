@@ -18,8 +18,23 @@ CREATE TABLE users (
     role user_role NOT NULL DEFAULT 'customer',
     interests TEXT[] NOT NULL DEFAULT '{}',
     subscription_tier subscription_tier NOT NULL DEFAULT 'free',
+    subscription_expires_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE payments (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    plan TEXT NOT NULL CHECK (plan IN ('pro', 'enterprise')),
+    amount_paise INTEGER NOT NULL CHECK (amount_paise >= 100),
+    razorpay_link_id TEXT UNIQUE,
+    razorpay_payment_id TEXT UNIQUE,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'refunded')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    paid_at TIMESTAMPTZ,
+    access_expires_at TIMESTAMPTZ
+);
+CREATE INDEX payments_user_id_idx ON payments(user_id);
 
 CREATE TABLE organizations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

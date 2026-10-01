@@ -54,4 +54,5 @@ class User(Base):
         default=SubscriptionTier.FREE,
         server_default=SubscriptionTier.FREE.value,
     )
+    subscription_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

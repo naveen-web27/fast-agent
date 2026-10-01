@@ -23,7 +23,7 @@ from app.features.marketplace.service import count_resolved_clients
 from app.models.email_verification import EmailVerification
 from app.models.organization_member import MemberRole, OrganizationMember
 from app.models.profile import Organization, Profile, ProfileKind, VerificationStatus
-from app.models.user import User, UserRole
+from app.models.user import SubscriptionTier, User, UserRole
 
 OTP_TTL_MINUTES = 10
 OTP_MAX_ATTEMPTS = 5
@@ -60,6 +60,7 @@ async def get_user_profile(session: AsyncSession, auth_user_id: UUID) -> UserRes
     if user is None:
         return None
     onboarding_status = "complete" if user.role is UserRole.CUSTOMER else "verification_pending"
+    active = user.subscription_expires_at is not None and user.subscription_expires_at > datetime.now(timezone.utc)
     return UserResponse(
         id=user.id,
         full_name=user.full_name,
@@ -67,6 +68,8 @@ async def get_user_profile(session: AsyncSession, auth_user_id: UUID) -> UserRes
         role=user.role.value,
         interests=user.interests,
         onboarding_status=onboarding_status,
+        subscription_tier=user.subscription_tier.value if active else SubscriptionTier.FREE.value,
+        subscription_expires_at=user.subscription_expires_at.isoformat() if active else None,
     )
 
 

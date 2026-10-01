@@ -122,14 +122,6 @@
           <div class="results" id="saved-results"></div>
           <div class="empty" id="saved-empty" hidden><h2>Your comparison list will live here.</h2><p>Save experts and companies while you compare options.</p><button class="primary" style="margin-top:18px" data-view="discover">Discover profiles</button></div>
         </section>
-        <section class="view" id="plans">
-          <div class="page-title"><div><span class="section-tag">Plans</span><h1>Choose the plan that fits your workspace.</h1><p>Upgrade to unlock full visibility across the marketplace.</p></div></div>
-          <div class="plans-grid">
-            <article class="plan-card"><span class="section-tag">Free</span><h2>₹0<small>/month</small></h2><ul><li>Search experts &amp; companies</li><li>Send and receive requests</li><li>Verified reviews</li></ul><button class="secondary" disabled>Current plan</button></article>
-            <article class="plan-card featured"><span class="section-tag">Pro</span><h2>Upgrade<small>/month</small></h2><ul><li>Everything in Free</li><li>View other experts' &amp; companies' profiles</li><li>Priority placement in search</li></ul><button class="primary" id="plan-pro-button" type="button">Continue to secure checkout</button></article>
-            <article class="plan-card"><span class="section-tag">Enterprise</span><h2>Upgrade<small>/month</small></h2><ul><li>Everything in Pro</li><li>Team seats for your company</li><li>Dedicated account support</li></ul><button class="primary" id="plan-enterprise-button" type="button">Continue to secure checkout</button></article>
-          </div>
-        </section>
       </div>
     </main>
   </div>
@@ -210,6 +202,7 @@
     const views = document.querySelectorAll('.view');
     const navButtons = document.querySelectorAll('.nav-button');
     function showView(viewId) {
+      if (viewId === 'plans') { window.location.href = 'plans.html'; return; }
       views.forEach((view) => view.classList.toggle('active', view.id === viewId));
       navButtons.forEach((button) => button.classList.toggle('active', button.dataset.view === viewId));
       closeSidebar();
@@ -243,13 +236,6 @@
     const apiBase = '/api/v1';
     const resultsList = document.querySelector('#results');
     const resultCount = document.querySelector('#result-count');
-    async function startCheckout(plan, button) {
-      if (!accessToken) { window.location.href = 'auth.html'; return; }
-      setButtonLoading(button, true, 'Opening checkout…');
-      const response = await fetch(`${apiBase}/payments/checkout?plan=${plan}`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` } });
-      if (!response.ok) { showToast(await extractErrorMessage(response, 'Payments are not available yet.'), 'error'); setButtonLoading(button, false); return; }
-      window.location.href = (await response.json()).checkout_url;
-    }
 
     let toastTimer = null;
     function showToast(message, variant) {
@@ -338,9 +324,7 @@
     });
     pagePrevButton.addEventListener('click', async () => { if (currentPage <= 1) return; currentPage -= 1; setButtonLoading(pagePrevButton, true, ''); await refreshDiscoverResults(); setButtonLoading(pagePrevButton, false); });
     pageNextButton.addEventListener('click', async () => { currentPage += 1; setButtonLoading(pageNextButton, true, ''); await refreshDiscoverResults(); setButtonLoading(pageNextButton, false); });
-    document.querySelector('#payment-nav-button').addEventListener('click', () => showView('plans'));
-    document.querySelector('#plan-pro-button').addEventListener('click', (event) => startCheckout('pro', event.currentTarget));
-    document.querySelector('#plan-enterprise-button').addEventListener('click', (event) => startCheckout('enterprise', event.currentTarget));
+    document.querySelector('#payment-nav-button').addEventListener('click', () => { window.location.href = 'plans.html'; });
 
     async function renderLeadsMode() {
       paginationBar.hidden = true;
