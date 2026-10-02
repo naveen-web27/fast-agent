@@ -88,6 +88,8 @@ CREATE TABLE profiles (
     review_count INTEGER NOT NULL DEFAULT 0,
     response_minutes INTEGER,
     show_resolved_count BOOLEAN NOT NULL DEFAULT TRUE,
+    blocked_at TIMESTAMPTZ,
+    blocked_reason TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CHECK ((kind = 'expert' AND user_id IS NOT NULL) OR (kind = 'company' AND organization_id IS NOT NULL))
 );

@@ -402,7 +402,7 @@ async def create_request(session: AsyncSession, auth_user_id: UUID, payload: Cre
     user = await _get_user(session, auth_user_id)
 
     profile = await session.get(Profile, payload.profile_id)
-    if profile is None:
+    if profile is None or profile.blocked_at is not None:
         raise ProfileTargetError("This profile could not be found")
 
     request = Request(
@@ -553,7 +553,7 @@ async def invite_company(session: AsyncSession, auth_user_id: UUID, request_id: 
         raise RequestAccessError("Only an expert who has accepted this request can invite a company")
 
     profile = await session.get(Profile, profile_id)
-    if profile is None or profile.kind is not ProfileKind.COMPANY:
+    if profile is None or profile.kind is not ProfileKind.COMPANY or profile.blocked_at is not None:
         raise ProfileTargetError("Choose a valid company profile to invite")
 
     if any(p.organization_id == profile.organization_id for p in participants if p.organization_id is not None):

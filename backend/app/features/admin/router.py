@@ -6,8 +6,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.features.admin.schemas import PendingProfile, VerificationDecision
-from app.features.admin.service import ProfileNotFoundError, list_profiles_for_review, set_profile_verification
+from app.features.admin.schemas import BlockProfilePayload, PendingProfile, VerificationDecision
+from app.features.admin.service import (
+    ProfileNotFoundError,
+    delete_profile,
+    list_profiles_for_review,
+    set_profile_blocked,
+    set_profile_verification,
+)
 from app.models.profile import VerificationStatus
 from app.models.user import User, UserRole
 from app.security.dependencies import get_current_auth_user_id
@@ -27,11 +33,12 @@ async def require_platform_admin(
 
 @router.get("/profiles", response_model=list[PendingProfile], dependencies=[Depends(require_platform_admin)])
 async def list_profiles(
-    verification: str | None = Query(default="pending", pattern="^(pending|verified|rejected)$"),
+    verification: str = Query(default="pending", pattern="^(pending|verified|rejected|blocked|all)$"),
+    q: str | None = Query(default=None, max_length=120),
     session: AsyncSession = Depends(get_db),
 ) -> list[PendingProfile]:
-    """List marketplace profiles for review, defaulting to those still pending."""
-    return await list_profiles_for_review(session, verification)
+    """List marketplace profiles by status, optionally searched by name or owner email."""
+    return await list_profiles_for_review(session, verification, q)
 
 
 @router.post("/profiles/{profile_id}/verification", dependencies=[Depends(require_platform_admin)])
@@ -46,3 +53,35 @@ async def review_profile(
     except ProfileNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     return {"status": payload.status}
+
+
+@router.post("/profiles/{profile_id}/block", dependencies=[Depends(require_platform_admin)])
+async def block_profile(
+    profile_id: UUID,
+    payload: BlockProfilePayload,
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    """Hide a profile from discovery and stop it receiving new requests."""
+    try:
+        await set_profile_blocked(session, profile_id, payload.reason)
+    except ProfileNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return {"status": "blocked"}
+
+
+@router.post("/profiles/{profile_id}/unblock", dependencies=[Depends(require_platform_admin)])
+async def unblock_profile(profile_id: UUID, session: AsyncSession = Depends(get_db)) -> dict[str, str]:
+    try:
+        await set_profile_blocked(session, profile_id, None)
+    except ProfileNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return {"status": "active"}
+
+
+@router.delete("/profiles/{profile_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_platform_admin)])
+async def remove_profile(profile_id: UUID, session: AsyncSession = Depends(get_db)) -> None:
+    """Permanently delete a profile; deleting a company profile removes the whole company."""
+    try:
+        await delete_profile(session, profile_id)
+    except ProfileNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

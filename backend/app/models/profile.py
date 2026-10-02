@@ -97,6 +97,9 @@ class Profile(Base):
     response_minutes: Mapped[int | None] = mapped_column()
     # Owner-controlled: whether the "N clients resolved" badge is shown publicly on this profile.
     show_resolved_count: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # Set by a platform admin; blocked profiles are hidden from discovery and can't receive new requests.
+    blocked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    blocked_reason: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     services: Mapped[list[Service]] = relationship(secondary=ProfileService.__table__, lazy="selectin")

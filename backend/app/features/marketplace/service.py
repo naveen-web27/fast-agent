@@ -77,7 +77,7 @@ async def search_profiles(
     page_size: int = 12,
 ) -> ProfileListResponse:
     """Return a page of verified profiles matching the optional search filters."""
-    stmt = select(Profile)
+    stmt = select(Profile).where(Profile.blocked_at.is_(None))
     if query:
         pattern = f"%{query}%"
         stmt = stmt.where(or_(Profile.display_name.ilike(pattern), Profile.headline.ilike(pattern)))
@@ -98,7 +98,7 @@ async def search_profiles(
 async def get_profile_detail(session: AsyncSession, profile_id: UUID) -> ProfileDetail | None:
     """Return the full profile detail with reviews, or None if it doesn't exist."""
     profile = await session.get(Profile, profile_id)
-    if profile is None:
+    if profile is None or profile.blocked_at is not None:
         return None
     review_rows = (
         await session.execute(
@@ -119,7 +119,8 @@ async def get_profile_detail(session: AsyncSession, profile_id: UUID) -> Profile
 async def save_profile(session: AsyncSession, auth_user_id: UUID, profile_id: UUID) -> None:
     """Bookmark a profile for the caller, ignoring the call if it's already saved."""
     user = await _get_user(session, auth_user_id)
-    if await session.get(Profile, profile_id) is None:
+    profile = await session.get(Profile, profile_id)
+    if profile is None or profile.blocked_at is not None:
         raise ProfileNotFoundError("Profile not found")
     existing = await session.scalar(
         select(SavedProfile).where(SavedProfile.user_id == user.id, SavedProfile.profile_id == profile_id)
@@ -148,7 +149,7 @@ async def list_saved_profiles(
     stmt = (
         select(Profile)
         .join(SavedProfile, SavedProfile.profile_id == Profile.id)
-        .where(SavedProfile.user_id == user.id)
+        .where(SavedProfile.user_id == user.id, Profile.blocked_at.is_(None))
         .order_by(SavedProfile.created_at.desc())
     )
 
