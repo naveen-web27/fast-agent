@@ -202,10 +202,12 @@
   </div>
   <div class="modal" id="otp-modal" hidden>
     <h2>Confirm your company email</h2>
-    <p class="modal-note" id="otp-note"></p>
+    <p class="modal-note">We email a 6-digit code to your work email. Entering it proves you work at this company and helps it get verified faster.</p>
+    <div class="field"><label for="otp-email">Work email</label><div style="display:flex;gap:8px"><input id="otp-email" type="email" style="flex:1" required><button type="button" class="secondary" id="otp-send">Send code</button></div></div>
+    <p class="modal-note" id="otp-note" hidden></p>
     <form id="otp-form">
-      <div class="field"><label for="otp-code">6-digit code</label><input id="otp-code" inputmode="numeric" maxlength="6" required></div>
-      <div class="modal-actions"><button type="button" class="secondary" id="otp-cancel">Cancel</button><button type="submit" class="primary" id="otp-submit">Verify</button></div>
+      <div class="field"><label for="otp-code">6-digit code</label><input id="otp-code" inputmode="numeric" pattern="\d{6}" maxlength="6" autocomplete="one-time-code" required></div>
+      <div class="modal-actions"><button type="button" class="secondary" id="otp-cancel">Do it later</button><button type="submit" class="primary" id="otp-submit">Verify</button></div>
     </form>
   </div>
   <div class="modal" id="interests-modal" hidden>
@@ -1252,9 +1254,15 @@
       }
       items.push('<hr>');
       identities.companies.forEach((company) => {
-        items.push(`<button data-type="company" data-id="${company.organization_id}" data-label="${company.name}">${company.name} <small>${company.verification}</small></button>`);
+        items.push(`<button data-type="company" data-id="${escapeHtml(company.organization_id)}" data-label="${escapeHtml(company.name)}">${escapeHtml(company.name)} <small>${escapeHtml(company.verification)}</small></button>`);
+        if (company.member_role === 'admin' && !company.email_domain_verified) {
+          items.push(`<button class="workspace-add" type="button" data-verify-org="${escapeHtml(company.organization_id)}">✉ Verify company email</button>`);
+        }
       });
-      items.push(`<button class="workspace-add" id="add-company-button" type="button">+ Add a company</button>`);
+      // One company per account; the backend enforces this too.
+      if (!identities.companies.some((company) => company.member_role === 'admin')) {
+        items.push(`<button class="workspace-add" id="add-company-button" type="button">+ Add a company</button>`);
+      }
       workspaceMenu.innerHTML = items.join('');
 
       workspaceMenu.querySelectorAll('button[data-type]').forEach((button) => {
@@ -1264,7 +1272,8 @@
       });
       const addExpertButton = document.querySelector('#add-expert-button');
       if (addExpertButton) addExpertButton.addEventListener('click', () => { workspaceMenu.hidden = true; openModal('expert-modal'); });
-      document.querySelector('#add-company-button').addEventListener('click', () => { workspaceMenu.hidden = true; openModal('company-modal'); });
+      document.querySelector('#add-company-button')?.addEventListener('click', () => { workspaceMenu.hidden = true; openModal('company-modal'); });
+      workspaceMenu.querySelectorAll('[data-verify-org]').forEach((button) => button.addEventListener('click', () => { workspaceMenu.hidden = true; openOtpModal(button.dataset.verifyOrg, ''); }));
 
       document.querySelector('#request-expert').hidden = Boolean(identities.expert_profile);
     }
@@ -1319,24 +1328,54 @@
       if (!response.ok) { const body = await response.json().catch(() => ({})); showToast(body.detail || 'Could not create company.', 'error'); return; }
       const company = await response.json();
       closeModals();
+      document.querySelector('#company-form').reset();
       await loadIdentities();
       setActingAs('company', company.name, company.organization_id);
-      if (confirm(`Company created (unverified). Send a verification code to ${workEmail} now to confirm this company email?`)) {
-        await requestDomainOtp(company.organization_id, workEmail);
-      }
+      showToast('Company created. Confirm your work email to speed up verification.', 'success');
+      openOtpModal(company.organization_id, workEmail, { autoSend: true });
     });
 
-    async function requestDomainOtp(organizationId, email) {
-      const response = await fetch(`${apiBase}/auth/identities/companies/domain-otp/send`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ organization_id: organizationId, email }) });
-      if (!response.ok) { const body = await response.json().catch(() => ({})); showToast(body.detail || 'Could not send verification code.', 'error'); return; }
-      pendingOtpOrganizationId = organizationId;
-      pendingOtpEmail = email;
-      document.querySelector('#otp-note').textContent = `Enter the 6-digit code sent to ${email}.`;
-      openModal('otp-modal');
+    function setOtpNote(message, isError) {
+      const note = document.querySelector('#otp-note');
+      note.hidden = !message;
+      note.textContent = message || '';
+      note.style.color = isError ? 'var(--danger)' : '';
     }
+
+    function openOtpModal(organizationId, email, options = {}) {
+      pendingOtpOrganizationId = organizationId;
+      pendingOtpEmail = null;
+      document.querySelector('#otp-email').value = email;
+      document.querySelector('#otp-code').value = '';
+      setOtpNote('', false);
+      openModal('otp-modal');
+      if (options.autoSend && email) requestDomainOtp();
+    }
+
+    async function requestDomainOtp() {
+      const emailInput = document.querySelector('#otp-email');
+      if (!emailInput.reportValidity()) return;
+      const email = emailInput.value.trim();
+      const sendButton = document.querySelector('#otp-send');
+      setButtonLoading(sendButton, true, 'Sending…');
+      setOtpNote(`Sending a code to ${email}…`, false);
+      const response = await fetch(`${apiBase}/auth/identities/companies/domain-otp/send`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ organization_id: pendingOtpOrganizationId, email }) }).catch(() => null);
+      setButtonLoading(sendButton, false);
+      if (!response || !response.ok) {
+        const message = response ? await extractErrorMessage(response, 'Could not send the code.') : 'Network error. Check your connection.';
+        setOtpNote(`${message} You can tap Send code to try again, or do it later from the workspace menu.`, true);
+        return;
+      }
+      pendingOtpEmail = email;
+      sendButton.textContent = 'Resend';
+      setOtpNote(`Code sent to ${email}. It expires in 10 minutes. Check spam if you don't see it.`, false);
+      document.querySelector('#otp-code').focus();
+    }
+    document.querySelector('#otp-send').addEventListener('click', requestDomainOtp);
 
     document.querySelector('#otp-form').addEventListener('submit', async (event) => {
       event.preventDefault();
+      if (!pendingOtpEmail) { setOtpNote('Tap Send code first, then enter the code from your email.', true); return; }
       const code = document.querySelector('#otp-code').value.trim();
       const submitButton = document.querySelector('#otp-submit');
       setButtonLoading(submitButton, true, 'Verifying…');

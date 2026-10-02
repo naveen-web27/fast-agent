@@ -49,6 +49,10 @@ class InvalidOtpError(Exception):
     """Raised when a submitted verification code is wrong, expired, or exhausted."""
 
 
+class CompanyConflictError(Exception):
+    """Raised when the account already administers a company."""
+
+
 def _slugify(name: str) -> str:
     base = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or "company"
     return f"{base}-{secrets.token_hex(3)}"
@@ -249,6 +253,14 @@ async def add_company(session: AsyncSession, auth_user_id: UUID, payload: Compan
     user = await session.scalar(select(User).where(User.auth_user_id == auth_user_id))
     if user is None:
         raise IdentityNotFoundError("Complete onboarding before adding a company")
+
+    already_admin = await session.scalar(
+        select(OrganizationMember.id).where(
+            OrganizationMember.user_id == user.id, OrganizationMember.member_role == MemberRole.ADMIN.value
+        )
+    )
+    if already_admin is not None:
+        raise CompanyConflictError("You can register only one company per account")
 
     organization = Organization(
         name=payload.company_name,

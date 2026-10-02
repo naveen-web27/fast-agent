@@ -1,11 +1,27 @@
 """Validation models owned by the authentication and onboarding feature."""
+import re
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 Role = Literal["customer", "expert", "company_admin", "platform_admin"]
 OnboardingRole = Literal["customer", "expert", "company_admin"]
+
+
+def normalize_phone(value: str | None) -> str | None:
+    """Return the number in E.164 form (e.g. +919876543210), or raise if it looks mistyped."""
+    if value is None:
+        return None
+    compact = re.sub(r"[\s()-]", "", value)
+    if not compact:
+        return None
+    if compact.startswith("+91"):
+        if not re.fullmatch(r"\+91[6-9]\d{9}", compact):
+            raise ValueError("Enter a valid 10-digit Indian mobile number")
+    elif not re.fullmatch(r"\+[1-9]\d{6,14}", compact):
+        raise ValueError("Enter the mobile number with its country code, e.g. +91 9876543210")
+    return compact
 
 
 class OnboardingRequest(BaseModel):
@@ -25,6 +41,11 @@ class OnboardingRequest(BaseModel):
     work_email: EmailStr | None = None
     website: str | None = Field(default=None, max_length=255)
     business_registration: str | None = Field(default=None, max_length=160)
+
+    @field_validator("phone")
+    @classmethod
+    def _validate_phone(cls, value: str | None) -> str | None:
+        return normalize_phone(value)
 
 
 class UserResponse(BaseModel):

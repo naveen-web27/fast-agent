@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.db.session import get_db
-from app.features.auth.email import EmailNotConfiguredError
+from app.features.auth.email import EmailDeliveryError, EmailNotConfiguredError
 from app.features.auth.schemas import (
     CompanyMembership,
     CompanyRequest,
@@ -21,6 +21,7 @@ from app.features.auth.schemas import (
     UserResponse,
 )
 from app.features.auth.service import (
+    CompanyConflictError,
     ExpertProfileConflictError,
     IdentityNotFoundError,
     InvalidOtpError,
@@ -114,6 +115,8 @@ async def create_company(
         return await add_company(session, auth_user_id, payload)
     except IdentityNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except CompanyConflictError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
 
 
 @router.post("/identities/companies/domain-otp/send", status_code=status.HTTP_202_ACCEPTED)
@@ -131,7 +134,15 @@ async def request_domain_otp(
     except OrganizationAccessError as exc:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
     except EmailNotConfiguredError as exc:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Email sending is not set up on the server yet. Please try again later or contact support.",
+        ) from exc
+    except EmailDeliveryError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="We couldn't deliver the code to this email. Check the address or try again later.",
+        ) from exc
     return {"status": "sent"}
 
 
