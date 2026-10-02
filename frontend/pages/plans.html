@@ -19,6 +19,7 @@
     .status { display:none; margin:0 0 24px; padding:13px 16px; border-left:3px solid var(--green); background:#e1f3e8; color:#225449; font-weight:700; }.status.show { display:block; }.status.error { border-color:#b64747; background:#fff0ed; color:#922d2d; }
     .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }.plan { display:flex; flex-direction:column; min-width:0; padding:24px; border:1px solid var(--line); border-radius:8px; background:var(--surface); box-shadow:0 9px 24px rgba(20,60,48,.04); animation:rise .4s both; }.plan:nth-child(2) { animation-delay:.08s; border-color:#74bba3; }.plan:nth-child(3) { animation-delay:.16s; }.plan h2 { margin:14px 0 6px; font-size:20px; }.price { min-height:45px; font-size:30px; font-weight:800; }.period { color:var(--muted); font-size:12px; font-weight:600; }.plan p { margin:0 0 20px; color:var(--muted); font-size:12px; }.plan ul { display:grid; gap:12px; margin:0 0 26px; padding:0; list-style:none; }.plan li::before { content:'✓'; margin-right:9px; color:var(--green); font-weight:800; }.plan button { width:100%; min-height:46px; margin-top:auto; border:1px solid var(--green); border-radius:7px; background:var(--green); color:#fff; font-weight:800; }.plan button:hover:not(:disabled) { background:#054f46; }.plan.free button { border-color:var(--line); background:#fff; color:var(--ink); }
     .fineprint { max-width:700px; margin-top:26px; color:var(--muted); font-size:12px; line-height:1.7; } @keyframes rise { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+    .identity-note { margin:0 0 12px !important; color:#225449 !important; font-weight:700; } .identity-note:empty { display:none; }
     .login-dialog { width:min(420px,calc(100vw - 32px)); padding:26px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); box-shadow:0 20px 70px rgba(20,41,40,.24); }.login-dialog::backdrop { background:rgba(10,32,30,.55); }.login-dialog h2 { margin:0 0 8px; font-size:22px; }.login-dialog p { margin:0 0 22px; color:var(--muted); }.login-actions { display:grid; gap:10px; }.login-actions button,.login-actions a { display:grid; place-items:center; min-height:46px; border:1px solid var(--green); border-radius:7px; background:var(--green); color:#fff; font:800 14px Manrope,sans-serif; text-decoration:none; }.login-actions .cancel { border-color:var(--line); background:#fff; color:var(--ink); }
     @media(max-width:760px) { .topbar { padding:12px 18px; }.back { max-width:110px; text-align:right; }.grid { grid-template-columns:1fr; }.plan { padding:21px; }.intro { margin-bottom:25px; } main { padding:28px 18px calc(40px + env(safe-area-inset-bottom)); }.price { min-height:0; }.plan ul { margin-bottom:20px; } }
     @media(prefers-reduced-motion:reduce) { .plan { animation:none; } }
@@ -27,12 +28,12 @@
 <body>
   <header class="topbar"><a class="brand" href="marketplace.html"><img src="../assets/rightconnect-mark.svg" alt="">RightConnect</a><a class="back" href="marketplace.html">← Back to marketplace</a></header>
   <main>
-    <div class="intro"><span class="eyebrow">Membership</span><h1>Choose your level of access.</h1><p>Pay securely on Razorpay. Access begins only after your payment is confirmed.</p></div>
+    <div class="intro"><span class="eyebrow">Membership</span><h1>Customers are always free. Providers pick a plan.</h1><p>Each plan unlocks one identity: <strong>Pro</strong> for your expert profile, <strong>Enterprise</strong> for your company. Your customer account never needs a plan. Pay securely on Razorpay.</p></div>
     <div class="status" id="status" role="status" aria-live="polite"></div>
     <div class="grid">
-      <article class="plan free"><span class="eyebrow">Start here</span><h2>Free</h2><div class="price">₹0</div><p>Explore and connect at your own pace.</p><ul><li>Discover experts and companies</li><li>Send and receive requests</li><li>Save profiles</li></ul><button disabled type="button">Current base plan</button></article>
-      <article class="plan"><span class="eyebrow">For specialists</span><h2>Pro</h2><div class="price" id="pro-price">Loading…</div><p>One-time payment for 30 days. No automatic renewal.</p><ul><li>Everything in Free</li><li>View peer profiles</li><li>Expand your network</li></ul><button type="button" id="pro-button" disabled>Buy plan</button></article>
-      <article class="plan"><span class="eyebrow">For teams</span><h2>Enterprise</h2><div class="price" id="enterprise-price">Loading…</div><p>One-time payment for 30 days. No automatic renewal.</p><ul><li>Everything in Pro</li><li>Company workspace access</li><li>Manage incoming requests</li></ul><button type="button" id="enterprise-button" disabled>Buy plan</button></article>
+      <article class="plan free"><span class="eyebrow">Everyone</span><h2>Free</h2><div class="price">₹0</div><p>The full request flow, free forever.</p><ul><li>Search and compare experts and companies</li><li>Send and receive unlimited requests</li><li>Chat, contact details and verified reviews</li><li>Dashboard with picks for every interest</li><li>Basic profile, 2 links and 1 credential</li></ul><button disabled type="button">Included</button></article>
+      <article class="plan"><span class="eyebrow">For your expert profile</span><h2>Pro</h2><div class="price" id="pro-price">Loading…</div><p>One-time payment for 30 days. No automatic renewal. Applies only to your expert profile.</p><ul><li>Everything in Free</li><li>Online booking: customers pick your time slots</li><li>Intro video and portfolio on your profile</li><li>Up to 10 links and 10 credentials</li><li>Service catalogue with price ranges</li><li>Insights: views, accept rate, reply time</li><li>View other experts' profiles</li></ul><p class="identity-note" id="pro-note"></p><button type="button" id="pro-button" disabled>Buy plan</button></article>
+      <article class="plan"><span class="eyebrow">For your company</span><h2>Enterprise</h2><div class="price" id="enterprise-price">Loading…</div><p>One-time payment for 30 days. No automatic renewal. Applies only to your company.</p><ul><li>Everything in Pro, for your company profile</li><li>Team seats: up to 10 members</li><li>Assign each request to a team member</li><li>Pipeline board and team performance</li><li>View other companies' profiles</li></ul><p class="identity-note" id="enterprise-note"></p><button type="button" id="enterprise-button" disabled>Buy plan</button></article>
     </div>
     <p class="fineprint">Payments are processed by Razorpay. Returning here does not confirm a payment; your access updates after the payment provider confirms it. No charge occurs until you review and pay on Razorpay.</p>
     <p class="fineprint">Need help with a plan or payment? <a href="https://wa.me/916382595243?text=Hi%20RightConnect%2C%20I%20need%20help%20with%20a%20plan." target="_blank" rel="noopener">Chat on WhatsApp (+91 63825 95243)</a> or email <a href="mailto:rightconnect.co@gmail.com">rightconnect.co@gmail.com</a>.</p>
@@ -58,6 +59,26 @@
     let authClient;
     function message(text, error = false) { statusBox.textContent = text; statusBox.classList.toggle('error', error); statusBox.classList.add('show'); }
     async function sessionToken() { return (await authClient.auth.getSession()).data.session?.access_token; }
+    function applyIdentities(identities, plans) {
+      const available = Object.fromEntries(plans.map((plan) => [plan.id, plan.available]));
+      const date = (value) => new Date(value).toLocaleDateString('en-IN');
+      const expert = identities.expert_profile;
+      const company = identities.companies.find((item) => item.member_role === 'admin');
+      const targets = {
+        pro: expert
+          ? { note: expert.plan_active ? `Active on your expert profile until ${date(expert.plan_expires_at)}.` : 'Will apply to your expert profile.', renew: expert.plan_active }
+          : { note: 'Pro is for expert profiles. Add your expert profile from the marketplace first.', blocked: true },
+        enterprise: company
+          ? { note: company.plan_active ? `Active for ${company.name} until ${date(company.plan_expires_at)}.` : `Will apply to ${company.name}.`, renew: company.plan_active }
+          : { note: 'Enterprise is for companies. Register your company from the marketplace first.', blocked: true },
+      };
+      for (const [plan, target] of Object.entries(targets)) {
+        document.querySelector(`#${plan}-note`).textContent = target.note;
+        if (!available[plan]) continue;
+        buttons[plan].disabled = Boolean(target.blocked);
+        buttons[plan].textContent = target.blocked ? 'Not available for your account yet' : target.renew ? 'Add 30 more days' : 'Buy plan';
+      }
+    }
     async function load() {
       if (new URLSearchParams(location.search).has('payment')) message('Returned from Razorpay. Confirming payment with the provider may take a moment.');
       try {
@@ -74,12 +95,8 @@
           if (!plan.available) buttons[plan.id].textContent = 'Not available yet';
         }
         if (authClient && await sessionToken()) {
-          const response = await fetch('/api/v1/auth/me', { headers: { Authorization: `Bearer ${await sessionToken()}` } });
-          if (response.ok) {
-            const user = await response.json();
-            sessionStorage.setItem('rightconnect-user', JSON.stringify(user));
-            if (user.subscription_tier !== 'free') message(`${user.subscription_tier.toUpperCase()} access active until ${new Date(user.subscription_expires_at).toLocaleDateString('en-IN')}.`);
-          }
+          const response = await fetch('/api/v1/auth/identities', { headers: { Authorization: `Bearer ${await sessionToken()}` } });
+          if (response.ok) applyIdentities(await response.json(), plans);
         }
       } catch (_) {
         for (const plan of Object.keys(buttons)) document.querySelector(`#${plan}-price`).textContent = 'Unavailable';

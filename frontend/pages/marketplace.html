@@ -125,10 +125,67 @@
     .support-option div span { color:var(--muted); font-size:11px; }
     .support-icon { display:grid; place-items:center; width:38px; height:38px; flex:none; color:#33415c; border-radius:50%; background:#eef2f8; font-style:normal; font-weight:800; }
     .support-icon.wa { color:#fff; background:#25d366; }
+    .kpi-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+    .kpi { padding:16px; border:1px solid var(--line); border-radius:10px; background:#fff; }
+    .kpi small { display:block; color:var(--muted); font-size:11px; font-weight:700; }
+    .kpi strong { display:block; margin-top:4px; font-size:24px; letter-spacing:-.03em; }
+    .dash-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+    .dash-card { padding:18px; border:1px solid var(--line); border-radius:10px; background:#fff; }
+    .dash-card h2 { margin:0 0 10px; font-size:15px; }
+    .dash-card.full { grid-column:1/-1; }
+    .dash-card .row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--line); font-size:12px; }
+    .dash-card .row:first-of-type { border-top:0; }
+    .muted { color:var(--muted); font-size:12px; }
+    .plan-banner { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; padding:14px 16px; border:1px solid #b8e5dc; border-radius:10px; background:var(--mint); color:#0b5a53; font-size:13px; font-weight:700; }
+    .plan-banner.free { border-color:#f3dfa8; background:#fff8e6; color:#5c4a12; }
+    .progress { height:8px; overflow:hidden; border-radius:99px; background:var(--line); }
+    .progress i { display:block; height:100%; border-radius:99px; background:var(--teal); }
+    .bars { display:flex; align-items:flex-end; gap:8px; height:110px; padding-top:8px; }
+    .bars div { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:4px; height:100%; color:var(--muted); font-size:10px; font-weight:700; }
+    .bars i { display:block; width:100%; min-height:3px; border-radius:5px 5px 0 0; background:#7fcfc3; }
+    .pipeline { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+    .pipeline div { padding:12px; border-radius:8px; background:#f4f6fa; text-align:center; }
+    .pipeline strong { display:block; font-size:22px; }
+    .pipeline small { color:var(--muted); font-size:11px; font-weight:700; }
+    .locked-card { border-style:dashed; background:#fbfcfe; }
+    .locked-card ul { margin:6px 0 14px; padding-left:18px; color:var(--muted); font-size:12px; }
+    .mini-cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:8px 0 14px; }
+    .mini-card { display:grid; gap:3px; padding:12px; border:1px solid var(--line); border-radius:9px; background:#fbfcfe; text-align:left; }
+    .mini-card:hover { border-color:#92d8cb; }
+    .mini-card strong { font-size:13px; }
+    .mini-card span { color:var(--muted); font-size:11px; }
+    .modal.wide { width:min(94vw,720px); }
+    .editor-section { padding:14px 0; border-top:1px solid var(--line); }
+    .editor-section:first-of-type { border-top:0; padding-top:0; }
+    .editor-section h3 { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 0 10px; font-size:14px; }
+    .editor-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
+    .modal .field select { padding:9px 10px; border:1px solid var(--line); border-radius:7px; font:inherit; background:#fff; }
+    .lock-pill { padding:3px 8px; color:#8a5a00; border-radius:99px; background:#fff4db; font-size:10px; font-weight:800; }
+    .item-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--line); font-size:12px; }
+    .item-row .secondary { min-height:30px; padding:0 10px; font-size:11px; }
+    .window-row { display:grid; grid-template-columns:1.2fr 1fr 1fr auto; gap:8px; margin-bottom:8px; }
+    .window-row select,.window-row input { min-height:36px; padding:0 8px; border:1px solid var(--line); border-radius:7px; font:inherit; }
+    .slot-day { margin-bottom:12px; }
+    .slot-day strong { display:block; margin-bottom:6px; font-size:12px; }
+    .slot-grid { display:flex; flex-wrap:wrap; gap:6px; }
+    .slot-grid button { min-height:32px; padding:0 10px; color:#06655f; border:1px solid #b8e5dc; border-radius:7px; background:var(--mint); font-size:12px; font-weight:800; }
+    .suggest-wrap { position:relative; }
+    .suggest-wrap > input { width:100%; }
+    .suggest-list { position:absolute; top:100%; left:0; right:0; z-index:80; display:grid; margin-top:3px; padding:5px; border:1px solid var(--line); border-radius:8px; background:#fff; box-shadow:var(--shadow); }
+    .suggest-list button { padding:7px 9px; color:var(--ink); border:0; border-radius:6px; background:transparent; font-size:12px; font-weight:700; text-align:left; }
+    .suggest-list button:hover { background:#eef7f5; }
+    .extras-list { display:grid; gap:8px; margin-top:6px; }
+    .offering { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid var(--line); font-size:12px; }
+    .offering:first-child { border-top:0; }
+    .offering strong { display:block; font-size:13px; }
+    .price-tag { color:#0b5a53; font-weight:800; white-space:nowrap; }
+    @media (max-width:1050px) { .kpi-grid { grid-template-columns:1fr 1fr; } .dash-grid,.mini-cards { grid-template-columns:1fr; } .pipeline { grid-template-columns:1fr 1fr; } }
+    @media (max-width:720px) { .editor-grid,.window-row { grid-template-columns:1fr; } }
     @media (max-width:1050px) { .how-steps { grid-template-columns:1fr 1fr; } }
     @media (max-width:720px) { .support-fab { right:14px; bottom:84px; padding:10px 13px; } .how-steps { grid-template-columns:1fr; } }
     .mobile-nav { display:none; }
     @media (max-width:720px) { .app { display:block; padding-bottom:72px; }.main { grid-column:auto; }.sidebar { display:none; }.topbar { position:sticky; top:0; z-index:40; padding:12px 16px; }.mobile-menu { display:grid; }.page { padding:22px 16px 10px; }.page-title { align-items:start; }.page-title h1 { font-size:25px; }.page-title > .primary { display:none; }.search-panel { flex-direction:column; align-items:stretch; }.search-panel .search-field,.search-panel .select,.search-panel .kind-toggle,.search-panel .primary { flex:0 0 auto; width:100%; }.kind-toggle { justify-content:center; }.dashboard-grid,.request-layout { grid-template-columns:1fr; }.profile-card { grid-template-columns:55px minmax(0,1fr); gap:12px; }.portrait { width:55px; height:55px; }.profile-score { grid-column:2; text-align:left; align-items:flex-start; }.profile-score .secondary { margin-top:7px; }.profile-summary { display:block; }.profile-summary .portrait { width:88px; height:88px; margin-bottom:14px; }.trust-bar { grid-template-columns:1fr; }.trust-item + .trust-item { border-top:1px solid var(--line); border-left:0; }.top-actions #request-expert,.user-chip span:last-child { display:none; }.request-layout > :last-child { grid-column:auto; }.mobile-nav { position:fixed; inset:auto 0 0; z-index:50; display:grid; grid-template-columns:repeat(4,1fr); padding:8px 8px calc(8px + env(safe-area-inset-bottom)); border-top:1px solid rgba(227,232,240,.95); background:rgba(255,255,255,.94); box-shadow:0 -8px 24px rgba(22,35,58,.08); backdrop-filter:blur(18px); }.mobile-nav .nav-button { display:grid; justify-items:center; gap:2px; padding:4px 2px; color:var(--muted); border-radius:8px; text-align:center; font-size:10px; }.mobile-nav .nav-button.active { color:var(--teal); background:var(--mint); }.mobile-nav .nav-icon { width:auto; font-size:17px; } }
+    @media (max-width:720px) { .mobile-nav { grid-template-columns:repeat(5,1fr); } }
   </style>
 </head>
 <body>
@@ -139,6 +196,7 @@
       <div class="workspace" id="workspace-switcher"><small>Acting as</small><button class="workspace-button" id="workspace-button"><strong id="workspace-label">Customer</strong><span class="workspace-caret">⌄</span></button><div class="workspace-menu" id="workspace-menu" hidden></div></div>
       <nav class="navigation" aria-label="Primary navigation">
         <button class="nav-button active" data-view="discover"><span class="nav-icon">⌕</span><span>Discover</span></button>
+        <button class="nav-button" data-view="dashboard"><span class="nav-icon">▦</span><span>Dashboard</span></button>
         <button class="nav-button" data-view="requests"><span class="nav-icon">◫<b class="nav-badge" data-requests-badge hidden></b></span><span>My requests</span></button>
         <button class="nav-button" data-view="saved"><span class="nav-icon">♡</span><span>Saved</span></button>
         <button class="nav-button" data-view="profile"><span class="nav-icon">◉</span><span>Profile preview</span></button>
@@ -156,9 +214,13 @@
           <div class="search-panel"><label class="search-field">⌕ <input id="search-input" placeholder="What do you need help with?"></label><button class="select">Any location <span>⌄</span></button><div class="kind-toggle" id="kind-toggle" role="group" aria-label="Profile type filter"><button type="button" class="pill kind-pill selected" data-kind="expert">Experts</button><button type="button" class="pill kind-pill selected" data-kind="company">Companies</button><button type="button" class="pill kind-pill" id="kind-customer-pill" data-kind="customer" hidden>Customers</button></div><button class="primary" id="search-button">Search</button></div>
           <div class="dashboard-grid"><div><div class="filter-row"><h2 id="result-count">Loading profiles…</h2><div class="filter-pills"><button class="pill selected">Top match</button><button class="pill">Verified only</button><button class="pill">Available today</button></div></div><div class="results" id="results"></div><div class="pagination" id="pagination" hidden><button class="secondary" id="page-prev" type="button">← Prev</button><span id="page-indicator">Page 1</span><button class="secondary" id="page-next" type="button">Next →</button></div></div><aside><div class="insight-card"><span class="section-tag">RightConnect match</span><h2>Tell us your need. We will coordinate the right introduction.</h2><p>Share your requirements once. We keep the conversation clear between you, the expert, and the company.</p><div class="match-list" id="match-list"></div></div><div class="stat-grid"><div class="stat"><small>Verified reviews</small><strong id="stat-reviews">–</strong></div><div class="stat"><small>Average first response</small><strong id="stat-response">–</strong></div></div></aside></div>
         </section>
+        <section class="view" id="dashboard">
+          <div class="page-title"><div><span class="section-tag" id="dash-tag">Dashboard</span><h1 id="dash-title">Your overview</h1><p id="dash-copy">Everything that needs your attention, in one place.</p></div><div class="top-actions" id="dash-actions"></div></div>
+          <div id="dash-body"><p class="muted">Sign in to see your dashboard.</p></div>
+        </section>
         <section class="view" id="profile">
           <div class="page-title"><div><span class="section-tag">Profile preview</span><h1>Trusted information, before the conversation.</h1></div><button class="secondary" data-view="discover">← Back to discover</button></div>
-          <div class="profile-layout"><div><article class="profile-hero"><div class="profile-summary"><div class="portrait" id="profile-portrait"></div><div><span class="verified" id="profile-verified" hidden>● Identity and credentials verified</span><h1 id="profile-name">Select a profile</h1><p id="profile-subtitle"></p><div class="tags" id="profile-tags"></div><div class="resolved-badge" id="profile-resolved" hidden></div></div></div><div class="trust-bar"><div class="trust-item"><small>Rating</small><strong id="profile-rating">–</strong></div><div class="trust-item"><small>Verified reviews</small><strong id="profile-review-count">–</strong></div><div class="trust-item"><small>Typical reply</small><strong id="profile-reply">–</strong></div></div></article><article class="content-card" id="profile-bio-card" hidden><h2 id="profile-bio-heading">About</h2><p id="profile-bio"></p></article><article class="content-card"><h2>Customer reviews</h2><div id="profile-reviews"><p style="color:var(--muted);font-size:12px;margin:0">Open a profile from Discover to see its reviews.</p></div></article></div><aside class="booking"><span class="section-tag">Request introduction</span><h2>Start with a 20-minute consultation.</h2><p>Tell them what you need. Once they accept, you can chat in My requests and see their contact details.</p><button class="primary" id="book-button">Send a free request</button><button class="secondary" id="detail-save-button" type="button" style="width:100%;margin-top:10px">♡ Save profile</button><button class="secondary" id="share-profile-button" type="button" style="width:100%;margin-top:8px">Copy profile link</button><div class="assurance">✓ No fee to submit a request</div><div class="assurance">✓ You control who can see your details</div></aside></div>
+          <div class="profile-layout"><div><article class="profile-hero"><div class="profile-summary"><div class="portrait" id="profile-portrait"></div><div><span class="verified" id="profile-verified" hidden>● Identity and credentials verified</span><h1 id="profile-name">Select a profile</h1><p id="profile-subtitle"></p><div class="tags" id="profile-tags"></div><div class="resolved-badge" id="profile-resolved" hidden></div></div></div><div class="trust-bar"><div class="trust-item"><small>Rating</small><strong id="profile-rating">–</strong></div><div class="trust-item"><small>Verified reviews</small><strong id="profile-review-count">–</strong></div><div class="trust-item"><small>Typical reply</small><strong id="profile-reply">–</strong></div></div></article><article class="content-card" id="profile-bio-card" hidden><h2 id="profile-bio-heading">About</h2><p id="profile-bio"></p></article><div id="profile-extras"></div><article class="content-card"><h2>Customer reviews</h2><div id="profile-reviews"><p style="color:var(--muted);font-size:12px;margin:0">Open a profile from Discover to see its reviews.</p></div></article></div><aside class="booking"><span class="section-tag">Request introduction</span><h2>Start with a 20-minute consultation.</h2><p>Tell them what you need. Once they accept, you can chat in My requests and see their contact details.</p><button class="primary" id="book-button">Send a free request</button><button class="secondary" id="detail-save-button" type="button" style="width:100%;margin-top:10px">♡ Save profile</button><button class="secondary" id="share-profile-button" type="button" style="width:100%;margin-top:8px">Copy profile link</button><div class="assurance">✓ No fee to submit a request</div><div class="assurance" id="profile-bookable" hidden>✓ Pick a meeting time online once they accept</div><div class="assurance">✓ You control who can see your details</div></aside></div>
         </section>
         <section class="view" id="requests">
           <div class="page-title"><div><span class="section-tag">My requests</span><h1>One place for every moving part.</h1><p>Track the people, answers, and decisions around your request.</p></div><button class="primary" data-view="discover">+ New request</button></div>
@@ -174,6 +236,7 @@
   </div>
   <nav class="mobile-nav" aria-label="Mobile navigation">
     <button class="nav-button active" data-view="discover" type="button"><span class="nav-icon">⌕</span><span>Discover</span></button>
+    <button class="nav-button" data-view="dashboard" type="button"><span class="nav-icon">▦</span><span>Dashboard</span></button>
     <button class="nav-button" data-view="requests" type="button"><span class="nav-icon">◫<b class="nav-badge" data-requests-badge hidden></b></span><span>Requests</span></button>
     <button class="nav-button" data-view="saved" type="button"><span class="nav-icon">♡</span><span>Saved</span></button>
     <button class="nav-button" data-view="plans" type="button"><span class="nav-icon">◆</span><span>Plans</span></button>
@@ -280,6 +343,22 @@
       <div class="modal-actions"><button type="button" class="secondary" id="dispute-cancel">Cancel</button><button type="submit" class="primary" id="dispute-submit">Send report</button></div>
     </form>
   </div>
+  <div class="modal wide" id="editor-modal" role="dialog" aria-modal="true" aria-labelledby="editor-title" hidden>
+    <h2 id="editor-title">Edit profile</h2>
+    <div id="editor-body"><p class="muted"><span class="spinner"></span>Loading…</p></div>
+    <div class="modal-actions"><button type="button" class="secondary" data-close-modal>Close</button></div>
+  </div>
+  <div class="modal wide" id="team-modal" role="dialog" aria-modal="true" aria-labelledby="team-title" hidden>
+    <h2 id="team-title">Team</h2>
+    <div id="team-body"><p class="muted"><span class="spinner"></span>Loading…</p></div>
+    <div class="modal-actions"><button type="button" class="secondary" data-close-modal>Close</button></div>
+  </div>
+  <div class="modal wide" id="booking-modal" role="dialog" aria-modal="true" aria-labelledby="booking-title" hidden>
+    <h2 id="booking-title">Book a meeting</h2>
+    <p class="modal-note">Times are in India time (IST). Each meeting is 30 minutes and is confirmed right away.</p>
+    <div id="booking-body"></div>
+    <div class="modal-actions"><button type="button" class="secondary" data-close-modal>Close</button></div>
+  </div>
   <script>
     if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('../sw.js'));
     const buttons = document.querySelectorAll('[data-view]');
@@ -291,6 +370,7 @@
       navButtons.forEach((button) => button.classList.toggle('active', button.dataset.view === viewId));
       closeSidebar();
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (viewId === 'dashboard') loadDashboard();
       if (viewId !== 'profile') {
         const url = new URL(window.location.href);
         if (url.searchParams.has('profile')) { url.searchParams.delete('profile'); window.history.replaceState({}, '', url); }
@@ -392,8 +472,11 @@
 
     function getActingType() { return JSON.parse(sessionStorage.getItem('rightconnect-acting-as') || '{"type":"customer"}').type; }
     function isPremiumUser() {
-      const user = JSON.parse(sessionStorage.getItem('rightconnect-user') || 'null');
-      return Boolean(user && user.subscription_tier && user.subscription_tier !== 'free');
+      // Plans belong to the identity: Pro to the expert profile, Enterprise to the company.
+      const acting = JSON.parse(sessionStorage.getItem('rightconnect-acting-as') || '{"type":"customer"}');
+      if (acting.type === 'expert') return Boolean(identities?.expert_profile?.plan_active);
+      if (acting.type === 'company') return Boolean(identities?.companies.find((company) => company.organization_id === acting.id)?.plan_active);
+      return false;
     }
     function isPeerLocked(profileKind, actingType) {
       return (actingType === 'expert' && profileKind === 'expert') || (actingType === 'company' && profileKind === 'company');
@@ -444,8 +527,8 @@
         card.innerHTML = `
           <div class="portrait"></div>
           <div>
-            <div class="profile-head"><h3>${request.title}</h3></div>
-            <div class="profile-role">${request.counterpart_name}</div>
+            <div class="profile-head"><h3>${escapeHtml(request.title)}</h3></div>
+            <div class="profile-role">${escapeHtml(request.counterpart_name)}</div>
             <div class="profile-meta">Status: ${request.status.replace('_', ' ')}</div>
           </div>
           <div class="profile-score"><button class="secondary open-lead">Open request</button></div>`;
@@ -529,12 +612,12 @@
       const locked = isPeerLocked(profile.kind, getActingType()) && !isPremiumUser();
       article.className = `profile-card${locked ? ' locked' : ''}`;
       article.innerHTML = `
-        <div class="portrait">${profile.avatar_url ? `<img src="${profile.avatar_url}" alt="${profile.display_name}">` : ''}</div>
+        <div class="portrait">${profile.avatar_url ? `<img src="${safeHref(profile.avatar_url)}" alt="${escapeHtml(profile.display_name)}">` : ''}</div>
         <div>
-          <div class="profile-head"><h3>${profile.display_name}</h3>${profile.verified ? `<span class="verified">● Verified ${profile.kind}</span>` : ''}</div>
-          <div class="profile-role">${roleLine}</div>
-          <div class="profile-meta">${metaLine}</div>
-          <div class="tags">${profile.tags.map((tag) => `<span class="tag">${tag}</span>`).join('')}</div>
+          <div class="profile-head"><h3>${escapeHtml(profile.display_name)}</h3>${profile.verified ? `<span class="verified">● Verified ${profile.kind}</span>` : ''}</div>
+          <div class="profile-role">${escapeHtml(roleLine)}</div>
+          <div class="profile-meta">${escapeHtml(metaLine)}</div>
+          <div class="tags">${profile.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
           ${profile.resolved_clients_count != null ? `<div class="resolved-badge">✓ ${profile.resolved_clients_count} client${profile.resolved_clients_count === 1 ? '' : 's'} resolved</div>` : ''}
         </div>
         <div class="profile-score">
@@ -594,11 +677,11 @@
 
     function renderProfileDetail(profile) {
       currentProfileName = profile.display_name;
-      document.querySelector('#profile-portrait').innerHTML = profile.avatar_url ? `<img src="${profile.avatar_url}" alt="${profile.display_name}">` : '';
+      document.querySelector('#profile-portrait').innerHTML = profile.avatar_url ? `<img src="${safeHref(profile.avatar_url)}" alt="${escapeHtml(profile.display_name)}">` : '';
       document.querySelector('#profile-verified').hidden = !profile.verified;
       document.querySelector('#profile-name').textContent = profile.display_name;
       document.querySelector('#profile-subtitle').textContent = `${profile.headline}${profile.city ? ` · ${profile.city}` : ''}`;
-      document.querySelector('#profile-tags').innerHTML = profile.tags.map((tag) => `<span class="tag">${tag}</span>`).join('');
+      document.querySelector('#profile-tags').innerHTML = profile.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('');
       const detailResolvedBadge = document.querySelector('#profile-resolved');
       if (profile.resolved_clients_count != null) {
         detailResolvedBadge.hidden = false;
@@ -620,15 +703,16 @@
       }
       const reviewsBox = document.querySelector('#profile-reviews');
       reviewsBox.innerHTML = profile.reviews.length
-        ? profile.reviews.map((review) => `<div class="review"><strong>“${review.body}”</strong><span>${review.reviewer_name} · ★ ${review.rating.toFixed ? review.rating.toFixed(1) : review.rating}</span></div>`).join('')
+        ? profile.reviews.map((review) => `<div class="review"><strong>“${escapeHtml(review.body)}”</strong><span>${escapeHtml(review.reviewer_name)} · ★ ${review.rating.toFixed ? review.rating.toFixed(1) : review.rating}</span></div>`).join('')
         : '<p style="color:var(--muted);font-size:12px;margin:0">No reviews yet.</p>';
+      renderProfileExtras(profile);
     }
 
     function renderInsights(profiles) {
       const matchList = document.querySelector('#match-list');
       matchList.innerHTML = profiles.slice(0, 2).map((profile) => {
-        const initials = profile.display_name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase();
-        return `<div class="match"><span class="avatar">${initials}</span><div><strong>${profile.display_name}</strong><span>${profile.headline}</span></div><span class="score">${profile.average_rating.toFixed(1)}</span></div>`;
+        const initials = escapeHtml(profile.display_name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase());
+        return `<div class="match"><span class="avatar">${initials}</span><div><strong>${escapeHtml(profile.display_name)}</strong><span>${escapeHtml(profile.headline)}</span></div><span class="score">${profile.average_rating.toFixed(1)}</span></div>`;
       }).join('') || '<p style="color:#b9c7dd;font-size:12px;margin:0">No profiles yet.</p>';
 
       const totalReviews = profiles.reduce((sum, profile) => sum + profile.review_count, 0);
@@ -708,6 +792,8 @@
         </section>
         <aside class="request-panel">
           <div id="request-expert-referral"></div>
+          <div id="request-assign"></div>
+          <div id="request-meetings"></div>
           <span class="section-tag">People in this request</span><h2>Participants</h2><div id="request-participants"><span style="color:var(--muted);font-size:12px">Select a request to see its participants.</span></div>
         </aside>
       </div>`;
@@ -814,7 +900,7 @@
       filtered.forEach((request) => {
         const item = document.createElement('div');
         item.className = `request-item${request.id === selectedRequestId ? ' active' : ''}`;
-        item.innerHTML = `<strong>${isUnread(request) || needsMyAction(request) ? '<span class="unread-dot" title="Needs your attention"></span>' : ''}${escapeHtml(request.title)}</strong><span>${escapeHtml(request.counterpart_name)} · ${statusLabel(request.status)}</span>`;
+        item.innerHTML = `<strong>${isUnread(request) || needsMyAction(request) ? '<span class="unread-dot" title="Needs your attention"></span>' : ''}${escapeHtml(request.title)}</strong><span>${escapeHtml(request.counterpart_name)} · ${statusLabel(request.status)}${request.assigned_to_name ? ` · → ${escapeHtml(request.assigned_to_name)}` : ''}</span>`;
         item.addEventListener('click', () => selectRequest(request.id));
         listBox.appendChild(item);
       });
@@ -1006,10 +1092,10 @@
       const referral = detail.expert_referral;
       document.querySelector('#request-expert-referral').innerHTML = referral
         ? `<span class="section-tag">Expert track record</span>
-           <h2 style="font-size:15px;margin:4px 0">${referral.display_name}${referral.verified ? ' ✓' : ''}</h2>
-           <p style="margin:0 0 6px;font-size:12px;color:var(--muted)">${referral.headline} · ★ ${referral.average_rating.toFixed(1)} (${referral.review_count})</p>
+           <h2 style="font-size:15px;margin:4px 0">${escapeHtml(referral.display_name)}${referral.verified ? ' ✓' : ''}</h2>
+           <p style="margin:0 0 6px;font-size:12px;color:var(--muted)">${escapeHtml(referral.headline)} · ★ ${referral.average_rating.toFixed(1)} (${referral.review_count})</p>
            ${referral.client_stats.length
-              ? `<ul style="margin:0 0 12px;padding:0;list-style:none;font-size:12px">${referral.client_stats.map((stat) => `<li style="display:flex;justify-content:space-between;padding:3px 0"><span>${stat.domain}</span><strong>${stat.client_count} clients</strong></li>`).join('')}</ul>`
+              ? `<ul style="margin:0 0 12px;padding:0;list-style:none;font-size:12px">${referral.client_stats.map((stat) => `<li style="display:flex;justify-content:space-between;padding:3px 0"><span>${escapeHtml(stat.domain)}</span><strong>${stat.client_count} clients</strong></li>`).join('')}</ul>`
               : '<p style="margin:0 0 12px;font-size:12px;color:var(--muted)">No completed clients recorded yet.</p>'}`
         : '';
 
@@ -1019,6 +1105,7 @@
       document.querySelector('#request-invite-company-button').hidden = !(iAccepted && !alreadyHasCompany);
       document.querySelector('#request-message-input').disabled = false;
       document.querySelector('#request-message-send').disabled = false;
+      renderRequestExtras(detail);
     }
 
     document.querySelector('#request-accept-button').addEventListener('click', async () => {
@@ -1292,8 +1379,8 @@
     }
 
     function applyActingAsDefaultView(type) {
-      // Stay on the dashboard; only the underlying results change based on the active role.
-      showView('discover');
+      // Stay on the dashboard if it's open (it reloads for the new identity); otherwise go to discover.
+      showView(document.querySelector('#dashboard').classList.contains('active') ? 'dashboard' : 'discover');
       currentPage = 1;
       document.querySelector('#how-steps').hidden = type !== 'customer';
       customerPill.hidden = type === 'customer';
@@ -1507,6 +1594,7 @@
     if (sharedProfileId) { openProfile(sharedProfileId, { skipHistory: true }); }
     loadProfiles();
   </script>
+  <script src="../assets/workspace.js"></script>
 
 </body>
 </html>

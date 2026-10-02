@@ -1,0 +1,571 @@
+// Dashboards and provider tools for marketplace.html. Loaded after the page script and uses its globals
+// (apiBase, accessToken, identities, authHeaders, escapeHtml, safeHref, showToast, openModal, closeModals, ...).
+
+const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const IST = 'Asia/Kolkata';
+const ACTIVE_MEETING = ['proposed', 'confirmed'];
+
+document.querySelectorAll('[data-close-modal]').forEach((button) => button.addEventListener('click', closeModals));
+
+function actingAs() {
+  return JSON.parse(sessionStorage.getItem('rightconnect-acting-as') || '{"type":"customer","label":"Customer"}');
+}
+
+async function api(path, options = {}) {
+  const response = await fetch(`${apiBase}${path}`, {
+    ...options,
+    headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...authHeaders() },
+  });
+  if (!response.ok) throw new Error(await extractErrorMessage(response, 'Something went wrong. Please try again.'));
+  return response.status === 204 ? null : response.json();
+}
+
+function formatWhen(iso) {
+  return new Date(iso).toLocaleString('en-IN', { timeZone: IST, weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+}
+function formatDate(iso) { return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }); }
+function formatPrice(min, max) {
+  const inr = (value) => `₹${Number(value).toLocaleString('en-IN')}`;
+  if (min != null && max != null) return min === max ? inr(min) : `${inr(min)} – ${inr(max)}`;
+  if (min != null) return `From ${inr(min)}`;
+  if (max != null) return `Up to ${inr(max)}`;
+  return 'Price on request';
+}
+function planLabel(plan) { return plan === 'pro' ? 'Pro' : 'Enterprise'; }
+function emptyNote(text) { return `<p class="muted" style="margin:0">${text}</p>`; }
+
+// Type-ahead for service areas: "beau" -> Beauty & wellness, Beauty salon, Beauty & fashion...
+function attachSuggest(input, onPick) {
+  const wrap = document.createElement('div');
+  wrap.className = 'suggest-wrap';
+  input.parentNode.insertBefore(wrap, input);
+  wrap.appendChild(input);
+  const list = document.createElement('div');
+  list.className = 'suggest-list';
+  list.hidden = true;
+  list.setAttribute('role', 'listbox');
+  wrap.appendChild(list);
+  let timer = null;
+  let ticket = 0;
+  const load = () => {
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      const mine = ++ticket;
+      let suggestions = [];
+      try { suggestions = (await api(`/services/suggest?${new URLSearchParams({ q: input.value.trim() })}`)).suggestions; } catch (_) { /* typing still works */ }
+      if (mine !== ticket || document.activeElement !== input) return;
+      list.innerHTML = suggestions.map((item) => `<button type="button" role="option" data-value="${escapeHtml(item)}">${escapeHtml(item)}</button>`).join('');
+      list.hidden = suggestions.length === 0;
+      list.querySelectorAll('button').forEach((button) => button.addEventListener('mousedown', (event) => {
+        event.preventDefault();
+        list.hidden = true;
+        onPick(button.dataset.value);
+      }));
+    }, 180);
+  };
+  input.setAttribute('autocomplete', 'off');
+  input.addEventListener('input', load);
+  input.addEventListener('focus', load);
+  input.addEventListener('blur', () => { list.hidden = true; });
+  input.addEventListener('keydown', (event) => { if (event.key === 'Escape') list.hidden = true; });
+}
+
+const interestsInput = document.querySelector('#interests-input');
+attachSuggest(interestsInput, (value) => { interestsInput.value = value; document.querySelector('#interests-form').requestSubmit(); });
+document.querySelector('#interests-cancel').addEventListener('click', () => {
+  if (document.querySelector('#dashboard').classList.contains('active')) loadDashboard();
+});
+
+/* ---------- Dashboards ---------- */
+
+function kpi(label, value) { return `<div class="kpi"><small>${label}</small><strong>${value}</strong></div>`; }
+
+function meetingRows(meetings, emptyText) {
+  return meetings.length
+    ? meetings.map((meeting) => `<div class="row"><span><strong>${escapeHtml(meeting.request_title)}</strong><br><span class="muted">with ${escapeHtml(meeting.with_name)}</span></span><button class="secondary" type="button" data-open-request="${escapeHtml(meeting.request_id)}">${escapeHtml(formatWhen(meeting.starts_at))}</button></div>`).join('')
+    : emptyNote(emptyText);
+}
+
+function miniCard(profile) {
+  return `<button type="button" class="mini-card" data-open-profile="${escapeHtml(profile.id)}"><strong>${escapeHtml(profile.display_name)}${profile.verified ? ' <span class="verified">●</span>' : ''}</strong><span>${escapeHtml(profile.headline)}</span><span>★ ${profile.average_rating.toFixed(1)} · ${profile.review_count} reviews · ${profile.kind}</span></button>`;
+}
+
+function wireDashboard() {
+  const root = document.querySelector('#dashboard');
+  root.querySelectorAll('[data-open-request]').forEach((button) => button.addEventListener('click', async () => {
+    setRequestsTab(actingAs().type === 'customer' ? 'sent' : 'received');
+    showView('requests');
+    await loadRequests();
+    selectRequest(button.dataset.openRequest);
+  }));
+  root.querySelectorAll('[data-open-profile]').forEach((button) => button.addEventListener('click', () => openProfile(button.dataset.openProfile)));
+  root.querySelectorAll('[data-go]').forEach((button) => button.addEventListener('click', () => {
+    if (button.dataset.go === 'requests') { document.querySelector('.nav-button[data-view="requests"]').click(); return; }
+    showView(button.dataset.go);
+  }));
+  root.querySelectorAll('[data-edit-profile]').forEach((button) => button.addEventListener('click', (event) => {
+    event.preventDefault();
+    openProfileEditor(button.dataset.editProfile, button.dataset.focus);
+  }));
+  root.querySelectorAll('[data-team]').forEach((button) => button.addEventListener('click', () => openTeam(button.dataset.team)));
+  root.querySelectorAll('[data-interests]').forEach((button) => button.addEventListener('click', () => { renderInterestsModal(); openModal('interests-modal'); }));
+}
+
+async function loadDashboard() {
+  const body = document.querySelector('#dash-body');
+  document.querySelector('#dash-actions').innerHTML = '';
+  if (!accessToken) {
+    body.innerHTML = '<div class="empty"><h2>Sign in to see your dashboard.</h2><p>Track requests, meetings and recommendations in one place.</p><a class="primary" style="margin-top:18px" href="auth.html">Sign in or join</a></div>';
+    return;
+  }
+  body.innerHTML = '<p class="muted"><span class="spinner"></span>Loading your dashboard…</p>';
+  const acting = actingAs();
+  try {
+    if (acting.type === 'expert') renderProviderDashboard(await api('/dashboard/expert'));
+    else if (acting.type === 'company' && acting.id) renderProviderDashboard(await api(`/dashboard/company/${encodeURIComponent(acting.id)}`));
+    else renderCustomerDashboard(await api('/dashboard/customer'));
+  } catch (error) {
+    body.innerHTML = `<p class="muted">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function renderCustomerDashboard(data) {
+  document.querySelector('#dash-tag').textContent = 'Customer dashboard · always free';
+  document.querySelector('#dash-title').textContent = 'Your requests and picks';
+  document.querySelector('#dash-copy').textContent = 'Add every area you need help with. We line up trusted people for each one.';
+  document.querySelector('#dash-actions').innerHTML = '<button class="secondary" type="button" data-interests>Manage interests</button><button class="primary" type="button" data-go="discover">+ New request</button>';
+  const counts = data.requests;
+  const recommendations = data.recommendations.length
+    ? data.recommendations.map((group) => `<h3 style="margin:10px 0 0;font-size:13px">${escapeHtml(group.interest)}</h3>${group.profiles.length
+      ? `<div class="mini-cards">${group.profiles.map(miniCard).join('')}</div>`
+      : `<p class="muted" style="margin:4px 0 12px">No profiles for ${escapeHtml(group.interest)} yet. We're adding more every week.</p>`}`).join('')
+    : `${emptyNote('Tell us what you need help with, like insurance, fashion or beauty, and we will suggest trusted people here.')}<button class="primary" type="button" data-interests style="margin-top:12px">Add interests</button>`;
+  document.querySelector('#dash-body').innerHTML = `
+    ${data.pending_actions ? `<div class="plan-banner free"><span>${data.pending_actions} request${data.pending_actions === 1 ? ' needs' : 's need'} your action.</span><button class="primary" type="button" data-go="requests">Open My requests</button></div>` : ''}
+    <div class="kpi-grid">${kpi('Active requests', counts.active)}${kpi('Waiting for a reply', counts.waiting)}${kpi('Completed', counts.completed)}${kpi('Saved profiles', data.saved_count)}</div>
+    <div class="dash-grid">
+      <div class="dash-card"><h2>Upcoming meetings</h2>${meetingRows(data.upcoming_meetings, 'No meetings booked. When an expert offers online booking, you can pick a time inside the request.')}</div>
+      <div class="dash-card"><h2>How it works</h2><div class="row"><span>1. Search or pick from your interests</span></div><div class="row"><span>2. Send a free request</span></div><div class="row"><span>3. Chat, book a time, decide</span></div><div class="row"><span>4. Mark done and leave a verified review</span></div></div>
+      <div class="dash-card full"><h2>Picked for your interests</h2>${recommendations}</div>
+    </div>`;
+  wireDashboard();
+}
+
+function renderBars(months) {
+  const max = Math.max(1, ...months.map((item) => item.count));
+  return `<div class="bars">${months.map((item) => {
+    const [year, month] = item.month.split('-').map(Number);
+    const label = new Date(year, month - 1, 1).toLocaleString('en-IN', { month: 'short' });
+    return `<div>${item.count}<i style="height:${Math.round((item.count / max) * 80)}%"></i>${label}</div>`;
+  }).join('')}</div>`;
+}
+
+function renderProviderDashboard(data) {
+  const isCompany = data.kind === 'company';
+  const canManage = !isCompany || data.member_role === 'admin';
+  const plan = planLabel(data.plan);
+  document.querySelector('#dash-tag').textContent = isCompany ? `Company dashboard · ${data.member_role}` : 'Expert dashboard';
+  document.querySelector('#dash-title').textContent = data.name;
+  document.querySelector('#dash-copy').textContent = isCompany && !canManage ? 'Requests assigned to you and your upcoming meetings.' : 'Leads, meetings and how your profile is doing.';
+  document.querySelector('#dash-actions').innerHTML = [
+    data.profile_id ? `<button class="secondary" type="button" data-open-profile="${escapeHtml(data.profile_id)}">View public profile</button>` : '',
+    isCompany ? `<button class="secondary" type="button" data-team="${escapeHtml(data.organization_id)}">Team</button>` : '',
+    canManage && data.profile_id ? `<button class="primary" type="button" data-edit-profile="${escapeHtml(data.profile_id)}">Edit profile</button>` : '',
+  ].join('');
+
+  const banner = data.plan_active
+    ? `<div class="plan-banner"><span>✓ ${plan} active until ${formatDate(data.plan_expires_at)}</span>${canManage ? '<a class="secondary" href="plans.html">Add 30 days</a>' : ''}</div>`
+    : `<div class="plan-banner free"><span>You're on Free. ${plan} adds online booking, a richer profile${isCompany ? ', team seats, request assignment' : ''} and insights.</span>${canManage ? `<a class="primary" href="plans.html">Upgrade to ${plan}</a>` : ''}</div>`;
+
+  const completeness = data.completeness;
+  const availabilityNote = !data.plan_active
+    ? `<p class="muted" style="margin:10px 0 0">Online booking is part of ${plan}.</p>`
+    : data.has_availability
+      ? `<p class="muted" style="margin:10px 0 0">✓ Customers can book your open slots.${canManage ? ` <a href="#" data-edit-profile="${escapeHtml(data.profile_id)}" data-focus="availability">Change availability</a>` : ''}</p>`
+      : `${canManage ? `<button class="primary" type="button" style="margin-top:10px" data-edit-profile="${escapeHtml(data.profile_id)}" data-focus="availability">Set weekly availability</button>` : ''}`;
+
+  let insights;
+  if (data.insights) {
+    const ins = data.insights;
+    insights = `
+      <div class="dash-card full"><h2>Insights</h2>
+        <div class="kpi-grid">${kpi('Profile views', ins.profile_views)}${kpi('Accept rate', ins.accept_rate == null ? '–' : `${ins.accept_rate}%`)}${kpi('Avg. time to accept', ins.avg_response_minutes == null ? '–' : ins.avg_response_minutes < 120 ? `${ins.avg_response_minutes} min` : `${Math.round(ins.avg_response_minutes / 60)} h`)}${kpi('Resolved clients', data.resolved_clients)}</div>
+        <div class="dash-grid"><div><strong style="font-size:12px">Leads in the last 6 months</strong>${renderBars(ins.leads_by_month)}</div>
+        <div><strong style="font-size:12px">Clients by domain</strong>${ins.clients_by_domain.length ? ins.clients_by_domain.map((item) => `<div class="row"><span>${escapeHtml(item.domain)}</span><strong>${item.count}</strong></div>`).join('') : emptyNote('Completed requests will show here.')}</div></div>
+      </div>
+      ${ins.pipeline ? `<div class="dash-card full"><h2>Pipeline</h2><div class="pipeline"><div><strong>${ins.pipeline.unassigned}</strong><small>Unassigned</small></div><div><strong>${ins.pipeline.assigned}</strong><small>Assigned</small></div><div><strong>${ins.pipeline.meeting_booked}</strong><small>Meeting booked</small></div><div><strong>${ins.pipeline.completed}</strong><small>Completed</small></div></div></div>` : ''}
+      ${ins.team ? `<div class="dash-card full"><h2>Team performance</h2>${ins.team.map((member) => `<div class="row"><span><strong>${escapeHtml(member.full_name)}</strong> <span class="muted">${member.member_role}</span></span><span>${member.open} open · ${member.completed} completed</span></div>`).join('')}<button class="secondary" type="button" style="margin-top:10px" data-team="${escapeHtml(data.organization_id)}">Manage team</button></div>` : ''}`;
+  } else {
+    insights = `<div class="dash-card full locked-card"><h2>🔒 Insights with ${plan}</h2><ul>${data.locked_insights.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>${canManage ? `<a class="primary" href="plans.html">Upgrade to ${plan}</a>` : ''}</div>`;
+  }
+
+  document.querySelector('#dash-body').innerHTML = `
+    ${banner}
+    <div class="kpi-grid">${kpi('New leads waiting', data.leads.waiting)}${kpi('In progress', data.leads.active)}${kpi('Completed', data.leads.completed)}${kpi('Rating', data.review_count ? `★ ${data.average_rating.toFixed(1)} <small class="muted">(${data.review_count})</small>` : '–')}</div>
+    <div class="dash-grid">
+      <div class="dash-card"><h2>Profile strength · ${completeness.percent}%</h2><div class="progress"><i style="width:${completeness.percent}%"></i></div>
+        ${completeness.missing.length ? `<p class="muted" style="margin:10px 0 4px">Complete profiles get more requests. Add:</p>${completeness.missing.map((item) => `<div class="row"><span>${escapeHtml(item)}</span></div>`).join('')}` : '<p class="muted" style="margin:10px 0 0">✓ Your profile is complete.</p>'}
+        ${canManage && completeness.missing.length ? `<button class="secondary" type="button" style="margin-top:10px" data-edit-profile="${escapeHtml(data.profile_id)}">Complete profile</button>` : ''}</div>
+      <div class="dash-card"><h2>Upcoming meetings</h2>${meetingRows(data.upcoming_meetings, 'No meetings booked yet.')}${availabilityNote}</div>
+      ${data.leads.waiting ? `<div class="dash-card full"><h2>${data.leads.waiting} customer${data.leads.waiting === 1 ? ' is' : 's are'} waiting for you</h2><p class="muted" style="margin:0 0 10px">Fast replies win more customers.</p><button class="primary" type="button" data-go="requests">Open requests</button></div>` : ''}
+      ${insights}
+    </div>`;
+  wireDashboard();
+}
+
+/* ---------- Profile editor ---------- */
+
+let editorProfile = null;
+let editorServices = [];
+let editorWindows = [];
+
+async function openProfileEditor(profileId, focus) {
+  const body = document.querySelector('#editor-body');
+  body.innerHTML = '<p class="muted"><span class="spinner"></span>Loading…</p>';
+  openModal('editor-modal');
+  try {
+    renderEditor(await api(`/profiles/${encodeURIComponent(profileId)}/manage`));
+    if (focus) document.querySelector(`#editor-${focus}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (error) {
+    body.innerHTML = `<p class="muted">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function field(id, label, value, attrs = '') {
+  return `<div class="field"><label for="${id}">${label}</label><input id="${id}" value="${escapeHtml(value ?? '')}" ${attrs}></div>`;
+}
+
+function renderEditor(profile) {
+  editorProfile = profile;
+  editorServices = [...profile.services];
+  editorWindows = profile.availability.map((window) => ({ weekday: window.weekday, start_time: window.start_time.slice(0, 5), end_time: window.end_time.slice(0, 5) }));
+  const paid = profile.plan_active;
+  const plan = planLabel(profile.plan);
+  const lock = paid ? '' : `<span class="lock-pill">🔒 ${plan}</span>`;
+  const upgrade = `<p class="muted" style="margin:0">Part of ${plan}. <a href="plans.html">Upgrade</a> to unlock it.</p>`;
+  document.querySelector('#editor-title').textContent = `Edit ${profile.kind === 'company' ? 'company' : 'expert'} profile`;
+  document.querySelector('#editor-body').innerHTML = `
+    <section class="editor-section"><h3>Basics <span class="muted">Free</span></h3>
+      <form id="editor-basics">
+        <div class="editor-grid">
+          ${field('ed-name', profile.kind === 'company' ? 'Company name' : 'Display name', profile.display_name, 'required minlength="2" maxlength="160"')}
+          ${field('ed-headline', 'Headline', profile.headline, 'required minlength="2" maxlength="160" placeholder="e.g. Health insurance advisor for families"')}
+          ${field('ed-city', 'City', profile.city, 'maxlength="100"')}
+          ${profile.kind === 'expert' ? field('ed-years', 'Years of experience', profile.years_experience, 'type="number" min="0" max="80"') : ''}
+          ${field('ed-languages', 'Languages (comma separated)', profile.languages.join(', '), 'placeholder="English, Tamil"')}
+          ${field('ed-avatar', 'Photo or logo link', profile.avatar_url, 'type="url" placeholder="https://"')}
+        </div>
+        <div class="field"><label for="ed-bio">About</label><textarea id="ed-bio" rows="3" maxlength="2000">${escapeHtml(profile.bio ?? '')}</textarea></div>
+        <div class="field"><label for="ed-service-input">Services you offer</label><div class="tag-list" id="ed-services"></div><input id="ed-service-input" placeholder="Type a service, e.g. beauty, then pick or press Enter"></div>
+        <div class="editor-grid">
+          ${field('ed-video', `Intro video link ${lock}`, profile.intro_video_url, `type="url" placeholder="https://youtube.com/..." ${paid ? '' : 'disabled'}`)}
+          ${field('ed-portfolio', `Portfolio link ${lock}`, profile.portfolio_url, `type="url" placeholder="https://" ${paid ? '' : 'disabled'}`)}
+        </div>
+        <div class="modal-actions"><button class="primary" type="submit" id="ed-basics-save">Save basics</button></div>
+      </form>
+    </section>
+    <section class="editor-section"><h3>Website &amp; social links <span class="muted">${profile.social_links.length}/${profile.limits.social_links}</span></h3>
+      ${profile.social_links.map((link, index) => `<div class="item-row"><span><strong>${escapeHtml(link.platform)}</strong> · <a href="${safeHref(link.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.url)}</a></span><button class="secondary" type="button" data-remove-link="${index}">Remove</button></div>`).join('')}
+      ${profile.social_links.length < profile.limits.social_links
+        ? '<form id="editor-link" class="editor-grid" style="margin-top:8px"><div class="field"><label for="ed-link-platform">Name</label><input id="ed-link-platform" placeholder="LinkedIn, Instagram, Website" required maxlength="40"></div><div class="field"><label for="ed-link-url">Link</label><input id="ed-link-url" type="url" placeholder="https://" required></div><div class="modal-actions" style="grid-column:1/-1"><button class="secondary" type="submit">Add link</button></div></form>'
+        : (paid ? '' : upgrade.replace('Part of', 'More links are part of'))}
+    </section>
+    <section class="editor-section"><h3>Credentials <span class="muted">${profile.credentials.length}/${profile.limits.credentials}</span></h3>
+      ${profile.credentials.map((credential) => `<div class="item-row"><span><strong>${escapeHtml(credential.title)}</strong>${credential.issuing_body ? ` · ${escapeHtml(credential.issuing_body)}` : ''} <span class="muted">· ${credential.verification === 'verified' ? '✓ verified' : credential.verification}</span></span><button class="secondary" type="button" data-remove-credential="${escapeHtml(credential.id)}">Remove</button></div>`).join('')}
+      ${profile.credentials.length < profile.limits.credentials
+        ? '<form id="editor-credential" style="margin-top:8px"><div class="editor-grid"><div class="field"><label for="ed-cred-title">Licence or certificate</label><input id="ed-cred-title" required minlength="2" maxlength="160" placeholder="IRDAI licensed agent"></div><div class="field"><label for="ed-cred-body">Issued by</label><input id="ed-cred-body" maxlength="160"></div><div class="field"><label for="ed-cred-number">Number</label><input id="ed-cred-number" maxlength="160"></div><div class="field"><label for="ed-cred-doc">Document link</label><input id="ed-cred-doc" type="url" placeholder="https://"></div></div><div class="modal-actions"><button class="secondary" type="submit">Add credential</button></div></form>'
+        : (paid ? '' : upgrade.replace('Part of', 'More credentials are part of'))}
+    </section>
+    <section class="editor-section"><h3>Service catalogue &amp; prices ${lock}</h3>
+      ${profile.offerings.map((offering) => `<div class="item-row"><span><strong>${escapeHtml(offering.title)}</strong> · <span class="price-tag">${formatPrice(offering.price_min_inr, offering.price_max_inr)}</span></span><button class="secondary" type="button" data-remove-offering="${escapeHtml(offering.id)}">Remove</button></div>`).join('')}
+      ${paid
+        ? '<form id="editor-offering" style="margin-top:8px"><div class="editor-grid"><div class="field" style="grid-column:1/-1"><label for="ed-off-title">Service</label><input id="ed-off-title" required minlength="2" maxlength="160" placeholder="Family health cover review"></div><div class="field"><label for="ed-off-min">Price from (₹)</label><input id="ed-off-min" type="number" min="0"></div><div class="field"><label for="ed-off-max">Price up to (₹)</label><input id="ed-off-max" type="number" min="0"></div></div><div class="field"><label for="ed-off-desc">What\'s included</label><textarea id="ed-off-desc" rows="2" maxlength="1000"></textarea></div><div class="modal-actions"><button class="secondary" type="submit">Add to catalogue</button></div></form>'
+        : upgrade}
+    </section>
+    <section class="editor-section" id="editor-availability"><h3>Weekly availability for online booking ${lock}</h3>
+      ${paid
+        ? '<p class="muted" style="margin:0 0 10px">India time. Customers who sent you a request can book any free 30-minute slot in these windows.</p><div id="ed-windows"></div><div class="modal-actions" style="justify-content:space-between"><span><button class="secondary" type="button" id="ed-window-add">+ Add window</button> <button class="secondary" type="button" id="ed-window-preset">Mon–Fri 10:00–18:00</button></span><button class="primary" type="button" id="ed-window-save">Save availability</button></div>'
+        : upgrade}
+    </section>`;
+  renderEditorServices();
+  const serviceInput = document.querySelector('#ed-service-input');
+  attachSuggest(serviceInput, addEditorService);
+  serviceInput.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    addEditorService(serviceInput.value);
+  });
+  if (paid) renderWindows();
+  wireEditor(profile);
+}
+
+function renderEditorServices() {
+  const box = document.querySelector('#ed-services');
+  box.innerHTML = editorServices.length
+    ? editorServices.map((name, index) => `<span class="tag">${escapeHtml(name)}<button type="button" data-remove-service="${index}" aria-label="Remove ${escapeHtml(name)}">×</button></span>`).join('')
+    : '<span class="muted">No services yet. Customers find you by these.</span>';
+  box.querySelectorAll('[data-remove-service]').forEach((button) => button.addEventListener('click', () => {
+    editorServices.splice(Number(button.dataset.removeService), 1);
+    renderEditorServices();
+  }));
+}
+
+function addEditorService(value) {
+  const name = value.trim();
+  const input = document.querySelector('#ed-service-input');
+  input.value = '';
+  if (!name || editorServices.some((item) => item.toLowerCase() === name.toLowerCase())) return;
+  if (editorServices.length >= 10) { showToast('You can list up to 10 services.', 'error'); return; }
+  editorServices.push(name.slice(0, 120));
+  renderEditorServices();
+}
+
+function renderWindows() {
+  const box = document.querySelector('#ed-windows');
+  box.innerHTML = editorWindows.length
+    ? editorWindows.map((window, index) => `<div class="window-row"><select data-window="${index}" data-key="weekday" aria-label="Day">${WEEKDAYS.map((day, value) => `<option value="${value}" ${value === window.weekday ? 'selected' : ''}>${day}</option>`).join('')}</select><input type="time" data-window="${index}" data-key="start_time" value="${window.start_time}" aria-label="From"><input type="time" data-window="${index}" data-key="end_time" value="${window.end_time}" aria-label="To"><button class="secondary" type="button" data-remove-window="${index}">Remove</button></div>`).join('')
+    : emptyNote('No windows yet. Add the days and hours you take meetings.');
+  box.querySelectorAll('[data-window]').forEach((input) => input.addEventListener('change', () => {
+    const window = editorWindows[Number(input.dataset.window)];
+    window[input.dataset.key] = input.dataset.key === 'weekday' ? Number(input.value) : input.value;
+  }));
+  box.querySelectorAll('[data-remove-window]').forEach((button) => button.addEventListener('click', () => {
+    editorWindows.splice(Number(button.dataset.removeWindow), 1);
+    renderWindows();
+  }));
+}
+
+async function editorSave(button, path, method, payload, message) {
+  setButtonLoading(button, true, 'Saving…');
+  try {
+    renderEditor(await api(path, { method, body: payload === undefined ? undefined : JSON.stringify(payload) }));
+    showToast(message, 'success');
+    if (document.querySelector('#dashboard').classList.contains('active')) loadDashboard();
+  } catch (error) {
+    setButtonLoading(button, false);
+    showToast(error.message, 'error');
+  }
+}
+
+function wireEditor(profile) {
+  const base = `/profiles/${encodeURIComponent(profile.id)}`;
+  const value = (id) => document.querySelector(id)?.value.trim() ?? '';
+  document.querySelector('#editor-basics').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const payload = {
+      display_name: value('#ed-name'),
+      headline: value('#ed-headline'),
+      city: value('#ed-city') || null,
+      languages: value('#ed-languages').split(',').map((item) => item.trim()).filter(Boolean),
+      avatar_url: value('#ed-avatar') || null,
+      bio: value('#ed-bio') || null,
+      services: editorServices,
+    };
+    if (profile.kind === 'expert') payload.years_experience = value('#ed-years') === '' ? null : Number(value('#ed-years'));
+    if (profile.plan_active) {
+      payload.intro_video_url = value('#ed-video') || null;
+      payload.portfolio_url = value('#ed-portfolio') || null;
+    }
+    editorSave(document.querySelector('#ed-basics-save'), base, 'PATCH', payload, 'Profile saved.');
+  });
+  document.querySelector('#editor-link')?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const links = [...profile.social_links, { platform: value('#ed-link-platform'), url: value('#ed-link-url') }];
+    editorSave(event.submitter, `${base}/social-links`, 'PUT', { links }, 'Link added.');
+  });
+  document.querySelectorAll('[data-remove-link]').forEach((button) => button.addEventListener('click', () => {
+    const links = profile.social_links.filter((_, index) => index !== Number(button.dataset.removeLink));
+    editorSave(button, `${base}/social-links`, 'PUT', { links }, 'Link removed.');
+  }));
+  document.querySelector('#editor-credential')?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    editorSave(event.submitter, `${base}/credentials`, 'POST', {
+      title: value('#ed-cred-title'),
+      issuing_body: value('#ed-cred-body') || null,
+      credential_number: value('#ed-cred-number') || null,
+      document_url: value('#ed-cred-doc') || null,
+    }, 'Credential added. Our team will verify it.');
+  });
+  document.querySelectorAll('[data-remove-credential]').forEach((button) => button.addEventListener('click', () => {
+    editorSave(button, `${base}/credentials/${encodeURIComponent(button.dataset.removeCredential)}`, 'DELETE', undefined, 'Credential removed.');
+  }));
+  document.querySelector('#editor-offering')?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const price = (id) => (value(id) === '' ? null : Number(value(id)));
+    editorSave(event.submitter, `${base}/offerings`, 'POST', {
+      title: value('#ed-off-title'),
+      description: value('#ed-off-desc') || null,
+      price_min_inr: price('#ed-off-min'),
+      price_max_inr: price('#ed-off-max'),
+    }, 'Added to your catalogue.');
+  });
+  document.querySelectorAll('[data-remove-offering]').forEach((button) => button.addEventListener('click', () => {
+    editorSave(button, `${base}/offerings/${encodeURIComponent(button.dataset.removeOffering)}`, 'DELETE', undefined, 'Removed from your catalogue.');
+  }));
+  document.querySelector('#ed-window-add')?.addEventListener('click', () => {
+    editorWindows.push({ weekday: 0, start_time: '10:00', end_time: '13:00' });
+    renderWindows();
+  });
+  document.querySelector('#ed-window-preset')?.addEventListener('click', () => {
+    editorWindows = [0, 1, 2, 3, 4].map((weekday) => ({ weekday, start_time: '10:00', end_time: '18:00' }));
+    renderWindows();
+  });
+  document.querySelector('#ed-window-save')?.addEventListener('click', (event) => {
+    editorSave(event.currentTarget, `${base}/availability`, 'PUT', { windows: editorWindows }, 'Availability saved. Customers can now book you.');
+  });
+}
+
+/* ---------- Team seats ---------- */
+
+async function openTeam(organizationId) {
+  const body = document.querySelector('#team-body');
+  body.innerHTML = '<p class="muted"><span class="spinner"></span>Loading…</p>';
+  openModal('team-modal');
+  try {
+    renderTeam(await api(`/organizations/${encodeURIComponent(organizationId)}/team`));
+  } catch (error) {
+    body.innerHTML = `<p class="muted">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function renderTeam(team) {
+  const base = `/organizations/${encodeURIComponent(team.organization_id)}/team`;
+  document.querySelector('#team-title').textContent = `${team.name} team`;
+  const canInvite = team.can_manage && team.plan_active && team.seats_used < team.seat_limit;
+  document.querySelector('#team-body').innerHTML = `
+    ${team.plan_active ? '' : `<div class="plan-banner free"><span>Team seats and request assignment are part of Enterprise.</span>${team.can_manage ? '<a class="primary" href="plans.html">Upgrade</a>' : ''}</div>`}
+    <p class="modal-note">${team.seats_used}/${team.seat_limit} seats used. Staff only see the requests you assign to them; admins see everything.</p>
+    ${team.members.map((member) => `<div class="item-row"><span><strong>${escapeHtml(member.full_name)}</strong> <span class="muted">${escapeHtml(member.email)} · ${member.member_role} · ${member.open_assigned} open</span></span>${team.can_manage && member.member_role === 'staff' ? `<button class="secondary" type="button" data-remove-member="${escapeHtml(member.id)}">Remove</button>` : ''}</div>`).join('')}
+    ${team.invites.map((invite) => `<div class="item-row"><span>${escapeHtml(invite.email)} <span class="muted">· invited ${formatDate(invite.created_at)}, joins on first sign-in</span></span>${team.can_manage ? `<button class="secondary" type="button" data-cancel-invite="${escapeHtml(invite.id)}">Cancel</button>` : ''}</div>`).join('')}
+    ${canInvite ? '<form id="team-invite" style="display:flex;gap:8px;margin-top:12px"><input id="team-email" type="email" required placeholder="colleague@company.com" style="flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:7px;font:inherit"><button class="primary" type="submit">Invite</button></form>' : ''}`;
+  const act = async (button, path, method, payload, message) => {
+    setButtonLoading(button, true, '…');
+    try {
+      renderTeam(await api(path, { method, body: payload ? JSON.stringify(payload) : undefined }));
+      showToast(message, 'success');
+    } catch (error) {
+      setButtonLoading(button, false);
+      showToast(error.message, 'error');
+    }
+  };
+  document.querySelector('#team-invite')?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    act(event.submitter, `${base}/invites`, 'POST', { email: document.querySelector('#team-email').value.trim() }, 'Invite sent.');
+  });
+  document.querySelectorAll('[data-remove-member]').forEach((button) => button.addEventListener('click', () => {
+    if (confirm('Remove this person from the team? Their open requests go back to Unassigned.')) act(button, `${base}/members/${encodeURIComponent(button.dataset.removeMember)}`, 'DELETE', null, 'Removed from the team.');
+  }));
+  document.querySelectorAll('[data-cancel-invite]').forEach((button) => button.addEventListener('click', () => {
+    act(button, `${base}/invites/${encodeURIComponent(button.dataset.cancelInvite)}`, 'DELETE', null, 'Invite cancelled.');
+  }));
+}
+
+/* ---------- Requests: meetings, booking and assignment ---------- */
+
+async function openBooking(requestId, profileId, name) {
+  document.querySelector('#booking-title').textContent = `Book a meeting with ${name}`;
+  const body = document.querySelector('#booking-body');
+  body.innerHTML = '<p class="muted"><span class="spinner"></span>Finding open times…</p>';
+  openModal('booking-modal');
+  try {
+    const data = await api(`/requests/${encodeURIComponent(requestId)}/slots?${new URLSearchParams({ profile_id: profileId })}`);
+    if (!data.slots.length) {
+      body.innerHTML = emptyNote('No open times in the next 2 weeks. Send them a message in the timeline to agree a time.');
+      return;
+    }
+    const days = new Map();
+    data.slots.forEach((slot) => {
+      const day = new Date(slot).toLocaleDateString('en-IN', { timeZone: IST, weekday: 'long', day: 'numeric', month: 'short' });
+      if (!days.has(day)) days.set(day, []);
+      days.get(day).push(slot);
+    });
+    body.innerHTML = [...days.entries()].map(([day, slots]) => `<div class="slot-day"><strong>${day}</strong><div class="slot-grid">${slots.map((slot) => `<button type="button" data-slot="${escapeHtml(slot)}">${new Date(slot).toLocaleTimeString('en-IN', { timeZone: IST, hour: 'numeric', minute: '2-digit' })}</button>`).join('')}</div></div>`).join('');
+    body.querySelectorAll('[data-slot]').forEach((button) => button.addEventListener('click', async () => {
+      setButtonLoading(button, true, '');
+      try {
+        const detail = await api(`/requests/${encodeURIComponent(requestId)}/appointments`, { method: 'POST', body: JSON.stringify({ profile_id: profileId, starts_at: button.dataset.slot }) });
+        closeModals();
+        showToast(`Meeting booked for ${formatWhen(button.dataset.slot)}.`, 'success');
+        renderRequestDetail(detail);
+        loadRequests({ silent: true });
+      } catch (error) {
+        setButtonLoading(button, false);
+        showToast(error.message, 'error');
+      }
+    }));
+  } catch (error) {
+    body.innerHTML = `<p class="muted">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function renderRequestExtras(detail) {
+  const open = !['completed', 'cancelled'].includes(detail.status);
+  const assignBox = document.querySelector('#request-assign');
+  const acting = actingAs();
+  const actingCompany = acting.type === 'company' ? identities?.companies.find((company) => company.organization_id === acting.id) : null;
+  if (detail.can_assign) {
+    assignBox.innerHTML = `<span class="section-tag">Handled by</span><div style="display:flex;gap:6px;margin:6px 0 18px"><select id="assign-select" aria-label="Assign to" style="flex:1;min-width:0;min-height:36px;padding:0 8px;border:1px solid var(--line);border-radius:7px;font:inherit"><option value="">Unassigned</option>${detail.assignable_members.map((member) => `<option value="${escapeHtml(member.user_id)}" ${member.user_id === detail.assigned_user_id ? 'selected' : ''}>${escapeHtml(member.full_name)}${member.member_role === 'admin' ? ' (admin)' : ''}</option>`).join('')}</select><button class="secondary" type="button" id="assign-save">Assign</button></div>`;
+    document.querySelector('#assign-save').addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      setButtonLoading(button, true, '…');
+      try {
+        const updated = await api(`/requests/${encodeURIComponent(detail.id)}/assign`, { method: 'POST', body: JSON.stringify({ user_id: document.querySelector('#assign-select').value || null }) });
+        showToast('Assignment saved.', 'success');
+        renderRequestDetail(updated);
+        loadRequests({ silent: true });
+      } catch (error) {
+        setButtonLoading(button, false);
+        showToast(error.message, 'error');
+      }
+    });
+  } else if (detail.my_role === 'company' && actingCompany?.member_role === 'admin' && !actingCompany.plan_active) {
+    assignBox.innerHTML = '<p class="muted" style="margin:0 0 16px">🔒 Assign requests to your team with <a href="plans.html">Enterprise</a>.</p>';
+  } else {
+    assignBox.innerHTML = '';
+  }
+
+  const meetingsBox = document.querySelector('#request-meetings');
+  if (!detail.appointments.length && !detail.bookable_profiles.length) { meetingsBox.innerHTML = ''; return; }
+  meetingsBox.innerHTML = `<span class="section-tag">Meetings</span>
+    ${detail.appointments.map((meeting) => {
+      const active = ACTIVE_MEETING.includes(meeting.status);
+      return `<div class="meeting" style="margin:6px 0;${active ? '' : 'opacity:.6'}"><strong>${active ? '' : '<s>'}${escapeHtml(formatWhen(meeting.starts_at))}${active ? '' : '</s>'}</strong><span>${escapeHtml(meeting.with_name)} · 30 min · ${meeting.status}</span>${active && open ? `<button class="secondary" type="button" data-cancel-meeting="${escapeHtml(meeting.id)}" style="min-height:28px;margin-top:6px;font-size:11px">Cancel meeting</button>` : ''}</div>`;
+    }).join('')}
+    ${detail.bookable_profiles.map((target) => `<button class="primary" type="button" data-book-profile="${escapeHtml(target.profile_id)}" data-book-name="${escapeHtml(target.name)}" style="width:100%;margin-top:6px">📅 Book a time with ${escapeHtml(target.name)}</button>`).join('')}
+    <div style="height:18px"></div>`;
+  meetingsBox.querySelectorAll('[data-book-profile]').forEach((button) => button.addEventListener('click', () => openBooking(detail.id, button.dataset.bookProfile, button.dataset.bookName)));
+  meetingsBox.querySelectorAll('[data-cancel-meeting]').forEach((button) => button.addEventListener('click', async () => {
+    if (!confirm('Cancel this meeting? Everyone on the request will see it in the timeline.')) return;
+    setButtonLoading(button, true, 'Cancelling…');
+    try {
+      renderRequestDetail(await api(`/requests/${encodeURIComponent(detail.id)}/appointments/${encodeURIComponent(button.dataset.cancelMeeting)}/cancel`, { method: 'POST' }));
+      showToast('Meeting cancelled.', 'success');
+      loadRequests({ silent: true });
+    } catch (error) {
+      setButtonLoading(button, false);
+      showToast(error.message, 'error');
+    }
+  }));
+}
+
+/* ---------- Public profile extras ---------- */
+
+function renderProfileExtras(profile) {
+  document.querySelector('#profile-bookable').hidden = !profile.bookable;
+  const cards = [];
+  const links = [
+    profile.intro_video_url ? { label: '▶ Watch intro video', url: profile.intro_video_url } : null,
+    profile.portfolio_url ? { label: 'Portfolio', url: profile.portfolio_url } : null,
+    ...(profile.social_links || []).map((link) => ({ label: link.platform, url: link.url })),
+  ].filter(Boolean);
+  if (links.length) {
+    cards.push(`<article class="content-card"><h2>Links</h2><div class="tags">${links.map((link) => `<a class="secondary" style="min-height:32px" href="${safeHref(link.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label)}</a>`).join('')}</div></article>`);
+  }
+  if (profile.offerings?.length) {
+    cards.push(`<article class="content-card"><h2>Services &amp; prices</h2>${profile.offerings.map((offering) => `<div class="offering"><div><strong>${escapeHtml(offering.title)}</strong>${offering.description ? `<span class="muted">${escapeHtml(offering.description)}</span>` : ''}</div><span class="price-tag">${formatPrice(offering.price_min_inr, offering.price_max_inr)}</span></div>`).join('')}</article>`);
+  }
+  if (profile.credentials?.length) {
+    cards.push(`<article class="content-card"><h2>Credentials</h2>${profile.credentials.map((credential) => `<div class="offering"><div><strong>${escapeHtml(credential.title)}</strong>${credential.issuing_body ? `<span class="muted">${escapeHtml(credential.issuing_body)}</span>` : ''}</div><span class="${credential.verified ? 'verified' : 'muted'}">${credential.verified ? '● Verified' : 'Pending check'}</span></div>`).join('')}</article>`);
+  }
+  document.querySelector('#profile-extras').innerHTML = cards.join('');
+}

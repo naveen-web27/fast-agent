@@ -52,6 +52,7 @@ CREATE TABLE organizations (
     verification verification_status NOT NULL DEFAULT 'pending',
     email_domain_verified BOOLEAN NOT NULL DEFAULT FALSE,
     subscription_tier subscription_tier NOT NULL DEFAULT 'free',
+    subscription_expires_at TIMESTAMPTZ,
     deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -95,6 +96,11 @@ CREATE TABLE profiles (
     review_count INTEGER NOT NULL DEFAULT 0,
     response_minutes INTEGER,
     show_resolved_count BOOLEAN NOT NULL DEFAULT TRUE,
+    subscription_tier subscription_tier NOT NULL DEFAULT 'free',
+    subscription_expires_at TIMESTAMPTZ,
+    intro_video_url TEXT,
+    portfolio_url TEXT,
+    view_count INTEGER NOT NULL DEFAULT 0,
     blocked_at TIMESTAMPTZ,
     blocked_reason TEXT,
     deleted_at TIMESTAMPTZ,
@@ -159,6 +165,7 @@ CREATE TABLE request_participants (
     accepted_at TIMESTAMPTZ,
     completion_confirmed_at TIMESTAMPTZ,
     completion_disputed_at TIMESTAMPTZ,
+    assigned_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     CHECK (user_id IS NOT NULL OR organization_id IS NOT NULL)
 );
 
@@ -178,8 +185,48 @@ CREATE TABLE appointments (
     ends_at TIMESTAMPTZ NOT NULL,
     meeting_url TEXT,
     status TEXT NOT NULL DEFAULT 'proposed' CHECK (status IN ('proposed', 'confirmed', 'cancelled', 'completed')),
+    profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    booked_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CHECK (ends_at > starts_at)
 );
+CREATE UNIQUE INDEX appointments_profile_slot_active_idx
+    ON appointments(profile_id, starts_at)
+    WHERE status IN ('proposed', 'confirmed');
+
+CREATE TABLE availability_slots (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    weekday SMALLINT NOT NULL CHECK (weekday BETWEEN 0 AND 6),
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    CHECK (end_time > start_time)
+);
+CREATE INDEX availability_slots_profile_idx ON availability_slots(profile_id);
+
+CREATE TABLE profile_offerings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    price_min_inr INTEGER CHECK (price_min_inr >= 0),
+    price_max_inr INTEGER CHECK (price_max_inr >= 0),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CHECK (price_max_inr IS NULL OR price_min_inr IS NULL OR price_max_inr >= price_min_inr)
+);
+CREATE INDEX profile_offerings_profile_idx ON profile_offerings(profile_id);
+
+CREATE TABLE organization_invites (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    email TEXT NOT NULL,
+    invited_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    accepted_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX organization_invites_pending_idx
+    ON organization_invites(organization_id, lower(email))
+    WHERE accepted_at IS NULL;
 
 CREATE TABLE reviews (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -223,3 +270,7 @@ CREATE UNIQUE INDEX request_participants_user_unique_idx
 CREATE UNIQUE INDEX request_participants_organization_unique_idx
     ON request_participants(request_id, participant_role, organization_id)
     WHERE organization_id IS NOT NULL;
+
+-- payments is created before profiles/organizations, so its identity links are added here.
+ALTER TABLE payments ADD COLUMN profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL;
+ALTER TABLE payments ADD COLUMN organization_id UUID REFERENCES organizations(id) ON DELETE SET NULL;

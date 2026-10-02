@@ -63,6 +63,10 @@ class RequestParticipant(Base):
     accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completion_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completion_disputed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Company staff member handling this request for the organization (Enterprise).
+    assigned_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
+    )
 
 
 class RequestEvent(Base):

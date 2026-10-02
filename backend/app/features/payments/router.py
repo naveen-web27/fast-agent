@@ -13,7 +13,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.db.session import get_db
+from app.models.organization_member import MemberRole, OrganizationMember
 from app.models.payment import Payment
+from app.models.profile import Organization, Profile, ProfileKind
 from app.models.user import SubscriptionTier, User, active_user_by_auth_id
 from app.security.dependencies import get_current_auth_user_id
 
@@ -45,7 +47,32 @@ async def create_checkout_session(
     user = await session.scalar(active_user_by_auth_id(auth_user_id))
     if user is None:
         raise HTTPException(status_code=404, detail="Complete onboarding before checkout")
-    payment = Payment(id=uuid.uuid4(), user_id=user.id, plan=plan, amount_paise=amount, status="pending")
+    # Pro belongs to the caller's expert profile, Enterprise to the company they administer.
+    profile_id = organization_id = None
+    if plan == "pro":
+        profile_id = await session.scalar(
+            select(Profile.id).where(
+                Profile.user_id == user.id, Profile.kind == ProfileKind.EXPERT, Profile.deleted_at.is_(None)
+            )
+        )
+        if profile_id is None:
+            raise HTTPException(status_code=409, detail="Pro is for expert profiles. Create your expert profile first.")
+        label = "Pro (expert profile)"
+    else:
+        organization_id = await session.scalar(
+            select(OrganizationMember.organization_id)
+            .join(Organization, Organization.id == OrganizationMember.organization_id)
+            .where(
+                OrganizationMember.user_id == user.id,
+                OrganizationMember.member_role == MemberRole.ADMIN.value,
+                Organization.deleted_at.is_(None),
+            )
+        )
+        if organization_id is None:
+            raise HTTPException(status_code=409, detail="Enterprise is for companies. Register your company first.")
+        label = "Enterprise (company)"
+    payment = Payment(id=uuid.uuid4(), user_id=user.id, profile_id=profile_id, organization_id=organization_id,
+                      plan=plan, amount_paise=amount, status="pending")
     session.add(payment)
     await session.commit()
 
@@ -53,7 +80,7 @@ async def create_checkout_session(
         "amount": amount,
         "currency": "INR",
         "accept_partial": False,
-        "description": f"RightConnect {plan.title()} - {ACCESS_DAYS} days access",
+        "description": f"RightConnect {label} - {ACCESS_DAYS} days access",
         "reference_id": str(payment.id),
         "customer": {"name": user.full_name, "email": user.email},
         "notify": {"email": False, "sms": False},
@@ -105,16 +132,21 @@ async def razorpay_webhook(request: Request, session: AsyncSession = Depends(get
                 or captured.get("amount") != payment.amount_paise \
                 or not captured.get("id"):
             raise HTTPException(status_code=400, detail="Payment details do not match")
-        user = await session.get(User, payment.user_id, with_for_update=True)
         now = datetime.now(timezone.utc)
-        expires_at = max(now, user.subscription_expires_at or now) + timedelta(days=ACCESS_DAYS)
+        if payment.profile_id is not None or payment.organization_id is not None:
+            target = (await session.get(Profile, payment.profile_id, with_for_update=True) if payment.profile_id
+                      else await session.get(Organization, payment.organization_id, with_for_update=True))
+            if target is None:
+                raise HTTPException(status_code=409, detail="The profile for this payment no longer exists")
+        else:
+            # Payments created before plans moved onto profiles/companies.
+            target = await session.get(User, payment.user_id, with_for_update=True)
+        expires_at = max(now, target.subscription_expires_at or now) + timedelta(days=ACCESS_DAYS)
         payment.status = "paid"
         payment.razorpay_payment_id = captured["id"]
         payment.paid_at = now
         payment.access_expires_at = expires_at
-        user.subscription_tier = (SubscriptionTier.ENTERPRISE if user.subscription_tier == SubscriptionTier.ENTERPRISE
-                      and user.subscription_expires_at and user.subscription_expires_at > now
-                      else SubscriptionTier(payment.plan))
-        user.subscription_expires_at = expires_at
+        target.subscription_tier = SubscriptionTier(payment.plan)
+        target.subscription_expires_at = expires_at
         await session.commit()
     return {"status": "ok"}

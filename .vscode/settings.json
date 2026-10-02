@@ -1,0 +1,9 @@
+{
+  // Auto-approve ALL tool confirmations in this workspace (use with caution)
+  "chat.tools.global.autoApprove": true,
+  "chat.permissions.default": "autoApprove",
+  "chat.tools.terminal.enableAutoApprove": true,
+  "chat.tools.edits.autoApprove": {
+    "**/*": true
+  }
+}

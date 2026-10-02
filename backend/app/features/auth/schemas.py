@@ -1,5 +1,6 @@
 """Validation models owned by the authentication and onboarding feature."""
 import re
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
@@ -34,6 +35,7 @@ class OnboardingRequest(BaseModel):
     city: str | None = Field(default=None, max_length=100)
     preferred_language: str | None = Field(default=None, max_length=50)
     interest: str | None = Field(default=None, max_length=120)
+    interests: list[str] = Field(default_factory=list, max_length=20)
     primary_service: str | None = Field(default=None, max_length=120)
     years_experience: int | None = Field(default=None, ge=0, le=80)
     credential_number: str | None = Field(default=None, max_length=160)
@@ -46,6 +48,12 @@ class OnboardingRequest(BaseModel):
     @classmethod
     def _validate_phone(cls, value: str | None) -> str | None:
         return normalize_phone(value)
+
+    @field_validator("interests")
+    @classmethod
+    def _clean_interests(cls, values: list[str]) -> list[str]:
+        cleaned = [value.strip()[:120] for value in values if value and value.strip()]
+        return list({value.lower(): value for value in cleaned}.values())
 
 
 class UserResponse(BaseModel):
@@ -80,6 +88,8 @@ class ExpertProfileSummary(BaseModel):
     review_count: int
     resolved_clients_count: int
     show_resolved_count: bool
+    plan_active: bool = False
+    plan_expires_at: datetime | None = None
 
 
 class CompanyRequest(BaseModel):
@@ -101,6 +111,8 @@ class CompanyMembership(BaseModel):
     email_domain_verified: bool
     resolved_clients_count: int
     show_resolved_count: bool
+    plan_active: bool = False
+    plan_expires_at: datetime | None = None
 
 
 class IdentitiesResponse(BaseModel):

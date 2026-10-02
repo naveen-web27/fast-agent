@@ -44,6 +44,7 @@ class Organization(Base):
     subscription_tier: Mapped[SubscriptionTier] = mapped_column(
         _enum(SubscriptionTier, "subscription_tier"), nullable=False, default=SubscriptionTier.FREE
     )
+    subscription_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -98,6 +99,14 @@ class Profile(Base):
     response_minutes: Mapped[int | None] = mapped_column()
     # Owner-controlled: whether the "N clients resolved" badge is shown publicly on this profile.
     show_resolved_count: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # Pro plan for expert profiles; company profiles use their organization's plan instead.
+    subscription_tier: Mapped[SubscriptionTier] = mapped_column(
+        _enum(SubscriptionTier, "subscription_tier"), nullable=False, default=SubscriptionTier.FREE
+    )
+    subscription_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    intro_video_url: Mapped[str | None] = mapped_column(String)
+    portfolio_url: Mapped[str | None] = mapped_column(String)
+    view_count: Mapped[int] = mapped_column(nullable=False, default=0)
     # Set by a platform admin; blocked profiles are hidden from discovery and can't receive new requests.
     blocked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     blocked_reason: Mapped[str | None] = mapped_column(Text)

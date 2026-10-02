@@ -41,6 +41,34 @@ class CreateReviewPayload(BaseModel):
     body: str = Field(min_length=5, max_length=2000)
 
 
+class AssignPayload(BaseModel):
+    """Team member to hand the company's side of a request to; null unassigns."""
+
+    user_id: UUID | None = None
+
+
+class MemberOption(BaseModel):
+    user_id: UUID
+    full_name: str
+    member_role: Literal["admin", "staff"]
+
+
+class AppointmentOut(BaseModel):
+    id: UUID
+    profile_id: UUID | None
+    with_name: str
+    starts_at: datetime
+    ends_at: datetime
+    status: Literal["proposed", "confirmed", "cancelled", "completed"]
+
+
+class BookableProfileOut(BaseModel):
+    """An accepted provider on this request who publishes bookable time slots."""
+
+    profile_id: UUID
+    name: str
+
+
 class SocialLinkOut(BaseModel):
     platform: str
     url: str
@@ -62,6 +90,7 @@ class RequestParticipantOut(BaseModel):
     accepted_at: datetime | None
     completion_confirmed_at: datetime | None = None
     completion_disputed_at: datetime | None = None
+    assigned_to_name: str | None = None
     contact: ContactInfo | None = None
 
 
@@ -111,6 +140,8 @@ class RequestSummary(BaseModel):
     my_role: ParticipantRole
     counterpart_name: str
     pending_action: PendingAction | None = None
+    # For company viewers: which team member is handling it.
+    assigned_to_name: str | None = None
     completed_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
@@ -124,6 +155,11 @@ class RequestDetail(RequestSummary):
     expert_referral: ExpertReferralInfo | None = None
     can_mark_done: bool = False
     review_targets: list[ReviewTargetOut] = Field(default_factory=list)
+    can_assign: bool = False
+    assignable_members: list[MemberOption] = Field(default_factory=list)
+    assigned_user_id: UUID | None = None
+    appointments: list[AppointmentOut] = Field(default_factory=list)
+    bookable_profiles: list[BookableProfileOut] = Field(default_factory=list)
 
 
 class RequestListResponse(BaseModel):

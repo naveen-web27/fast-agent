@@ -44,11 +44,36 @@ class ReviewSummary(BaseModel):
     created_at: datetime
 
 
+class ProfileLink(BaseModel):
+    platform: str
+    url: str
+
+
+class PublicCredential(BaseModel):
+    title: str
+    issuing_body: str | None
+    verified: bool
+
+
+class PublicOffering(BaseModel):
+    title: str
+    description: str | None
+    price_min_inr: int | None
+    price_max_inr: int | None
+
+
 class ProfileDetail(ProfileSummary):
     """Full profile detail including bio and reviews, for the profile preview page."""
 
     bio: str | None
     reviews: list[ReviewSummary]
+    intro_video_url: str | None = None
+    portfolio_url: str | None = None
+    social_links: list[ProfileLink] = []
+    credentials: list[PublicCredential] = []
+    offerings: list[PublicOffering] = []
+    # Paid provider with published weekly slots: customers can pick a time once the request is accepted.
+    bookable: bool = False
 
 
 class ProfileVisibilityUpdate(BaseModel):

@@ -5,10 +5,11 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
+from app.core.plans import company_plan_active, expert_plan_active, plan_expiry
 from app.features.auth.email import send_email
 from app.features.auth.lifecycle import soft_delete_company, soft_delete_user
 from app.features.auth.schemas import (
@@ -22,6 +23,7 @@ from app.features.auth.schemas import (
 )
 from app.features.marketplace.service import count_resolved_clients
 from app.models.email_verification import EmailVerification
+from app.models.organization_invite import OrganizationInvite
 from app.models.organization_member import MemberRole, OrganizationMember
 from app.models.profile import Organization, Profile, ProfileKind, VerificationStatus
 from app.models.user import SubscriptionTier, User, UserRole, active_user_by_auth_id
@@ -93,13 +95,15 @@ async def create_user_profile(
         raise OnboardingConflictError("This account has already completed onboarding")
 
     role = UserRole(payload.role)
+    raw_interests = ([payload.interest] if payload.interest else []) + payload.interests
+    interests = list({item.strip().lower(): item.strip() for item in raw_interests if item.strip()}.values())
     user = User(
         auth_user_id=auth_user_id,
         full_name=payload.full_name,
         email=str(payload.email),
         phone=payload.phone,
         role=role,
-        interests=[payload.interest] if payload.interest else [],
+        interests=interests,
     )
     session.add(user)
     await session.flush()
@@ -153,11 +157,42 @@ async def create_user_profile(
     )
 
 
+async def _accept_pending_invites(session: AsyncSession, user: User) -> None:
+    """Join any company team that invited this email before the person signed up."""
+    invites = (
+        await session.scalars(
+            select(OrganizationInvite)
+            .join(Organization, Organization.id == OrganizationInvite.organization_id)
+            .where(
+                func.lower(OrganizationInvite.email) == user.email.lower(),
+                OrganizationInvite.accepted_at.is_(None),
+                Organization.deleted_at.is_(None),
+            )
+        )
+    ).all()
+    if not invites:
+        return
+    now = datetime.now(timezone.utc)
+    for invite in invites:
+        already_member = await session.scalar(
+            select(OrganizationMember.id).where(
+                OrganizationMember.organization_id == invite.organization_id, OrganizationMember.user_id == user.id
+            )
+        )
+        if already_member is None:
+            session.add(
+                OrganizationMember(organization_id=invite.organization_id, user_id=user.id, member_role=MemberRole.STAFF.value)
+            )
+        invite.accepted_at = now
+    await session.commit()
+
+
 async def get_identities(session: AsyncSession, auth_user_id: UUID) -> IdentitiesResponse | None:
     """Return everything this auth identity can act as: customer, expert, and/or company admin."""
     user = await session.scalar(active_user_by_auth_id(auth_user_id))
     if user is None:
         return None
+    await _accept_pending_invites(session, user)
 
     expert_profile_row = await session.scalar(
         select(Profile).where(Profile.kind == ProfileKind.EXPERT, Profile.user_id == user.id, Profile.deleted_at.is_(None))
@@ -171,6 +206,8 @@ async def get_identities(session: AsyncSession, auth_user_id: UUID) -> Identitie
             review_count=expert_profile_row.review_count,
             resolved_clients_count=await count_resolved_clients(session, expert_profile_row),
             show_resolved_count=expert_profile_row.show_resolved_count,
+            plan_active=expert_plan_active(expert_profile_row),
+            plan_expires_at=plan_expiry(expert_profile_row.subscription_tier, expert_profile_row.subscription_expires_at),
         )
         if expert_profile_row
         else None
@@ -198,6 +235,8 @@ async def get_identities(session: AsyncSession, auth_user_id: UUID) -> Identitie
                 email_domain_verified=organization.email_domain_verified,
                 resolved_clients_count=await count_resolved_clients(session, company_profile) if company_profile else 0,
                 show_resolved_count=company_profile.show_resolved_count if company_profile else True,
+                plan_active=company_plan_active(organization),
+                plan_expires_at=plan_expiry(organization.subscription_tier, organization.subscription_expires_at),
             )
         )
 

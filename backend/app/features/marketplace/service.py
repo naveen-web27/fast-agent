@@ -1,15 +1,27 @@
 """Query logic for searching live marketplace profiles."""
 from uuid import UUID
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.features.marketplace.schemas import ProfileDetail, ProfileListResponse, ProfileSummary, ReviewSummary
+from app.core.plans import CREDENTIAL_LIMIT, SOCIAL_LINK_LIMIT, profile_plan_active
+from app.features.marketplace.schemas import (
+    ProfileDetail,
+    ProfileLink,
+    ProfileListResponse,
+    ProfileSummary,
+    PublicCredential,
+    PublicOffering,
+    ReviewSummary,
+)
+from app.models.availability import AvailabilitySlot
 from app.models.organization_member import MemberRole, OrganizationMember
-from app.models.profile import Profile, ProfileKind, VerificationStatus
+from app.models.profile import Profile, ProfileKind, Service, VerificationStatus
+from app.models.profile_extras import Credential, ProfileOffering
 from app.models.request import Request, RequestParticipant, RequestStatus
 from app.models.review import Review
 from app.models.saved_profile import SavedProfile
+from app.models.social_link import SocialLink
 from app.models.user import User, active_user_by_auth_id
 
 
@@ -80,7 +92,13 @@ async def search_profiles(
     stmt = select(Profile).where(Profile.blocked_at.is_(None), Profile.deleted_at.is_(None))
     if query:
         pattern = f"%{query}%"
-        stmt = stmt.where(or_(Profile.display_name.ilike(pattern), Profile.headline.ilike(pattern)))
+        stmt = stmt.where(
+            or_(
+                Profile.display_name.ilike(pattern),
+                Profile.headline.ilike(pattern),
+                Profile.services.any(Service.name.ilike(pattern)),
+            )
+        )
     if city:
         stmt = stmt.where(Profile.city.ilike(f"%{city}%"))
     if kind:
@@ -113,7 +131,36 @@ async def get_profile_detail(session: AsyncSession, profile_id: UUID) -> Profile
         for review, name in review_rows
     ]
     summary = await _to_summary(session, profile)
-    return ProfileDetail(**summary.model_dump(), bio=profile.bio, reviews=reviews)
+    paid = await profile_plan_active(session, profile)
+    links = (await session.scalars(select(SocialLink).where(SocialLink.profile_id == profile_id))).all()
+    credentials = (await session.scalars(select(Credential).where(Credential.profile_id == profile_id))).all()
+    offerings = (
+        (await session.scalars(select(ProfileOffering).where(ProfileOffering.profile_id == profile_id).order_by(ProfileOffering.created_at))).all()
+        if paid
+        else []
+    )
+    has_slots = await session.scalar(select(AvailabilitySlot.id).where(AvailabilitySlot.profile_id == profile_id).limit(1))
+    detail = ProfileDetail(
+        **summary.model_dump(),
+        bio=profile.bio,
+        reviews=reviews,
+        intro_video_url=profile.intro_video_url if paid else None,
+        portfolio_url=profile.portfolio_url if paid else None,
+        # When a plan lapses the extras are kept but only the free allowance is shown.
+        social_links=[ProfileLink(platform=link.platform, url=link.url) for link in links[: SOCIAL_LINK_LIMIT[paid]]],
+        credentials=[
+            PublicCredential(title=c.title, issuing_body=c.issuing_body, verified=c.verification == VerificationStatus.VERIFIED)
+            for c in credentials[: CREDENTIAL_LIMIT[paid]]
+        ],
+        offerings=[
+            PublicOffering(title=o.title, description=o.description, price_min_inr=o.price_min_inr, price_max_inr=o.price_max_inr)
+            for o in offerings
+        ],
+        bookable=paid and has_slots is not None,
+    )
+    await session.execute(update(Profile).where(Profile.id == profile_id).values(view_count=Profile.view_count + 1))
+    await session.commit()
+    return detail
 
 
 async def save_profile(session: AsyncSession, auth_user_id: UUID, profile_id: UUID) -> None:

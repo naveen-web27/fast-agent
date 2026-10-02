@@ -2,9 +2,11 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
+from app.features.marketplace.catalog import suggest
 from app.features.marketplace.schemas import ProfileDetail, ProfileListResponse, ProfileSummary, ProfileVisibilityUpdate
 from app.features.marketplace.service import (
     IdentityNotFoundError,
@@ -17,9 +19,21 @@ from app.features.marketplace.service import (
     unsave_profile,
     update_resolved_visibility,
 )
+from app.models.profile import Service
 from app.security.dependencies import get_current_auth_user_id
 
 router = APIRouter()
+
+
+@router.get("/services/suggest")
+async def suggest_services(
+    q: str = Query(default="", max_length=80),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, list[str]]:
+    """Type-ahead suggestions for service areas, e.g. "beau" -> Beauty & wellness, Beauty salon."""
+    needle = q.strip()
+    extra = (await session.scalars(select(Service.name).where(Service.name.ilike(f"%{needle}%")).limit(20))).all() if needle else []
+    return {"suggestions": suggest(needle, list(extra))}
 
 
 @router.get("/profiles", response_model=ProfileListResponse)

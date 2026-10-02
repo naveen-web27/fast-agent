@@ -4,9 +4,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.plans import PlanRequiredError
 from app.db.session import get_db
 from app.features.requests.schemas import (
     AddEventPayload,
+    AssignPayload,
     CreateRequestPayload,
     CreateReviewPayload,
     DisputeCompletionPayload,
@@ -24,6 +26,7 @@ from app.features.requests.service import (
     RequestStateError,
     accept_request,
     add_event,
+    assign_request,
     create_request,
     create_review,
     get_request_detail,
@@ -146,10 +149,14 @@ def _raise_http(exc: Exception) -> None:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
     if isinstance(exc, (RequestStateError, DuplicateReviewError)):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    if isinstance(exc, PlanRequiredError):
+        raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=str(exc)) from exc
     raise exc
 
 
-_HANDLED = (IdentityNotFoundError, RequestNotFoundError, RequestAccessError, RequestStateError, DuplicateReviewError)
+_HANDLED = (
+    IdentityNotFoundError, RequestNotFoundError, RequestAccessError, RequestStateError, DuplicateReviewError, PlanRequiredError,
+)
 
 
 @router.post("/{request_id}/complete", response_model=RequestDetail)
@@ -202,5 +209,19 @@ async def review(
     """Rate an expert or company on a completed request."""
     try:
         return await create_review(session, auth_user_id, request_id, payload)
+    except _HANDLED as exc:
+        _raise_http(exc)
+
+
+@router.post("/{request_id}/assign", response_model=RequestDetail)
+async def assign(
+    request_id: UUID,
+    payload: AssignPayload,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> RequestDetail:
+    """Company admin (Enterprise) hands this request to a team member, or unassigns it."""
+    try:
+        return await assign_request(session, auth_user_id, request_id, payload.user_id)
     except _HANDLED as exc:
         _raise_http(exc)

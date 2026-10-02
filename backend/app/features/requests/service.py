@@ -5,12 +5,15 @@ from uuid import UUID
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.plans import company_plan_active, require_plan
+from app.features.booking.slots import bookable_profiles, request_appointments
 from app.features.requests.schemas import (
     ContactInfo,
     CreateRequestPayload,
     CreateReviewPayload,
     DomainClientStat,
     ExpertReferralInfo,
+    MemberOption,
     RequestDetail,
     RequestEventOut,
     RequestParticipantOut,
@@ -65,12 +68,25 @@ async def _get_user(session: AsyncSession, auth_user_id: UUID) -> User:
 
 
 async def _my_organization_ids(session: AsyncSession, user_id: UUID) -> set[UUID]:
+    """Companies whose whole request inbox the caller sees. Staff only see requests assigned to them."""
     rows = await session.scalars(
         select(OrganizationMember.organization_id)
         .join(Organization, Organization.id == OrganizationMember.organization_id)
-        .where(OrganizationMember.user_id == user_id, Organization.deleted_at.is_(None))
+        .where(
+            OrganizationMember.user_id == user_id,
+            OrganizationMember.member_role == MemberRole.ADMIN.value,
+            Organization.deleted_at.is_(None),
+        )
     )
     return set(rows.all())
+
+
+def _is_mine(participant: RequestParticipant, user: User, my_org_ids: set[UUID]) -> bool:
+    return (
+        participant.user_id == user.id
+        or participant.assigned_user_id == user.id
+        or (participant.organization_id is not None and participant.organization_id in my_org_ids)
+    )
 
 
 async def _social_links_for_profile(session: AsyncSession, profile_id: UUID) -> list[SocialLinkOut]:
@@ -94,22 +110,26 @@ async def _contact_info_for_user(session: AsyncSession, target_user: User) -> Co
     )
 
 
-async def _contact_info_for_organization(session: AsyncSession, organization: Organization) -> ContactInfo:
-    """Contact card for a company: its primary admin's phone/email plus the company profile's social links."""
-    admin_member = await session.scalar(
-        select(OrganizationMember)
-        .where(OrganizationMember.organization_id == organization.id, OrganizationMember.member_role == MemberRole.ADMIN.value)
-        .order_by(OrganizationMember.created_at)
-    )
-    admin_user = await session.get(User, admin_member.user_id) if admin_member is not None else None
+async def _contact_info_for_organization(
+    session: AsyncSession, organization: Organization, assigned_user_id: UUID | None = None
+) -> ContactInfo:
+    """Contact card for a company: the assigned team member (or primary admin) plus the company's social links."""
+    contact_user = await session.get(User, assigned_user_id) if assigned_user_id is not None else None
+    if contact_user is None or contact_user.deleted_at is not None:
+        admin_member = await session.scalar(
+            select(OrganizationMember)
+            .where(OrganizationMember.organization_id == organization.id, OrganizationMember.member_role == MemberRole.ADMIN.value)
+            .order_by(OrganizationMember.created_at)
+        )
+        contact_user = await session.get(User, admin_member.user_id) if admin_member is not None else None
     company_profile = await session.scalar(
         select(Profile).where(Profile.organization_id == organization.id, Profile.kind == ProfileKind.COMPANY)
     )
     social_links = await _social_links_for_profile(session, company_profile.id) if company_profile is not None else []
     return ContactInfo(
-        full_name=organization.name,
-        email=admin_user.email if admin_user is not None else None,
-        phone=admin_user.phone if admin_user is not None else None,
+        full_name=organization.name if assigned_user_id is None or contact_user is None else f"{contact_user.full_name} · {organization.name}",
+        email=contact_user.email if contact_user is not None else None,
+        phone=contact_user.phone if contact_user is not None else None,
         website_url=organization.website_url,
         social_links=social_links,
     )
@@ -180,12 +200,7 @@ async def _participant_display_name(session: AsyncSession, participant: RequestP
 def _my_participants(
     participants: list[RequestParticipant], user: User, my_org_ids: set[UUID]
 ) -> list[RequestParticipant]:
-    return [
-        participant
-        for participant in participants
-        if participant.user_id == user.id
-        or (participant.organization_id is not None and participant.organization_id in my_org_ids)
-    ]
+    return [participant for participant in participants if _is_mine(participant, user, my_org_ids)]
 
 
 async def _participant_profile(session: AsyncSession, participant: RequestParticipant) -> Profile | None:
@@ -284,23 +299,19 @@ async def _pending_action(
 async def _build_summary(
     session: AsyncSession, request: Request, user: User, my_org_ids: set[UUID], participants: list[RequestParticipant]
 ) -> RequestSummary:
+    assigned_to_name = None
     if request.customer_id == user.id:
         my_role = "customer"
         names = [await _participant_display_name(session, participant) for participant in participants]
         counterpart_name = ", ".join(names) if names else "Awaiting a match"
     else:
-        mine = next(
-            (
-                participant
-                for participant in participants
-                if participant.user_id == user.id
-                or (participant.organization_id is not None and participant.organization_id in my_org_ids)
-            ),
-            None,
-        )
+        mine = next((participant for participant in participants if _is_mine(participant, user, my_org_ids)), None)
         my_role = mine.participant_role if mine is not None else "expert"
         customer = await session.get(User, request.customer_id)
         counterpart_name = customer.full_name if customer is not None else "Customer"
+        if mine is not None and mine.assigned_user_id is not None:
+            assignee = await session.get(User, mine.assigned_user_id)
+            assigned_to_name = assignee.full_name if assignee is not None else None
 
     return RequestSummary(
         id=request.id,
@@ -311,6 +322,7 @@ async def _build_summary(
         my_role=my_role,
         counterpart_name=counterpart_name,
         pending_action=await _pending_action(session, request, user, my_org_ids, participants),
+        assigned_to_name=assigned_to_name,
         completed_at=request.completed_at,
         created_at=request.created_at,
         updated_at=request.updated_at,
@@ -326,15 +338,7 @@ async def _build_detail(session: AsyncSession, request: Request, user: User, my_
     # The customer never gets an explicit request_participants row, so synthesize their entry here.
     # They're treated as always-accepted since they're the one who opened the request.
     viewer_is_customer = request.customer_id == user.id
-    viewer_participant = next(
-        (
-            participant
-            for participant in participants
-            if participant.user_id == user.id
-            or (participant.organization_id is not None and participant.organization_id in my_org_ids)
-        ),
-        None,
-    )
+    viewer_participant = next((participant for participant in participants if _is_mine(participant, user, my_org_ids)), None)
     viewer_accepted = viewer_is_customer or (viewer_participant is not None and viewer_participant.accepted_at is not None)
 
     customer_user = await session.get(User, request.customer_id)
@@ -355,7 +359,12 @@ async def _build_detail(session: AsyncSession, request: Request, user: User, my_
                 contact = await _contact_info_for_user(session, participant_user) if participant_user is not None else None
             elif participant.organization_id is not None:
                 organization = await session.get(Organization, participant.organization_id)
-                contact = await _contact_info_for_organization(session, organization) if organization is not None else None
+                contact = (
+                    await _contact_info_for_organization(session, organization, participant.assigned_user_id)
+                    if organization is not None
+                    else None
+                )
+        assignee = await session.get(User, participant.assigned_user_id) if participant.assigned_user_id else None
         participant_payload.append(
             RequestParticipantOut(
                 participant_role=participant.participant_role,
@@ -363,6 +372,7 @@ async def _build_detail(session: AsyncSession, request: Request, user: User, my_
                 accepted_at=participant.accepted_at,
                 completion_confirmed_at=participant.completion_confirmed_at,
                 completion_disputed_at=participant.completion_disputed_at,
+                assigned_to_name=assignee.full_name if assignee is not None else None,
                 contact=contact,
             )
         )
@@ -392,6 +402,25 @@ async def _build_detail(session: AsyncSession, request: Request, user: User, my_
         and any(participant.accepted_at is not None for participant in participants)
     )
 
+    # Company admins on an Enterprise plan can hand the request to a team member.
+    assignable_members: list[MemberOption] = []
+    admin_company = next(
+        (p for p in participants if p.organization_id is not None and p.organization_id in my_org_ids), None
+    )
+    if admin_company is not None and company_plan_active(await session.get(Organization, admin_company.organization_id)):
+        member_rows = (
+            await session.execute(
+                select(User.id, User.full_name, OrganizationMember.member_role)
+                .join(OrganizationMember, OrganizationMember.user_id == User.id)
+                .where(OrganizationMember.organization_id == admin_company.organization_id, User.deleted_at.is_(None))
+                .order_by(User.full_name)
+            )
+        ).all()
+        assignable_members = [
+            MemberOption(user_id=member_id, full_name=name, member_role=role) for member_id, name, role in member_rows
+        ]
+
+    open_request = request.status not in (RequestStatus.COMPLETED, RequestStatus.CANCELLED)
     return RequestDetail(
         **summary.model_dump(),
         participants=participant_payload,
@@ -399,16 +428,18 @@ async def _build_detail(session: AsyncSession, request: Request, user: User, my_
         expert_referral=expert_referral,
         can_mark_done=can_mark_done,
         review_targets=await _review_targets(session, request, user, my_org_ids, list(participants)),
+        can_assign=bool(assignable_members),
+        assignable_members=assignable_members,
+        assigned_user_id=admin_company.assigned_user_id if admin_company is not None else None,
+        appointments=await request_appointments(session, request.id),
+        bookable_profiles=await bookable_profiles(session, list(participants)) if viewer_is_customer and open_request else [],
     )
 
 
 def _is_participant(request: Request, user: User, my_org_ids: set[UUID], participants: list[RequestParticipant]) -> bool:
     if request.customer_id == user.id:
         return True
-    return any(
-        participant.user_id == user.id or (participant.organization_id is not None and participant.organization_id in my_org_ids)
-        for participant in participants
-    )
+    return any(_is_mine(participant, user, my_org_ids) for participant in participants)
 
 
 async def create_request(session: AsyncSession, auth_user_id: UUID, payload: CreateRequestPayload) -> RequestDetail:
@@ -449,7 +480,11 @@ async def list_requests(session: AsyncSession, auth_user_id: UUID) -> list[Reque
     user = await _get_user(session, auth_user_id)
     my_org_ids = await _my_organization_ids(session, user.id)
 
-    conditions = [Request.customer_id == user.id, RequestParticipant.user_id == user.id]
+    conditions = [
+        Request.customer_id == user.id,
+        RequestParticipant.user_id == user.id,
+        RequestParticipant.assigned_user_id == user.id,
+    ]
     if my_org_ids:
         conditions.append(RequestParticipant.organization_id.in_(my_org_ids))
 
@@ -527,15 +562,7 @@ async def accept_request(session: AsyncSession, auth_user_id: UUID, request_id: 
     participants = (
         await session.scalars(select(RequestParticipant).where(RequestParticipant.request_id == request.id))
     ).all()
-    mine = next(
-        (
-            participant
-            for participant in participants
-            if participant.user_id == user.id
-            or (participant.organization_id is not None and participant.organization_id in my_org_ids)
-        ),
-        None,
-    )
+    mine = next((participant for participant in participants if _is_mine(participant, user, my_org_ids)), None)
     if mine is None:
         raise RequestAccessError("Only the invited expert or company can accept this request")
 
@@ -709,6 +736,43 @@ async def create_review(
     total = float(profile.average_rating) * profile.review_count + payload.rating
     profile.review_count += 1
     profile.average_rating = round(total / profile.review_count, 1)
+    request.updated_at = datetime.now(timezone.utc)
+    await session.commit()
+    await session.refresh(request)
+    return await _build_detail(session, request, user, my_org_ids)
+
+
+async def assign_request(
+    session: AsyncSession, auth_user_id: UUID, request_id: UUID, assignee_id: UUID | None
+) -> RequestDetail:
+    """Company admin hands the company's side of a request to a team member (Enterprise)."""
+    user, request, my_org_ids, participants = await _load_request_for_participant(session, auth_user_id, request_id)
+    company_participant = next(
+        (p for p in participants if p.organization_id is not None and p.organization_id in my_org_ids), None
+    )
+    if company_participant is None:
+        raise RequestAccessError("Only an admin of the company on this request can assign it")
+    organization = await session.get(Organization, company_participant.organization_id)
+    require_plan(company_plan_active(organization), ProfileKind.COMPANY, "Assigning requests to your team")
+
+    assignee = None
+    if assignee_id is not None:
+        is_member = await session.scalar(
+            select(OrganizationMember.id).where(
+                OrganizationMember.organization_id == organization.id, OrganizationMember.user_id == assignee_id
+            )
+        )
+        assignee = await session.get(User, assignee_id) if is_member else None
+        if assignee is None or assignee.deleted_at is not None:
+            raise RequestStateError("Choose someone from your company team")
+
+    company_participant.assigned_user_id = assignee_id
+    message = (
+        f"{organization.name} assigned this request to {assignee.full_name}."
+        if assignee is not None
+        else f"{organization.name} unassigned this request."
+    )
+    session.add(RequestEvent(request_id=request.id, author_id=user.id, event_type="system", message=message))
     request.updated_at = datetime.now(timezone.utc)
     await session.commit()
     await session.refresh(request)
