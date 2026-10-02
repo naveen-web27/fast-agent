@@ -23,7 +23,7 @@ from app.models.profile import Organization, Profile, ProfileKind, Service, Veri
 from app.models.request import Request, RequestEvent, RequestParticipant, RequestStatus
 from app.models.review import Review
 from app.models.social_link import SocialLink
-from app.models.user import User
+from app.models.user import User, active_user_by_auth_id
 
 # If a provider neither confirms nor disputes "done", reviews open anyway so they can't dodge ratings by staying silent.
 COMPLETION_REVIEW_GRACE = timedelta(days=7)
@@ -58,14 +58,18 @@ class DuplicateReviewError(Exception):
 
 
 async def _get_user(session: AsyncSession, auth_user_id: UUID) -> User:
-    user = await session.scalar(select(User).where(User.auth_user_id == auth_user_id))
+    user = await session.scalar(active_user_by_auth_id(auth_user_id))
     if user is None:
         raise IdentityNotFoundError("Complete onboarding before using requests")
     return user
 
 
 async def _my_organization_ids(session: AsyncSession, user_id: UUID) -> set[UUID]:
-    rows = await session.scalars(select(OrganizationMember.organization_id).where(OrganizationMember.user_id == user_id))
+    rows = await session.scalars(
+        select(OrganizationMember.organization_id)
+        .join(Organization, Organization.id == OrganizationMember.organization_id)
+        .where(OrganizationMember.user_id == user_id, Organization.deleted_at.is_(None))
+    )
     return set(rows.all())
 
 
@@ -77,7 +81,9 @@ async def _social_links_for_profile(session: AsyncSession, profile_id: UUID) -> 
 async def _contact_info_for_user(session: AsyncSession, target_user: User) -> ContactInfo:
     """Contact card for an individual (customer or expert), including their expert profile's social links."""
     expert_profile = await session.scalar(
-        select(Profile).where(Profile.user_id == target_user.id, Profile.kind == ProfileKind.EXPERT)
+        select(Profile).where(
+            Profile.user_id == target_user.id, Profile.kind == ProfileKind.EXPERT, Profile.deleted_at.is_(None)
+        )
     )
     social_links = await _social_links_for_profile(session, expert_profile.id) if expert_profile is not None else []
     return ContactInfo(
@@ -135,7 +141,11 @@ async def _expert_referral_info(
     if expert_participant is None:
         return None
     profile = await session.scalar(
-        select(Profile).where(Profile.user_id == expert_participant.user_id, Profile.kind == ProfileKind.EXPERT)
+        select(Profile).where(
+            Profile.user_id == expert_participant.user_id,
+            Profile.kind == ProfileKind.EXPERT,
+            Profile.deleted_at.is_(None),
+        )
     )
     if profile is None:
         return None
@@ -153,7 +163,9 @@ async def _expert_referral_info(
 async def _participant_display_name(session: AsyncSession, participant: RequestParticipant) -> str:
     if participant.user_id is not None:
         profile = await session.scalar(
-            select(Profile).where(Profile.user_id == participant.user_id, Profile.kind == ProfileKind.EXPERT)
+            select(Profile).where(
+                Profile.user_id == participant.user_id, Profile.kind == ProfileKind.EXPERT, Profile.deleted_at.is_(None)
+            )
         )
         if profile is not None:
             return profile.display_name
@@ -179,7 +191,9 @@ def _my_participants(
 async def _participant_profile(session: AsyncSession, participant: RequestParticipant) -> Profile | None:
     if participant.user_id is not None:
         return await session.scalar(
-            select(Profile).where(Profile.user_id == participant.user_id, Profile.kind == ProfileKind.EXPERT)
+            select(Profile).where(
+                Profile.user_id == participant.user_id, Profile.kind == ProfileKind.EXPERT, Profile.deleted_at.is_(None)
+            )
         )
     return await session.scalar(
         select(Profile).where(Profile.organization_id == participant.organization_id, Profile.kind == ProfileKind.COMPANY)
@@ -402,7 +416,7 @@ async def create_request(session: AsyncSession, auth_user_id: UUID, payload: Cre
     user = await _get_user(session, auth_user_id)
 
     profile = await session.get(Profile, payload.profile_id)
-    if profile is None or profile.blocked_at is not None:
+    if profile is None or profile.blocked_at is not None or profile.deleted_at is not None:
         raise ProfileTargetError("This profile could not be found")
 
     request = Request(
@@ -553,7 +567,12 @@ async def invite_company(session: AsyncSession, auth_user_id: UUID, request_id: 
         raise RequestAccessError("Only an expert who has accepted this request can invite a company")
 
     profile = await session.get(Profile, profile_id)
-    if profile is None or profile.kind is not ProfileKind.COMPANY or profile.blocked_at is not None:
+    if (
+        profile is None
+        or profile.kind is not ProfileKind.COMPANY
+        or profile.blocked_at is not None
+        or profile.deleted_at is not None
+    ):
         raise ProfileTargetError("Choose a valid company profile to invite")
 
     if any(p.organization_id == profile.organization_id for p in participants if p.organization_id is not None):

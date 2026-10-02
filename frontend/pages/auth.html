@@ -177,6 +177,13 @@
           authSession = data.session;
           if (authSession) {
             const meResponse = await fetch(`${apiBase}/auth/me`, { headers: { Authorization: `Bearer ${authSession.access_token}` } });
+            if (meResponse.status === 403) {
+              const body = await meResponse.json().catch(() => ({}));
+              await authClient.auth.signOut();
+              authSession = null;
+              showToast(body.detail || 'Your account has been suspended.', 'error');
+              return;
+            }
             if (meResponse.ok) {
               sessionStorage.setItem('rightconnect-user', JSON.stringify(await meResponse.json()));
               const destination = sessionStorage.getItem('rightconnect-auth-return') === 'plans' ? 'plans.html' : 'marketplace.html';

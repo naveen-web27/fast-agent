@@ -44,6 +44,7 @@ class Organization(Base):
     subscription_tier: Mapped[SubscriptionTier] = mapped_column(
         _enum(SubscriptionTier, "subscription_tier"), nullable=False, default=SubscriptionTier.FREE
     )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -100,6 +101,7 @@ class Profile(Base):
     # Set by a platform admin; blocked profiles are hidden from discovery and can't receive new requests.
     blocked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     blocked_reason: Mapped[str | None] = mapped_column(Text)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     services: Mapped[list[Service]] = relationship(secondary=ProfileService.__table__, lazy="selectin")

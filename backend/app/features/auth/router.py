@@ -31,6 +31,9 @@ from app.features.auth.service import (
     add_expert_profile,
     add_interest,
     create_user_profile,
+    delete_my_account,
+    delete_my_company,
+    delete_my_expert_profile,
     get_identities,
     get_user_profile,
     remove_interest,
@@ -62,6 +65,43 @@ async def get_current_user(
     if profile is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Onboarding not completed")
     return profile
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_account(
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> None:
+    """Delete the caller's account (soft delete). Signing in again starts a fresh signup."""
+    try:
+        await delete_my_account(session, auth_user_id)
+    except IdentityNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.delete("/identities/expert", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_expert_profile(
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> None:
+    try:
+        await delete_my_expert_profile(session, auth_user_id)
+    except IdentityNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.delete("/identities/companies/{organization_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_company(
+    organization_id: UUID,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> None:
+    try:
+        await delete_my_company(session, auth_user_id, organization_id)
+    except IdentityNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except OrganizationAccessError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
 
 
 @router.get("/identities", response_model=IdentitiesResponse)

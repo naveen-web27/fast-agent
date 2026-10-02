@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>RightConnect · Admin</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root { --teal:#0f9d8f; --ink:#132033; --muted:#63708a; --line:#e4e9f2; --danger:#c0392b; --warn:#b7791f; --shadow:0 18px 40px rgba(19,32,51,.08); }
+    * { box-sizing:border-box; }
+    [hidden] { display:none !important; }
+    body { margin:0; font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:#f5f7fb; color:var(--ink); }
+    header { position:sticky; top:0; z-index:10; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 24px; color:#fff; background:#101b31; }
+    header strong { font-size:15px; }
+    header a { color:#9fb3d9; font-size:12px; text-decoration:none; margin-left:12px; }
+    nav.sections { display:flex; flex-wrap:wrap; gap:6px; padding:12px 24px; background:#fff; border-bottom:1px solid var(--line); }
+    nav.sections button { position:relative; padding:8px 14px; border:0; border-radius:8px; background:transparent; color:var(--muted); font-weight:700; cursor:pointer; }
+    nav.sections button.active { color:var(--ink); background:#eef2f8; }
+    nav.sections .count { margin-left:6px; padding:1px 7px; border-radius:99px; color:#fff; background:var(--danger); font-size:10px; }
+    main { max-width:1080px; margin:0 auto; padding:22px 24px 60px; }
+    .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .pills { display:flex; flex-wrap:wrap; gap:6px; }
+    .pills button { padding:7px 13px; border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--muted); font-weight:700; font-size:12px; cursor:pointer; }
+    .pills button.active { color:#fff; background:var(--ink); border-color:var(--ink); }
+    .toolbar input,.toolbar select { padding:8px 12px; border:1px solid var(--line); border-radius:8px; font:inherit; background:#fff; }
+    .toolbar input { min-width:240px; }
+    .card { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:10px; padding:14px 16px; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); }
+    .card .info { min-width:0; }
+    .card .info strong { display:block; font-size:14px; }
+    .card .info small { color:var(--muted); font-size:12px; }
+    .card .meta { margin-top:3px; color:var(--muted); font-size:11px; letter-spacing:.03em; }
+    .card .reason { margin-top:4px; color:var(--danger); font-size:12px; }
+    .actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; flex-shrink:0; }
+    button.btn { padding:7px 12px; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; border:1px solid var(--line); background:#fff; color:var(--ink); }
+    button.btn.primary { color:#fff; background:var(--teal); border-color:var(--teal); }
+    button.btn.reject { color:var(--danger); border-color:#f0c4bd; }
+    button.btn.danger { color:#fff; background:var(--danger); border-color:var(--danger); }
+    button.btn:disabled { opacity:.6; cursor:progress; }
+    .badge { display:inline-block; margin-left:6px; padding:2px 7px; border-radius:99px; font-size:10px; font-weight:800; text-transform:uppercase; vertical-align:2px; }
+    .badge.pending { color:#7a5b00; background:#fff4d6; } .badge.verified { color:#0b6b4f; background:#e1f6ee; } .badge.rejected,.badge.blocked { color:#fff; background:var(--danger); } .badge.deleted { color:#fff; background:#6b7280; } .badge.role { color:#33507f; background:#e8eefb; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
+    .stat { padding:16px; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); cursor:default; }
+    .stat.link { cursor:pointer; } .stat.link:hover { border-color:#a9b7ca; }
+    .stat small { display:block; color:var(--muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+    .stat strong { display:block; margin-top:6px; font-size:26px; }
+    .stat.alert strong { color:var(--danger); }
+    .notice,.empty { padding:36px; text-align:center; color:var(--muted); background:#fff; border:1px solid var(--line); border-radius:12px; }
+    .notice.error { color:var(--danger); }
+    .modal-scrim { position:fixed; inset:0; z-index:40; background:rgba(16,27,49,.5); }
+    .modal { position:fixed; top:50%; left:50%; z-index:50; width:min(92vw,440px); padding:22px; background:#fff; border-radius:14px; box-shadow:0 30px 70px rgba(0,0,0,.25); transform:translate(-50%,-50%); }
+    .modal h2 { margin:0 0 6px; font-size:18px; }
+    .modal p { margin:0 0 14px; color:var(--muted); font-size:13px; }
+    .modal label { display:block; margin-bottom:6px; font-size:12px; font-weight:700; }
+    .modal textarea,.modal input { width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:8px; font:inherit; }
+    .modal .row { display:flex; justify-content:flex-end; gap:8px; margin-top:14px; }
+    .modal .error { min-height:16px; margin-top:6px; color:var(--danger); font-size:12px; }
+    .toast { position:fixed; left:50%; bottom:24px; z-index:60; padding:10px 16px; color:#fff; border-radius:9px; background:#22314f; font-size:13px; font-weight:700; transform:translateX(-50%); }
+    .toast.error { background:#7a2436; } .toast.success { background:#0f5c47; }
+    @media (max-width:720px) { .card { flex-direction:column; align-items:flex-start; } .actions { justify-content:flex-start; } .toolbar input { min-width:0; width:100%; } }
+  </style>
+</head>
+<body>
+  <header><div><strong>RightConnect admin</strong><a href="/pages/marketplace.html">Open marketplace ↗</a></div><span id="whoami"></span></header>
+  <nav class="sections" id="sections">
+    <button data-section="overview" class="active">Overview</button>
+    <button data-section="profiles">Profiles</button>
+    <button data-section="users">Accounts</button>
+    <button data-section="disputes">Disputes<span class="count" id="disputes-count" hidden></span></button>
+    <button data-section="activity">Activity log</button>
+  </nav>
+  <main>
+    <div class="toolbar" id="toolbar" hidden>
+      <div class="pills" id="filters"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><select id="role-filter" hidden><option value="">All roles</option><option value="customer">Customers</option><option value="expert">Experts</option><option value="company_admin">Company admins</option><option value="platform_admin">Platform admins</option></select><input id="search" type="search" placeholder="Search name, email or phone…"></div>
+    </div>
+    <div id="content"><p class="notice">Loading…</p></div>
+  </main>
+
+  <div class="modal-scrim" id="modal-scrim" hidden></div>
+  <div class="modal" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" hidden>
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-text"></p>
+    <div id="confirm-reason-wrap"><label for="confirm-reason" id="confirm-reason-label">Reason (only admins see this)</label><textarea id="confirm-reason" rows="3" maxlength="500"></textarea></div>
+    <div id="confirm-type-wrap"><label for="confirm-type">Type <b>DELETE</b> to confirm</label><input id="confirm-type" autocomplete="off"></div>
+    <div class="error" id="confirm-error"></div>
+    <div class="row"><button class="btn" type="button" id="confirm-cancel">Cancel</button><button class="btn danger" type="button" id="confirm-ok">Confirm</button></div>
+  </div>
+  <div class="toast" id="toast" hidden></div>
+
+  <script>
+    const apiBase = '/api/v1';
+    const content = document.querySelector('#content');
+    const toolbar = document.querySelector('#toolbar');
+    const filtersBox = document.querySelector('#filters');
+    const searchInput = document.querySelector('#search');
+    const roleFilter = document.querySelector('#role-filter');
+    let accessToken = null;
+    let section = 'overview';
+    const filterState = { profiles: 'pending', users: 'active' };
+    const FILTERS = {
+      profiles: [['pending', 'Pending'], ['verified', 'Verified'], ['rejected', 'Rejected'], ['blocked', 'Blocked'], ['deleted', 'Deleted'], ['all', 'All']],
+      users: [['active', 'Active'], ['blocked', 'Blocked'], ['deleted', 'Deleted'], ['all', 'All']],
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+    function formatDate(value) { return value ? new Date(value).toLocaleString() : ''; }
+    function authHeaders() { return accessToken ? { Authorization: `Bearer ${accessToken}` } : {}; }
+
+    let toastTimer = null;
+    function showToast(message, variant) {
+      const toast = document.querySelector('#toast');
+      toast.textContent = message;
+      toast.className = `toast ${variant || ''}`;
+      toast.hidden = false;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toast.hidden = true; }, 3000);
+    }
+
+    async function api(path, options = {}) {
+      const response = await fetch(`${apiBase}${path}`, { ...options, headers: { 'Content-Type': 'application/json', ...authHeaders(), ...(options.headers || {}) } });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        const detail = typeof body.detail === 'string' ? body.detail : body.detail?.[0]?.msg;
+        const error = new Error(detail || `Request failed (${response.status})`);
+        error.status = response.status;
+        throw error;
+      }
+      return response.status === 204 ? null : response.json();
+    }
+
+    // ---------- confirm modal (replaces prompt()/confirm(), which some browsers block) ----------
+    let confirmHandler = null;
+    function openConfirm({ title, text, needsReason = false, reasonLabel, typeDelete = false, okLabel = 'Confirm', danger = true, onConfirm }) {
+      document.querySelector('#confirm-title').textContent = title;
+      document.querySelector('#confirm-text').textContent = text;
+      document.querySelector('#confirm-reason-wrap').hidden = !needsReason;
+      document.querySelector('#confirm-reason-label').textContent = reasonLabel || 'Reason (only admins see this)';
+      document.querySelector('#confirm-type-wrap').hidden = !typeDelete;
+      document.querySelector('#confirm-reason').value = '';
+      document.querySelector('#confirm-type').value = '';
+      document.querySelector('#confirm-error').textContent = '';
+      const ok = document.querySelector('#confirm-ok');
+      ok.textContent = okLabel;
+      ok.className = `btn ${danger ? 'danger' : 'primary'}`;
+      ok.disabled = false;
+      confirmHandler = { needsReason, typeDelete, onConfirm };
+      document.querySelector('#modal-scrim').hidden = false;
+      document.querySelector('#confirm-modal').hidden = false;
+      (needsReason ? document.querySelector('#confirm-reason') : typeDelete ? document.querySelector('#confirm-type') : ok).focus();
+    }
+    function closeConfirm() {
+      document.querySelector('#modal-scrim').hidden = true;
+      document.querySelector('#confirm-modal').hidden = true;
+      confirmHandler = null;
+    }
+    document.querySelector('#confirm-cancel').addEventListener('click', closeConfirm);
+    document.querySelector('#modal-scrim').addEventListener('click', closeConfirm);
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && confirmHandler) closeConfirm(); });
+    document.querySelector('#confirm-ok').addEventListener('click', async () => {
+      if (!confirmHandler) return;
+      const errorBox = document.querySelector('#confirm-error');
+      const reason = document.querySelector('#confirm-reason').value.trim();
+      if (confirmHandler.needsReason && reason.length < 3) { errorBox.textContent = 'Please enter a reason (at least 3 characters).'; return; }
+      if (confirmHandler.typeDelete && document.querySelector('#confirm-type').value.trim().toUpperCase() !== 'DELETE') { errorBox.textContent = 'Type DELETE to confirm.'; return; }
+      const ok = document.querySelector('#confirm-ok');
+      ok.disabled = true;
+      ok.textContent = 'Working…';
+      try {
+        await confirmHandler.onConfirm(reason);
+        closeConfirm();
+      } catch (error) {
+        errorBox.textContent = error.message;
+        ok.disabled = false;
+        ok.textContent = 'Try again';
+      }
+    });
+
+    // ---------- navigation ----------
+    document.querySelectorAll('#sections button').forEach((button) => button.addEventListener('click', () => switchSection(button.dataset.section)));
+    function switchSection(next, filter) {
+      section = next;
+      if (filter) filterState[next] = filter;
+      document.querySelectorAll('#sections button').forEach((button) => button.classList.toggle('active', button.dataset.section === next));
+      searchInput.value = '';
+      roleFilter.value = '';
+      renderToolbar();
+      load();
+    }
+    function renderToolbar() {
+      const filters = FILTERS[section];
+      toolbar.hidden = !filters;
+      roleFilter.hidden = section !== 'users';
+      if (!filters) return;
+      filtersBox.innerHTML = filters.map(([value, label]) => `<button data-filter="${value}" class="${filterState[section] === value ? 'active' : ''}">${label}</button>`).join('');
+      filtersBox.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => {
+        filterState[section] = button.dataset.filter;
+        renderToolbar();
+        load();
+      }));
+    }
+    let searchTimer = null;
+    searchInput.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(load, 300); });
+    roleFilter.addEventListener('change', load);
+
+    async function load() {
+      content.innerHTML = '<p class="notice">Loading…</p>';
+      try {
+        if (section === 'overview') return renderOverview(await api('/admin/stats'));
+        if (section === 'profiles') {
+          const params = new URLSearchParams({ verification: filterState.profiles });
+          if (searchInput.value.trim()) params.set('q', searchInput.value.trim());
+          return renderList(await api(`/admin/profiles?${params}`), renderProfileCard, 'profiles');
+        }
+        if (section === 'users') {
+          const params = new URLSearchParams({ status: filterState.users });
+          if (searchInput.value.trim()) params.set('q', searchInput.value.trim());
+          if (roleFilter.value) params.set('role', roleFilter.value);
+          return renderList(await api(`/admin/users?${params}`), renderUserCard, 'accounts');
+        }
+        if (section === 'disputes') return renderList(await api('/admin/disputes'), renderDisputeCard, 'open disputes');
+        if (section === 'activity') return renderList(await api('/admin/activity'), renderActivityCard, 'admin actions yet');
+      } catch (error) {
+        content.innerHTML = error.status === 403
+          ? '<p class="notice error">Admin access required. Your account needs the platform_admin role (and to be in ADMIN_EMAILS if that is set).</p>'
+          : `<p class="notice error">${escapeHtml(error.message)}</p>`;
+      }
+    }
+
+    function renderList(items, renderCard, emptyLabel) {
+      if (!items.length) { content.innerHTML = `<p class="empty">No ${emptyLabel}.</p>`; return; }
+      content.innerHTML = '';
+      items.forEach((item) => content.appendChild(renderCard(item)));
+    }
+
+    function renderOverview(stats) {
+      setDisputeCount(stats.disputes_open);
+      const tiles = [
+        ['Pending verifications', stats.profiles_pending, 'profiles', 'pending', stats.profiles_pending > 0],
+        ['Open disputes', stats.disputes_open, 'disputes', null, stats.disputes_open > 0],
+        ['Active accounts', stats.users_total, 'users', 'active'],
+        ['New accounts (7 days)', stats.users_new_7d, 'users', 'active'],
+        ['Live experts', stats.experts_live, 'profiles', 'verified'],
+        ['Live companies', stats.companies_live, 'profiles', 'verified'],
+        ['Open requests', stats.requests_open],
+        ['New requests (7 days)', stats.requests_new_7d],
+        ['Completed requests', stats.requests_completed],
+        ['Blocked accounts', stats.users_blocked, 'users', 'blocked'],
+        ['Blocked profiles', stats.profiles_blocked, 'profiles', 'blocked'],
+        ['Deleted (awaiting purge)', stats.users_deleted, 'users', 'deleted'],
+      ];
+      content.innerHTML = `<div class="stats">${tiles.map(([label, value, target, filter, alert]) => `<div class="stat${target ? ' link' : ''}${alert ? ' alert' : ''}" ${target ? `data-target="${target}" data-filter="${filter || ''}"` : ''}><small>${label}</small><strong>${value}</strong></div>`).join('')}</div>`;
+      content.querySelectorAll('[data-target]').forEach((tile) => tile.addEventListener('click', () => switchSection(tile.dataset.target, tile.dataset.filter || undefined)));
+    }
+    function setDisputeCount(count) {
+      const badge = document.querySelector('#disputes-count');
+      badge.hidden = !count;
+      badge.textContent = count;
+    }
+
+    function card(infoHtml, buttons) {
+      const element = document.createElement('div');
+      element.className = 'card';
+      element.innerHTML = `<div class="info">${infoHtml}</div><div class="actions">${buttons.map(([action, label, style]) => `<button class="btn ${style || ''}" data-action="${action}">${label}</button>`).join('')}</div>`;
+      return element;
+    }
+
+    // ---------- profiles ----------
+    function renderProfileCard(profile) {
+      const deleted = Boolean(profile.deleted_at);
+      const blocked = Boolean(profile.blocked_at);
+      const buttons = [];
+      if (deleted) {
+        buttons.push(['restore', 'Restore', 'primary']);
+      } else {
+        if (profile.verification !== 'verified' && !blocked) buttons.push(['verified', 'Verify', 'primary']);
+        if (profile.verification !== 'rejected' && !blocked) buttons.push(['rejected', 'Reject', 'reject']);
+        buttons.push(blocked ? ['unblock', 'Unblock'] : ['block', 'Block']);
+        buttons.push(['delete', 'Delete', 'danger']);
+      }
+      const element = card(`
+        <strong>${escapeHtml(profile.display_name)}<span class="badge ${escapeHtml(profile.verification)}">${escapeHtml(profile.verification)}</span>${blocked ? '<span class="badge blocked">blocked</span>' : ''}${deleted ? '<span class="badge deleted">deleted</span>' : ''}</strong>
+        <small>${escapeHtml(profile.headline)}${profile.city ? ' · ' + escapeHtml(profile.city) : ''}</small>
+        <div class="meta">${escapeHtml(profile.kind.toUpperCase())}${profile.owner_email ? ' · ' + escapeHtml(profile.owner_email) : ''} · created ${formatDate(profile.created_at)}${deleted ? ' · deleted ' + formatDate(profile.deleted_at) : ''}</div>
+        ${blocked && profile.blocked_reason ? `<div class="reason">Blocked: ${escapeHtml(profile.blocked_reason)}</div>` : ''}`, buttons);
+      element.querySelectorAll('[data-action]').forEach((button) => button.addEventListener('click', () => profileAction(profile, button.dataset.action, button)));
+      return element;
+    }
+
+    async function profileAction(profile, action, button) {
+      const name = profile.display_name;
+      const base = `/admin/profiles/${profile.id}`;
+      const done = (message) => { showToast(message, 'success'); load(); };
+      if (action === 'verified' || action === 'rejected') {
+        button.disabled = true;
+        try {
+          await api(`${base}/verification`, { method: 'POST', body: JSON.stringify({ status: action }) });
+          done(`${name} ${action}.`);
+        } catch (error) { showToast(error.message, 'error'); button.disabled = false; }
+        return;
+      }
+      if (action === 'block') {
+        return openConfirm({ title: `Block ${name}?`, text: 'They disappear from Discover and can\'t receive new requests. Existing requests keep working. You can unblock any time.', needsReason: true, okLabel: 'Block',
+          onConfirm: async (reason) => { await api(`${base}/block`, { method: 'POST', body: JSON.stringify({ reason }) }); done(`${name} blocked.`); } });
+      }
+      if (action === 'unblock') {
+        return openConfirm({ title: `Unblock ${name}?`, text: 'The profile becomes visible in Discover again.', okLabel: 'Unblock', danger: false,
+          onConfirm: async () => { await api(`${base}/unblock`, { method: 'POST' }); done(`${name} unblocked.`); } });
+      }
+      if (action === 'delete') {
+        const what = profile.kind === 'company' ? 'This removes the company and its profile.' : 'This removes the expert profile. Their customer account stays.';
+        return openConfirm({ title: `Delete ${name}?`, text: `${what} It's a soft delete: data is kept until the purge job runs, and you can restore it from the Deleted tab.`, typeDelete: true, okLabel: 'Delete',
+          onConfirm: async () => { await api(base, { method: 'DELETE' }); done(`${name} deleted.`); } });
+      }
+      if (action === 'restore') {
+        return openConfirm({ title: `Restore ${name}?`, text: 'The profile comes back exactly as it was before deletion.', okLabel: 'Restore', danger: false,
+          onConfirm: async () => { await api(`${base}/restore`, { method: 'POST' }); done(`${name} restored.`); } });
+      }
+    }
+
+    // ---------- accounts ----------
+    const ROLE_LABELS = { customer: 'customer', expert: 'expert', company_admin: 'company admin', platform_admin: 'platform admin' };
+    function renderUserCard(user) {
+      const deleted = Boolean(user.deleted_at);
+      const blocked = Boolean(user.blocked_at);
+      const buttons = deleted ? [['restore', 'Restore', 'primary']] : [blocked ? ['unblock', 'Unblock'] : ['block', 'Block'], ['delete', 'Delete', 'danger']];
+      const owns = [user.has_expert_profile ? 'Expert profile' : null, ...user.companies.map((name) => `Company: ${escapeHtml(name)}`)].filter(Boolean).join(' · ');
+      const element = card(`
+        <strong>${escapeHtml(user.full_name)}<span class="badge role">${ROLE_LABELS[user.role] || escapeHtml(user.role)}</span>${blocked ? '<span class="badge blocked">blocked</span>' : ''}${deleted ? '<span class="badge deleted">deleted</span>' : ''}</strong>
+        <small>${escapeHtml(user.email)}${user.phone ? ' · ' + escapeHtml(user.phone) : ''}</small>
+        <div class="meta">Joined ${formatDate(user.created_at)} · ${user.requests_sent} request${user.requests_sent === 1 ? '' : 's'} sent${owns ? ' · ' + owns : ''}${deleted ? ' · deleted ' + formatDate(user.deleted_at) : ''}</div>
+        ${blocked && user.blocked_reason ? `<div class="reason">Blocked: ${escapeHtml(user.blocked_reason)}</div>` : ''}`, buttons);
+      element.querySelectorAll('[data-action]').forEach((button) => button.addEventListener('click', () => userAction(user, button.dataset.action)));
+      return element;
+    }
+
+    function userAction(user, action) {
+      const name = user.full_name;
+      const base = `/admin/users/${user.id}`;
+      const done = (message) => { showToast(message, 'success'); load(); };
+      if (action === 'block') {
+        return openConfirm({ title: `Block ${name}?`, text: 'They can no longer use RightConnect (they see a "suspended" message), and their expert/company profiles are hidden. Use this for bans: a blocked person cannot delete and re-create their account.', needsReason: true, okLabel: 'Block account',
+          onConfirm: async (reason) => { await api(`${base}/block`, { method: 'POST', body: JSON.stringify({ reason }) }); done(`${name} blocked.`); } });
+      }
+      if (action === 'unblock') {
+        return openConfirm({ title: `Unblock ${name}?`, text: 'They can sign in again, and profiles hidden by this block become visible again.', okLabel: 'Unblock', danger: false,
+          onConfirm: async () => { await api(`${base}/unblock`, { method: 'POST' }); done(`${name} unblocked.`); } });
+      }
+      if (action === 'delete') {
+        return openConfirm({ title: `Delete ${name}'s account?`, text: 'Soft delete: the account, its expert profile and any company where they are the only admin are hidden and marked for the purge job. They can sign up again with the same Google account. To stop someone from coming back, use Block instead.', typeDelete: true, okLabel: 'Delete account',
+          onConfirm: async () => { await api(base, { method: 'DELETE' }); done(`${name} deleted.`); } });
+      }
+      if (action === 'restore') {
+        return openConfirm({ title: `Restore ${name}'s account?`, text: 'Brings back the account plus the profiles and companies removed with it. Fails if they already signed up again.', okLabel: 'Restore', danger: false,
+          onConfirm: async () => { await api(`${base}/restore`, { method: 'POST' }); done(`${name} restored.`); } });
+      }
+    }
+
+    // ---------- disputes ----------
+    function renderDisputeCard(dispute) {
+      const element = card(`
+        <strong>${escapeHtml(dispute.request_title)}</strong>
+        <small>${escapeHtml(dispute.provider_name)} (${escapeHtml(dispute.provider_role)}) reported a problem after ${escapeHtml(dispute.customer_name)}${dispute.customer_email ? ' &lt;' + escapeHtml(dispute.customer_email) + '&gt;' : ''} marked it done</small>
+        <div class="meta">Reported ${formatDate(dispute.disputed_at)}</div>
+        ${dispute.reason ? `<div class="reason">${escapeHtml(dispute.reason)}</div>` : ''}`,
+        [['open_ratings', 'Open ratings', 'primary'], ['reopen', 'Reopen request']]);
+      element.querySelectorAll('[data-action]').forEach((button) => button.addEventListener('click', () => {
+        const action = button.dataset.action;
+        openConfirm({
+          title: action === 'open_ratings' ? 'Open ratings?' : 'Reopen the request?',
+          text: action === 'open_ratings'
+            ? 'You overrule the report: the customer can now rate this provider. A note is posted on the request timeline.'
+            : 'The request goes back to in progress, so the customer and provider can finish the work and mark it done again.',
+          okLabel: action === 'open_ratings' ? 'Open ratings' : 'Reopen', danger: false,
+          onConfirm: async () => {
+            await api(`/admin/disputes/${dispute.participant_id}/resolve`, { method: 'POST', body: JSON.stringify({ action }) });
+            showToast('Dispute resolved.', 'success');
+            load();
+          },
+        });
+      }));
+      return element;
+    }
+
+    // ---------- activity ----------
+    function renderActivityCard(entry) {
+      return card(`
+        <strong>${escapeHtml(entry.action.replace('_', ' '))} ${escapeHtml(entry.target_type)}: ${escapeHtml(entry.target_label || entry.target_id)}</strong>
+        <small>by ${escapeHtml(entry.admin_name || 'deleted admin')} · ${formatDate(entry.created_at)}</small>
+        ${entry.reason ? `<div class="reason">${escapeHtml(entry.reason)}</div>` : ''}`, []);
+    }
+
+    // ---------- startup ----------
+    (async () => {
+      try {
+        const config = await (await fetch(`${apiBase}/auth/provider-config`)).json();
+        if (!config.supabase_url || !config.supabase_publishable_key) { content.innerHTML = '<p class="notice error">Supabase is not configured.</p>'; return; }
+        const authClient = window.supabase.createClient(config.supabase_url, config.supabase_publishable_key);
+        const { data } = await authClient.auth.getSession();
+        if (!data.session) { content.innerHTML = '<p class="notice error">Sign in on the <a href="/pages/auth.html">RightConnect sign-in page</a> with your admin account, then reload this page.</p>'; return; }
+        accessToken = data.session.access_token;
+        document.querySelector('#whoami').textContent = data.session.user.email || '';
+      } catch (_) {
+        content.innerHTML = '<p class="notice error">Could not reach the API.</p>';
+        return;
+      }
+      renderToolbar();
+      load();
+    })();
+  </script>
+</body>
+</html>

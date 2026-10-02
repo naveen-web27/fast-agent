@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, get_settings
 from app.db.session import get_db
 from app.models.payment import Payment
-from app.models.user import SubscriptionTier, User
+from app.models.user import SubscriptionTier, User, active_user_by_auth_id
 from app.security.dependencies import get_current_auth_user_id
 
 router = APIRouter()
@@ -42,7 +42,7 @@ async def create_checkout_session(
     amount = plan_prices(settings)[plan]
     if not settings.razorpay_key_id or not settings.razorpay_key_secret or not settings.razorpay_webhook_secret or amount < 100:
         raise HTTPException(status_code=503, detail="This plan is not available for checkout yet")
-    user = await session.scalar(select(User).where(User.auth_user_id == auth_user_id))
+    user = await session.scalar(active_user_by_auth_id(auth_user_id))
     if user is None:
         raise HTTPException(status_code=404, detail="Complete onboarding before checkout")
     payment = Payment(id=uuid.uuid4(), user_id=user.id, plan=plan, amount_paise=amount, status="pending")

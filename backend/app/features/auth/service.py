@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.features.auth.email import send_email
+from app.features.auth.lifecycle import soft_delete_company, soft_delete_user
 from app.features.auth.schemas import (
     CompanyMembership,
     CompanyRequest,
@@ -23,7 +24,7 @@ from app.features.marketplace.service import count_resolved_clients
 from app.models.email_verification import EmailVerification
 from app.models.organization_member import MemberRole, OrganizationMember
 from app.models.profile import Organization, Profile, ProfileKind, VerificationStatus
-from app.models.user import SubscriptionTier, User, UserRole
+from app.models.user import SubscriptionTier, User, UserRole, active_user_by_auth_id
 
 OTP_TTL_MINUTES = 10
 OTP_MAX_ATTEMPTS = 5
@@ -60,7 +61,7 @@ def _slugify(name: str) -> str:
 
 async def get_user_profile(session: AsyncSession, auth_user_id: UUID) -> UserResponse | None:
     """Return the onboarded profile for this auth identity, or None if not onboarded yet."""
-    user = await session.scalar(select(User).where(User.auth_user_id == auth_user_id))
+    user = await session.scalar(active_user_by_auth_id(auth_user_id))
     if user is None:
         return None
     onboarding_status = "complete" if user.role is UserRole.CUSTOMER else "verification_pending"
@@ -84,7 +85,9 @@ async def create_user_profile(
 ) -> UserResponse:
     """Create the base account for a Supabase-verified identity, plus its first expert/company listing."""
     existing = await session.scalar(
-        select(User).where((User.auth_user_id == auth_user_id) | (User.email == str(payload.email)))
+        select(User).where(
+            (User.auth_user_id == auth_user_id) | (User.email == str(payload.email)), User.deleted_at.is_(None)
+        )
     )
     if existing:
         raise OnboardingConflictError("This account has already completed onboarding")
@@ -152,12 +155,12 @@ async def create_user_profile(
 
 async def get_identities(session: AsyncSession, auth_user_id: UUID) -> IdentitiesResponse | None:
     """Return everything this auth identity can act as: customer, expert, and/or company admin."""
-    user = await session.scalar(select(User).where(User.auth_user_id == auth_user_id))
+    user = await session.scalar(active_user_by_auth_id(auth_user_id))
     if user is None:
         return None
 
     expert_profile_row = await session.scalar(
-        select(Profile).where(Profile.kind == ProfileKind.EXPERT, Profile.user_id == user.id)
+        select(Profile).where(Profile.kind == ProfileKind.EXPERT, Profile.user_id == user.id, Profile.deleted_at.is_(None))
     )
     expert_profile = (
         ExpertProfileSummary(
@@ -177,7 +180,7 @@ async def get_identities(session: AsyncSession, auth_user_id: UUID) -> Identitie
         await session.execute(
             select(OrganizationMember, Organization)
             .join(Organization, Organization.id == OrganizationMember.organization_id)
-            .where(OrganizationMember.user_id == user.id)
+            .where(OrganizationMember.user_id == user.id, Organization.deleted_at.is_(None))
         )
     ).all()
     companies = []
@@ -215,11 +218,13 @@ async def get_identities(session: AsyncSession, auth_user_id: UUID) -> Identitie
 
 async def add_expert_profile(session: AsyncSession, auth_user_id: UUID, payload: ExpertProfileRequest) -> ExpertProfileSummary:
     """Add a personal expert listing to an account that has already completed base onboarding."""
-    user = await session.scalar(select(User).where(User.auth_user_id == auth_user_id))
+    user = await session.scalar(active_user_by_auth_id(auth_user_id))
     if user is None:
         raise IdentityNotFoundError("Complete onboarding before adding an expert profile")
 
-    existing = await session.scalar(select(Profile).where(Profile.kind == ProfileKind.EXPERT, Profile.user_id == user.id))
+    existing = await session.scalar(
+        select(Profile).where(Profile.kind == ProfileKind.EXPERT, Profile.user_id == user.id, Profile.deleted_at.is_(None))
+    )
     if existing:
         raise ExpertProfileConflictError("This account already has an expert profile")
 
@@ -250,13 +255,17 @@ async def add_expert_profile(session: AsyncSession, auth_user_id: UUID, payload:
 
 async def add_company(session: AsyncSession, auth_user_id: UUID, payload: CompanyRequest) -> CompanyMembership:
     """Register a new company and make the caller its first admin."""
-    user = await session.scalar(select(User).where(User.auth_user_id == auth_user_id))
+    user = await session.scalar(active_user_by_auth_id(auth_user_id))
     if user is None:
         raise IdentityNotFoundError("Complete onboarding before adding a company")
 
     already_admin = await session.scalar(
-        select(OrganizationMember.id).where(
-            OrganizationMember.user_id == user.id, OrganizationMember.member_role == MemberRole.ADMIN.value
+        select(OrganizationMember.id)
+        .join(Organization, Organization.id == OrganizationMember.organization_id)
+        .where(
+            OrganizationMember.user_id == user.id,
+            OrganizationMember.member_role == MemberRole.ADMIN.value,
+            Organization.deleted_at.is_(None),
         )
     )
     if already_admin is not None:
@@ -297,12 +306,16 @@ async def add_company(session: AsyncSession, auth_user_id: UUID, payload: Compan
 
 
 async def _require_admin_membership(session: AsyncSession, auth_user_id: UUID, organization_id: UUID) -> None:
-    user = await session.scalar(select(User).where(User.auth_user_id == auth_user_id))
+    user = await session.scalar(active_user_by_auth_id(auth_user_id))
     if user is None:
         raise IdentityNotFoundError("Complete onboarding first")
     member = await session.scalar(
-        select(OrganizationMember).where(
-            OrganizationMember.organization_id == organization_id, OrganizationMember.user_id == user.id
+        select(OrganizationMember)
+        .join(Organization, Organization.id == OrganizationMember.organization_id)
+        .where(
+            OrganizationMember.organization_id == organization_id,
+            OrganizationMember.user_id == user.id,
+            Organization.deleted_at.is_(None),
         )
     )
     if member is None or member.member_role != MemberRole.ADMIN.value:
@@ -368,7 +381,7 @@ async def verify_domain_otp(session: AsyncSession, auth_user_id: UUID, organizat
 
 async def add_interest(session: AsyncSession, auth_user_id: UUID, interest: str) -> list[str]:
     """Add an area of interest (e.g. from onboarding or a marketplace search), de-duplicated case-insensitively."""
-    user = await session.scalar(select(User).where(User.auth_user_id == auth_user_id))
+    user = await session.scalar(active_user_by_auth_id(auth_user_id))
     if user is None:
         raise IdentityNotFoundError("Complete onboarding before saving an interest")
 
@@ -382,7 +395,7 @@ async def add_interest(session: AsyncSession, auth_user_id: UUID, interest: str)
 
 async def remove_interest(session: AsyncSession, auth_user_id: UUID, interest: str) -> list[str]:
     """Remove an area of interest from the caller's saved list."""
-    user = await session.scalar(select(User).where(User.auth_user_id == auth_user_id))
+    user = await session.scalar(active_user_by_auth_id(auth_user_id))
     if user is None:
         raise IdentityNotFoundError("Complete onboarding before editing interests")
 
@@ -391,3 +404,31 @@ async def remove_interest(session: AsyncSession, auth_user_id: UUID, interest: s
     await session.commit()
     await session.refresh(user)
     return user.interests
+
+
+async def delete_my_account(session: AsyncSession, auth_user_id: UUID) -> None:
+    """Soft-delete the caller's account; the same Google login can sign up fresh afterwards."""
+    user = await session.scalar(active_user_by_auth_id(auth_user_id))
+    if user is None:
+        raise IdentityNotFoundError("Account not found")
+    await soft_delete_user(session, user, datetime.now(timezone.utc))
+    await session.commit()
+
+
+async def delete_my_expert_profile(session: AsyncSession, auth_user_id: UUID) -> None:
+    user = await session.scalar(active_user_by_auth_id(auth_user_id))
+    if user is None:
+        raise IdentityNotFoundError("Account not found")
+    profile = await session.scalar(
+        select(Profile).where(Profile.kind == ProfileKind.EXPERT, Profile.user_id == user.id, Profile.deleted_at.is_(None))
+    )
+    if profile is None:
+        raise IdentityNotFoundError("You don't have an expert profile")
+    profile.deleted_at = datetime.now(timezone.utc)
+    await session.commit()
+
+
+async def delete_my_company(session: AsyncSession, auth_user_id: UUID, organization_id: UUID) -> None:
+    await _require_admin_membership(session, auth_user_id, organization_id)
+    await soft_delete_company(session, organization_id, datetime.now(timezone.utc))
+    await session.commit()

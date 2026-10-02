@@ -11,16 +11,22 @@ CREATE TYPE subscription_tier AS ENUM ('free', 'pro', 'enterprise');
 
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    auth_user_id UUID NOT NULL UNIQUE,
+    auth_user_id UUID NOT NULL,
     full_name TEXT NOT NULL,
-    email TEXT NOT NULL UNIQUE,
-    phone TEXT UNIQUE,
+    email TEXT NOT NULL,
+    phone TEXT,
     role user_role NOT NULL DEFAULT 'customer',
     interests TEXT[] NOT NULL DEFAULT '{}',
     subscription_tier subscription_tier NOT NULL DEFAULT 'free',
     subscription_expires_at TIMESTAMPTZ,
+    deleted_at TIMESTAMPTZ,
+    blocked_at TIMESTAMPTZ,
+    blocked_reason TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE UNIQUE INDEX users_auth_user_id_active_idx ON users(auth_user_id) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX users_email_active_idx ON users(email) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX users_phone_active_idx ON users(phone) WHERE deleted_at IS NULL AND phone IS NOT NULL;
 
 CREATE TABLE payments (
     id UUID PRIMARY KEY,
@@ -46,6 +52,7 @@ CREATE TABLE organizations (
     verification verification_status NOT NULL DEFAULT 'pending',
     email_domain_verified BOOLEAN NOT NULL DEFAULT FALSE,
     subscription_tier subscription_tier NOT NULL DEFAULT 'free',
+    deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -90,11 +97,12 @@ CREATE TABLE profiles (
     show_resolved_count BOOLEAN NOT NULL DEFAULT TRUE,
     blocked_at TIMESTAMPTZ,
     blocked_reason TEXT,
+    deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CHECK ((kind = 'expert' AND user_id IS NOT NULL) OR (kind = 'company' AND organization_id IS NOT NULL))
 );
 
-CREATE UNIQUE INDEX profiles_user_expert_unique_idx ON profiles(user_id) WHERE kind = 'expert';
+CREATE UNIQUE INDEX profiles_user_expert_unique_idx ON profiles(user_id) WHERE kind = 'expert' AND deleted_at IS NULL;
 
 CREATE TABLE services (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -192,6 +200,18 @@ CREATE TABLE saved_profiles (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (user_id, profile_id)
 );
+
+CREATE TABLE admin_actions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    admin_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    action TEXT NOT NULL,
+    target_type TEXT NOT NULL CHECK (target_type IN ('user', 'profile', 'request')),
+    target_id UUID NOT NULL,
+    target_label TEXT,
+    reason TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX admin_actions_created_idx ON admin_actions(created_at DESC);
 
 CREATE INDEX profiles_kind_verification_idx ON profiles(kind, verification);
 CREATE INDEX profiles_city_idx ON profiles(city);

@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import DateTime, Enum, String, func
+from sqlalchemy import DateTime, Enum, Select, String, Text, func, select
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -29,10 +29,10 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    auth_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, unique=True, index=True)
+    auth_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
     full_name: Mapped[str] = mapped_column(String, nullable=False)
-    email: Mapped[str] = mapped_column(String, nullable=False, unique=True, index=True)
-    phone: Mapped[str | None] = mapped_column(String, unique=True)
+    email: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    phone: Mapped[str | None] = mapped_column(String)
     interests: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False, default=list)
     role: Mapped[UserRole] = mapped_column(
         Enum(
@@ -55,4 +55,13 @@ class User(Base):
         server_default=SubscriptionTier.FREE.value,
     )
     subscription_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Soft delete: the row stays until a purge job runs, but the login/email are free to sign up again.
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    blocked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    blocked_reason: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+def active_user_by_auth_id(auth_user_id: uuid.UUID) -> Select[tuple[User]]:
+    """The caller's live (not soft-deleted) account."""
+    return select(User).where(User.auth_user_id == auth_user_id, User.deleted_at.is_(None))

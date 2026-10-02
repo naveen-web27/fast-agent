@@ -25,7 +25,7 @@
     .request-layout { display:grid; grid-template-columns:250px minmax(0,1fr) 280px; gap:16px; min-height:640px; }.request-panel { padding:17px; border:1px solid var(--line); border-radius:10px; background:#fff; }.request-panel h2 { margin:4px 0 14px; font-size:15px; }.request-item { display:grid; gap:5px; padding:11px 0; border-top:1px solid var(--line); }.request-item:first-of-type { border-top:0; }.request-item strong { font-size:12px; }.request-item span { color:var(--muted); font-size:10px; }.request-item.active { margin:0 -9px; padding:11px 9px; border:0; border-radius:7px; background:#e9f8f5; }.coordination { display:flex; flex-direction:column; padding:0; overflow:hidden; }.coordination-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:17px; border-bottom:1px solid var(--line); }.participants { display:flex; align-items:center; }.participants .avatar { width:27px; height:27px; margin-left:-5px; border:2px solid #fff; font-size:10px; }.timeline { flex:1; padding:22px; }.event { position:relative; padding:0 0 19px 28px; }.event::before { content:""; position:absolute; left:6px; top:15px; bottom:0; width:1px; background:var(--line); }.event:last-child::before { display:none; }.event-dot { position:absolute; left:0; top:3px; width:13px; height:13px; border:3px solid #fff; border-radius:50%; background:var(--teal); box-shadow:0 0 0 1px #b7e5dc; }.event time { color:var(--muted); font:10px "DM Mono", monospace; }.event strong { display:block; margin-top:2px; font-size:12px; }.event p { margin:3px 0 0; color:var(--muted); font-size:11px; }.note-box { margin:0 17px 17px; padding:11px; color:#56647b; border:1px solid var(--line); border-radius:7px; background:#fbfcfe; font-size:11px; }.meeting { padding:13px; border-radius:8px; background:#edf8f5; }.meeting strong { display:block; color:#17655c; font-size:12px; }.meeting span { display:block; margin-top:2px; color:#368279; font-size:11px; }.checklist { display:grid; gap:11px; }.check { display:flex; gap:9px; color:#56647b; font-size:11px; }.check i { display:grid; place-items:center; width:17px; height:17px; flex:none; color:#08736c; border-radius:50%; background:#e4f6f1; font-style:normal; font-size:10px; }
     .empty { padding:70px 20px; text-align:center; border:1px dashed #cbd5e2; border-radius:10px; background:rgba(255,255,255,.55); }.empty h2 { margin:10px 0 5px; }.empty p { margin:0; color:var(--muted); }.mobile-menu { display:none; }
     [hidden] { display:none !important; }
-    .user-chip { position:relative; }.user-chip-button { display:flex; align-items:center; gap:8px; padding:0; color:inherit; border:0; background:transparent; cursor:pointer; }.user-menu { position:absolute; top:calc(100% + 8px); right:0; min-width:170px; padding:6px; border:1px solid var(--line); border-radius:9px; background:#fff; box-shadow:var(--shadow); z-index:30; }.user-menu a,.user-menu button,.user-menu a:not([hidden]) { display:block; width:100%; padding:8px 10px; color:var(--ink); border:0; border-radius:6px; background:transparent; font-size:12px; font-weight:700; text-align:left; text-decoration:none; }.user-menu a:hover,.user-menu button:hover,.user-menu a:hover { background:#f0f3f8; }
+    .user-chip { position:relative; }.user-chip-button { display:flex; align-items:center; gap:8px; padding:0; color:inherit; border:0; background:transparent; cursor:pointer; }.user-menu { position:absolute; top:calc(100% + 8px); right:0; min-width:170px; padding:6px; border:1px solid var(--line); border-radius:9px; background:#fff; box-shadow:var(--shadow); z-index:30; }.user-menu a,.user-menu button { display:block; width:100%; padding:8px 10px; color:var(--ink); border:0; border-radius:6px; background:transparent; font-size:12px; font-weight:700; text-align:left; text-decoration:none; }.user-menu a:hover,.user-menu button:hover { background:#f0f3f8; }
     .sidebar-scrim { display:none; }
     .workspace-button { display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; padding:0; color:inherit; border:0; background:transparent; text-align:left; cursor:pointer; }
     .workspace-caret { color:#8fa9d6; font-size:11px; }
@@ -53,6 +53,9 @@
     .toggle-row strong { display:block; font-size:12px; }
     .toggle-row small { display:block; margin-top:2px; color:var(--muted); font-size:11px; }
     .toggle-row input[type="checkbox"] { width:18px; height:18px; flex:0 0 auto; }
+    .danger-zone { margin-top:16px; padding-top:12px; border-top:1px solid var(--line); }
+    .danger-zone h3 { margin:0 0 4px; color:var(--danger); font-size:13px; }
+    .danger-zone .toggle-row button { color:var(--danger); border-color:#f0c4bd; }
     .kind-toggle { display:flex; flex-wrap:wrap; align-items:center; gap:6px; flex:0 1 auto; }
     .pagination { display:flex; align-items:center; justify-content:center; gap:14px; margin-top:16px; }
     .pagination span { color:var(--muted); font-size:12px; font-weight:700; }
@@ -145,7 +148,7 @@
       <div class="side-bottom" id="side-bottom" hidden><span class="section-tag">Signed in as</span><div class="profile-mini"><span class="avatar" id="sidebar-avatar">?</span><span id="sidebar-name"></span></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="top-actions"><button class="icon-button mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="crumb"><strong>RightConnect</strong> / Marketplace</div></div><div class="top-actions"><div class="bell-wrap" id="bell-wrap" hidden><button class="icon-button" id="notif-button" type="button" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="bell-count" id="notif-count" hidden>0</span></button><div class="notif-menu" id="notif-menu" hidden></div></div><a class="secondary" href="auth.html" id="sign-in-link">Sign in or join</a><button class="secondary" id="request-expert">Become an expert</button><div class="user-chip" id="user-chip" hidden><button class="user-chip-button" id="user-menu-button"><span class="avatar" id="chip-avatar">?</span><span id="chip-name"></span></button><div class="user-menu" id="user-menu" hidden><button id="manage-interests-button">Manage interests</button><button id="profile-settings-button">Profile settings</button><a id="admin-console-link" href="admin.html" hidden>Admin console</a><button id="menu-support-button">Help &amp; support</button><button id="sign-out-button">Sign out</button></div></div></div></header>
+      <header class="topbar"><div class="top-actions"><button class="icon-button mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="crumb"><strong>RightConnect</strong> / Marketplace</div></div><div class="top-actions"><div class="bell-wrap" id="bell-wrap" hidden><button class="icon-button" id="notif-button" type="button" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="bell-count" id="notif-count" hidden>0</span></button><div class="notif-menu" id="notif-menu" hidden></div></div><a class="secondary" href="auth.html" id="sign-in-link">Sign in or join</a><button class="secondary" id="request-expert">Become an expert</button><div class="user-chip" id="user-chip" hidden><button class="user-chip-button" id="user-menu-button"><span class="avatar" id="chip-avatar">?</span><span id="chip-name"></span></button><div class="user-menu" id="user-menu" hidden><button id="manage-interests-button">Manage interests</button><button id="profile-settings-button">Profile settings</button><button id="menu-support-button">Help &amp; support</button><button id="sign-out-button">Sign out</button></div></div></div></header>
       <div class="page">
         <section class="view active" id="discover">
           <div class="page-title"><div><span class="section-tag">Find trusted help</span><h1>Choose the right person for the decision.</h1><p>Compare verified specialists and companies before you commit.</p></div><button class="primary" id="match-button">✦ Get matched</button></div>
@@ -223,7 +226,16 @@
     <h2>Profile settings</h2>
     <p class="modal-note">Show how many customers you've successfully served on your card, so companies and customers can approach you with confidence. Toggle it off any time to keep it private.</p>
     <div id="visibility-list"></div>
+    <div class="danger-zone"><h3>Delete</h3><p class="modal-note">Deleting removes it from RightConnect right away. You can sign up or create it again later.</p><div id="danger-list"></div></div>
     <div class="modal-actions"><button type="button" class="secondary" id="visibility-close">Close</button></div>
+  </div>
+  <div class="modal" id="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title" hidden>
+    <h2 id="delete-title">Delete</h2>
+    <p class="modal-note" id="delete-note"></p>
+    <form id="delete-form">
+      <div class="field"><label for="delete-confirm-input">Type DELETE to confirm</label><input id="delete-confirm-input" autocomplete="off" required></div>
+      <div class="modal-actions"><button type="button" class="secondary" id="delete-cancel">Cancel</button><button type="submit" class="primary" id="delete-submit" style="background:var(--danger);border-color:var(--danger)">Delete</button></div>
+    </form>
   </div>
   <div class="modal" id="request-modal" hidden>
     <h2>Request a consultation</h2>
@@ -1186,7 +1198,55 @@
       list.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
         checkbox.addEventListener('change', () => updateResolvedVisibility(checkbox.dataset.profileId, checkbox.checked, checkbox));
       });
+      renderDangerZone();
     }
+
+    function renderDangerZone() {
+      const items = [];
+      if (identities?.expert_profile) items.push({ kind: 'expert', label: 'Expert profile', note: 'Your expert listing disappears from Discover. Your customer account and requests stay.' });
+      (identities?.companies || []).filter((company) => company.member_role === 'admin').forEach((company) => {
+        items.push({ kind: 'company', id: company.organization_id, label: `Company: ${company.name}`, note: `${company.name} disappears from Discover and your workspace. You can register a new company afterwards.` });
+      });
+      items.push({ kind: 'account', label: 'My whole account', note: 'Your account, expert profile and any company where you are the only admin are deleted and you are signed out. You can sign up again later with the same Google account, starting fresh.' });
+      const box = document.querySelector('#danger-list');
+      box.innerHTML = items.map((item, index) => `<div class="toggle-row"><div><strong>${escapeHtml(item.label)}</strong></div><button type="button" class="secondary" data-danger-index="${index}">Delete</button></div>`).join('');
+      box.querySelectorAll('[data-danger-index]').forEach((button) => button.addEventListener('click', () => openDeleteModal(items[Number(button.dataset.dangerIndex)])));
+    }
+
+    let pendingDeletion = null;
+    function openDeleteModal(item) {
+      pendingDeletion = item;
+      closeModals();
+      document.querySelector('#delete-title').textContent = `Delete ${item.label.toLowerCase().startsWith('company') ? item.label : item.label.toLowerCase()}?`;
+      document.querySelector('#delete-note').textContent = item.note;
+      document.querySelector('#delete-form').reset();
+      openModal('delete-modal');
+      document.querySelector('#delete-confirm-input').focus();
+    }
+    document.querySelector('#delete-cancel').addEventListener('click', closeModals);
+    document.querySelector('#delete-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!pendingDeletion) return;
+      if (document.querySelector('#delete-confirm-input').value.trim().toUpperCase() !== 'DELETE') { showToast('Type DELETE to confirm.', 'error'); return; }
+      const path = { expert: '/auth/identities/expert', company: `/auth/identities/companies/${pendingDeletion.id}`, account: '/auth/me' }[pendingDeletion.kind];
+      const submitButton = document.querySelector('#delete-submit');
+      setButtonLoading(submitButton, true, 'Deleting…');
+      const response = await fetch(`${apiBase}${path}`, { method: 'DELETE', headers: authHeaders() }).catch(() => null);
+      setButtonLoading(submitButton, false);
+      if (!response || !response.ok) { showToast(response ? await extractErrorMessage(response, 'Could not delete. Please try again.') : 'Network error.', 'error'); return; }
+      closeModals();
+      if (pendingDeletion.kind === 'account') {
+        showToast('Your account was deleted. Signing you out…', 'success');
+        if (authClient) await authClient.auth.signOut();
+        sessionStorage.clear();
+        setTimeout(() => { window.location.href = 'auth.html'; }, 1500);
+        return;
+      }
+      showToast(`${pendingDeletion.label} deleted.`, 'success');
+      await loadIdentities();
+      setActingAs('customer', 'Customer');
+      loadProfiles();
+    });
 
     async function updateResolvedVisibility(profileId, show, checkbox) {
       checkbox.disabled = true;
@@ -1394,7 +1454,6 @@
       document.querySelector('#side-bottom').hidden = false;
       document.querySelector('#chip-avatar').textContent = initials;
       document.querySelector('#chip-name').innerHTML = `${escapeHtml(user.full_name)}<br><small>${escapeHtml(user.role.replace('_', ' '))}</small>`;
-      document.querySelector('#admin-console-link').hidden = user.role !== 'platform_admin';
       document.querySelector('#user-chip').hidden = false;
       document.querySelector('#sign-in-link').hidden = true;
       document.querySelector('#bell-wrap').hidden = false;
@@ -1424,6 +1483,12 @@
 
       try {
         const meResponse = await fetch(`${apiBase}/auth/me`, { headers: authHeaders() });
+        if (meResponse.status === 403) {
+          showToast(await extractErrorMessage(meResponse, 'Your account has been suspended.'), 'error');
+          await authClient.auth.signOut();
+          accessToken = null;
+          return;
+        }
         if (!meResponse.ok) return;
         applySignedInUser(await meResponse.json());
       } catch (_) {
