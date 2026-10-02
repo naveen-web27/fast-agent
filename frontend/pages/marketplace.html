@@ -1032,14 +1032,14 @@
         const resultsBox = document.querySelector('#invite-company-results');
         resultsBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0"><span class="spinner"></span>Searching…</p>';
         try {
-          const url = new URL(`${apiBase}/profiles`);
+          const url = new URL(`${apiBase}/profiles`, window.location.origin);
           url.searchParams.set('kind', 'company');
           if (query) url.searchParams.set('q', query);
           const response = await fetch(url, { headers: authHeaders() });
           if (!response.ok) throw new Error('Search failed');
           const { results } = await response.json();
           resultsBox.innerHTML = results.length
-            ? results.map((profile) => `<div class="request-item" data-profile-id="${profile.id}" style="cursor:pointer"><strong>${profile.display_name}</strong><span>${profile.headline}</span></div>`).join('')
+            ? results.map((profile) => `<div class="request-item" data-profile-id="${escapeHtml(profile.id)}" style="cursor:pointer"><strong>${escapeHtml(profile.display_name)}</strong><span>${escapeHtml(profile.headline)}</span></div>`).join('')
             : '<p style="color:var(--muted);font-size:12px;margin:0">No companies matched.</p>';
           resultsBox.querySelectorAll('[data-profile-id]').forEach((item) => item.addEventListener('click', async () => {
             const response = await fetch(`${apiBase}/requests/${selectedRequestId}/invite-company`, {
