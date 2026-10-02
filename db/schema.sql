@@ -135,6 +135,7 @@ CREATE TABLE requests (
     requirements TEXT NOT NULL,
     city TEXT,
     status request_status NOT NULL DEFAULT 'submitted',
+    completed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -146,6 +147,8 @@ CREATE TABLE request_participants (
     organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
     participant_role TEXT NOT NULL CHECK (participant_role IN ('customer', 'expert', 'company')),
     accepted_at TIMESTAMPTZ,
+    completion_confirmed_at TIMESTAMPTZ,
+    completion_disputed_at TIMESTAMPTZ,
     CHECK (user_id IS NOT NULL OR organization_id IS NOT NULL)
 );
 

@@ -40,6 +40,7 @@ class Request(Base):
         nullable=False,
         default=RequestStatus.SUBMITTED,
     )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -60,6 +61,8 @@ class RequestParticipant(Base):
     # Stored as plain text (matches the TEXT + CHECK column in schema.sql), not a Postgres enum type.
     participant_role: Mapped[str] = mapped_column(String, nullable=False)
     accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completion_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completion_disputed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class RequestEvent(Base):

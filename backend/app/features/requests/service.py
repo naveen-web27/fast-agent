@@ -1,5 +1,5 @@
 """Service layer for submitting, listing, and messaging within customer requests."""
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from sqlalchemy import func, or_, select
@@ -8,19 +8,25 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.features.requests.schemas import (
     ContactInfo,
     CreateRequestPayload,
+    CreateReviewPayload,
     DomainClientStat,
     ExpertReferralInfo,
     RequestDetail,
     RequestEventOut,
     RequestParticipantOut,
     RequestSummary,
+    ReviewTargetOut,
     SocialLinkOut,
 )
 from app.models.organization_member import MemberRole, OrganizationMember
 from app.models.profile import Organization, Profile, ProfileKind, Service, VerificationStatus
 from app.models.request import Request, RequestEvent, RequestParticipant, RequestStatus
+from app.models.review import Review
 from app.models.social_link import SocialLink
 from app.models.user import User
+
+# If a provider neither confirms nor disputes "done", reviews open anyway so they can't dodge ratings by staying silent.
+COMPLETION_REVIEW_GRACE = timedelta(days=7)
 
 
 class IdentityNotFoundError(Exception):
@@ -41,6 +47,14 @@ class RequestAccessError(Exception):
 
 class DuplicateInviteError(Exception):
     """Raised when the invited company is already part of the request."""
+
+
+class RequestStateError(Exception):
+    """Raised when an action isn't allowed in the request's current state."""
+
+
+class DuplicateReviewError(Exception):
+    """Raised when the caller already reviewed this profile on this request."""
 
 
 async def _get_user(session: AsyncSession, auth_user_id: UUID) -> User:
@@ -151,6 +165,108 @@ async def _participant_display_name(session: AsyncSession, participant: RequestP
     return "Unknown"
 
 
+def _my_participants(
+    participants: list[RequestParticipant], user: User, my_org_ids: set[UUID]
+) -> list[RequestParticipant]:
+    return [
+        participant
+        for participant in participants
+        if participant.user_id == user.id
+        or (participant.organization_id is not None and participant.organization_id in my_org_ids)
+    ]
+
+
+async def _participant_profile(session: AsyncSession, participant: RequestParticipant) -> Profile | None:
+    if participant.user_id is not None:
+        return await session.scalar(
+            select(Profile).where(Profile.user_id == participant.user_id, Profile.kind == ProfileKind.EXPERT)
+        )
+    return await session.scalar(
+        select(Profile).where(Profile.organization_id == participant.organization_id, Profile.kind == ProfileKind.COMPANY)
+    )
+
+
+async def _review_targets(
+    session: AsyncSession,
+    request: Request,
+    user: User,
+    my_org_ids: set[UUID],
+    participants: list[RequestParticipant],
+) -> list[ReviewTargetOut]:
+    """Who the viewer may rate: customer -> every accepted provider; accepted expert -> accepted company."""
+    if request.status is not RequestStatus.COMPLETED:
+        return []
+
+    if request.customer_id == user.id:
+        reviewer_confirmed = True
+        candidates = [p for p in participants if p.accepted_at is not None]
+    else:
+        mine = [p for p in _my_participants(participants, user, my_org_ids) if p.participant_role == "expert" and p.accepted_at is not None]
+        if not mine or all(p.completion_disputed_at is not None for p in mine):
+            return []
+        reviewer_confirmed = any(p.completion_confirmed_at is not None for p in mine)
+        candidates = [p for p in participants if p.participant_role == "company" and p.accepted_at is not None]
+    if not candidates:
+        return []
+
+    reviewed_profile_ids = set(
+        (
+            await session.scalars(
+                select(Review.profile_id).where(Review.request_id == request.id, Review.reviewer_id == user.id)
+            )
+        ).all()
+    )
+    opens_at = (request.completed_at or request.updated_at) + COMPLETION_REVIEW_GRACE
+    now = datetime.now(timezone.utc)
+
+    targets = []
+    for participant in candidates:
+        profile = await _participant_profile(session, participant)
+        if profile is None or profile.user_id == user.id:
+            continue
+        if profile.id in reviewed_profile_ids:
+            state = "reviewed"
+        elif participant.completion_disputed_at is not None:
+            state = "disputed"
+        elif not reviewer_confirmed:
+            state = "confirm_first"
+        elif participant.completion_confirmed_at is not None or now >= opens_at:
+            state = "open"
+        else:
+            state = "waiting"
+        targets.append(
+            ReviewTargetOut(
+                profile_id=profile.id,
+                name=profile.display_name,
+                participant_role=participant.participant_role,
+                state=state,
+                opens_at=opens_at if state == "waiting" else None,
+            )
+        )
+    return targets
+
+
+async def _pending_action(
+    session: AsyncSession,
+    request: Request,
+    user: User,
+    my_org_ids: set[UUID],
+    participants: list[RequestParticipant],
+) -> str | None:
+    """The one thing the viewer still needs to do on this request, used for the red notification count."""
+    if request.status is RequestStatus.CANCELLED:
+        return None
+    mine = [] if request.customer_id == user.id else _my_participants(participants, user, my_org_ids)
+    if request.status is not RequestStatus.COMPLETED:
+        return "accept" if any(p.accepted_at is None for p in mine) else None
+    if any(
+        p.accepted_at is not None and p.completion_confirmed_at is None and p.completion_disputed_at is None for p in mine
+    ):
+        return "confirm_completion"
+    targets = await _review_targets(session, request, user, my_org_ids, participants)
+    return "review" if any(target.state == "open" for target in targets) else None
+
+
 async def _build_summary(
     session: AsyncSession, request: Request, user: User, my_org_ids: set[UUID], participants: list[RequestParticipant]
 ) -> RequestSummary:
@@ -180,6 +296,8 @@ async def _build_summary(
         status=request.status.value,
         my_role=my_role,
         counterpart_name=counterpart_name,
+        pending_action=await _pending_action(session, request, user, my_org_ids, participants),
+        completed_at=request.completed_at,
         created_at=request.created_at,
         updated_at=request.updated_at,
     )
@@ -229,6 +347,8 @@ async def _build_detail(session: AsyncSession, request: Request, user: User, my_
                 participant_role=participant.participant_role,
                 name=await _participant_display_name(session, participant),
                 accepted_at=participant.accepted_at,
+                completion_confirmed_at=participant.completion_confirmed_at,
+                completion_disputed_at=participant.completion_disputed_at,
                 contact=contact,
             )
         )
@@ -252,9 +372,19 @@ async def _build_detail(session: AsyncSession, request: Request, user: User, my_
         )
 
     expert_referral = await _expert_referral_info(session, list(participants))
+    can_mark_done = (
+        viewer_is_customer
+        and request.status not in (RequestStatus.COMPLETED, RequestStatus.CANCELLED)
+        and any(participant.accepted_at is not None for participant in participants)
+    )
 
     return RequestDetail(
-        **summary.model_dump(), participants=participant_payload, events=event_payload, expert_referral=expert_referral
+        **summary.model_dump(),
+        participants=participant_payload,
+        events=event_payload,
+        expert_referral=expert_referral,
+        can_mark_done=can_mark_done,
+        review_targets=await _review_targets(session, request, user, my_org_ids, list(participants)),
     )
 
 
@@ -447,4 +577,120 @@ async def invite_company(session: AsyncSession, auth_user_id: UUID, request_id: 
     await session.refresh(request)
 
     my_org_ids = await _my_organization_ids(session, user.id)
+    return await _build_detail(session, request, user, my_org_ids)
+
+
+async def _load_request_for_participant(
+    session: AsyncSession, auth_user_id: UUID, request_id: UUID
+) -> tuple[User, Request, set[UUID], list[RequestParticipant]]:
+    user = await _get_user(session, auth_user_id)
+    request = await session.get(Request, request_id)
+    if request is None:
+        raise RequestNotFoundError("Request not found")
+    my_org_ids = await _my_organization_ids(session, user.id)
+    participants = list(
+        (await session.scalars(select(RequestParticipant).where(RequestParticipant.request_id == request.id))).all()
+    )
+    if not _is_participant(request, user, my_org_ids, participants):
+        raise RequestAccessError("You do not have access to this request")
+    return user, request, my_org_ids, participants
+
+
+async def mark_request_done(session: AsyncSession, auth_user_id: UUID, request_id: UUID) -> RequestDetail:
+    """Customer closes the request; accepted providers are then asked to confirm before reviews open."""
+    user, request, my_org_ids, participants = await _load_request_for_participant(session, auth_user_id, request_id)
+    if request.customer_id != user.id:
+        raise RequestAccessError("Only the customer can mark this request as done")
+    if request.status in (RequestStatus.COMPLETED, RequestStatus.CANCELLED):
+        raise RequestStateError("This request is already closed")
+    if not any(participant.accepted_at is not None for participant in participants):
+        raise RequestStateError("Wait for an expert or company to accept before marking this as done")
+
+    now = datetime.now(timezone.utc)
+    request.status = RequestStatus.COMPLETED
+    request.completed_at = now
+    request.updated_at = now
+    session.add(
+        RequestEvent(
+            request_id=request.id,
+            author_id=user.id,
+            event_type="system",
+            message=f"{user.full_name} marked this request as done. Please confirm so ratings can open.",
+        )
+    )
+    await session.commit()
+    await session.refresh(request)
+    return await _build_detail(session, request, user, my_org_ids)
+
+
+async def respond_to_completion(
+    session: AsyncSession, auth_user_id: UUID, request_id: UUID, confirm: bool, reason: str | None = None
+) -> RequestDetail:
+    """An accepted expert/company confirms the work is done, or reports a problem (which blocks reviews of them)."""
+    user, request, my_org_ids, participants = await _load_request_for_participant(session, auth_user_id, request_id)
+    mine = [p for p in _my_participants(participants, user, my_org_ids) if p.accepted_at is not None]
+    if request.customer_id == user.id or not mine:
+        raise RequestAccessError("Only an expert or company who accepted this request can respond")
+    if request.status is not RequestStatus.COMPLETED:
+        raise RequestStateError("The customer has not marked this request as done yet")
+    pending = [p for p in mine if p.completion_confirmed_at is None and p.completion_disputed_at is None]
+    if not pending:
+        raise RequestStateError("You already responded to this request")
+
+    now = datetime.now(timezone.utc)
+    for participant in pending:
+        if confirm:
+            participant.completion_confirmed_at = now
+        else:
+            participant.completion_disputed_at = now
+    message = (
+        f"{user.full_name} confirmed this request is done."
+        if confirm
+        else f"{user.full_name} reported a problem with closing this request: {reason}"
+    )
+    session.add(RequestEvent(request_id=request.id, author_id=user.id, event_type="system", message=message))
+    request.updated_at = now
+    await session.commit()
+    await session.refresh(request)
+    return await _build_detail(session, request, user, my_org_ids)
+
+
+async def create_review(
+    session: AsyncSession, auth_user_id: UUID, request_id: UUID, payload: CreateReviewPayload
+) -> RequestDetail:
+    """Rate an expert/company on a completed request, once both sides have agreed it's done."""
+    user, request, my_org_ids, participants = await _load_request_for_participant(session, auth_user_id, request_id)
+    targets = await _review_targets(session, request, user, my_org_ids, participants)
+    target = next((t for t in targets if t.profile_id == payload.profile_id), None)
+    if target is None:
+        raise RequestAccessError("You can't rate this profile on this request")
+    if target.state == "reviewed":
+        raise DuplicateReviewError("You already rated this profile for this request")
+    if target.state != "open":
+        raise RequestStateError(
+            {
+                "waiting": "Ratings open once they confirm the request is done, or automatically after 7 days",
+                "disputed": "They reported a problem with this request, so ratings are on hold. Contact support",
+                "confirm_first": "Confirm the request is done before rating",
+            }[target.state]
+        )
+
+    session.add(
+        Review(
+            request_id=request.id,
+            reviewer_id=user.id,
+            profile_id=payload.profile_id,
+            rating=payload.rating,
+            body=payload.body,
+            verified_interaction=True,
+        )
+    )
+    # Incremental average keeps any existing (seeded/imported) aggregate intact.
+    profile = await session.get(Profile, payload.profile_id)
+    total = float(profile.average_rating) * profile.review_count + payload.rating
+    profile.review_count += 1
+    profile.average_rating = round(total / profile.review_count, 1)
+    request.updated_at = datetime.now(timezone.utc)
+    await session.commit()
+    await session.refresh(request)
     return await _build_detail(session, request, user, my_org_ids)

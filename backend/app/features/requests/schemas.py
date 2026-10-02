@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field
 
 RequestStatusLiteral = Literal["submitted", "accepted", "meeting_booked", "provider_invited", "completed", "cancelled"]
 ParticipantRole = Literal["customer", "expert", "company"]
+PendingAction = Literal["accept", "confirm_completion", "review"]
+ReviewTargetState = Literal["open", "waiting", "confirm_first", "disputed", "reviewed"]
 
 
 class CreateRequestPayload(BaseModel):
@@ -29,6 +31,16 @@ class InviteCompanyPayload(BaseModel):
     profile_id: UUID
 
 
+class DisputeCompletionPayload(BaseModel):
+    reason: str = Field(min_length=5, max_length=1000)
+
+
+class CreateReviewPayload(BaseModel):
+    profile_id: UUID
+    rating: int = Field(ge=1, le=5)
+    body: str = Field(min_length=5, max_length=2000)
+
+
 class SocialLinkOut(BaseModel):
     platform: str
     url: str
@@ -48,7 +60,19 @@ class RequestParticipantOut(BaseModel):
     participant_role: ParticipantRole
     name: str
     accepted_at: datetime | None
+    completion_confirmed_at: datetime | None = None
+    completion_disputed_at: datetime | None = None
     contact: ContactInfo | None = None
+
+
+class ReviewTargetOut(BaseModel):
+    """A profile the viewer may rate on this request, and whether rating is unlocked yet."""
+
+    profile_id: UUID
+    name: str
+    participant_role: ParticipantRole
+    state: ReviewTargetState
+    opens_at: datetime | None = None
 
 
 class RequestEventOut(BaseModel):
@@ -86,6 +110,8 @@ class RequestSummary(BaseModel):
     status: RequestStatusLiteral
     my_role: ParticipantRole
     counterpart_name: str
+    pending_action: PendingAction | None = None
+    completed_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -96,6 +122,8 @@ class RequestDetail(RequestSummary):
     participants: list[RequestParticipantOut]
     events: list[RequestEventOut]
     expert_referral: ExpertReferralInfo | None = None
+    can_mark_done: bool = False
+    review_targets: list[ReviewTargetOut] = Field(default_factory=list)
 
 
 class RequestListResponse(BaseModel):

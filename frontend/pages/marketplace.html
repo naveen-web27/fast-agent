@@ -99,6 +99,14 @@
     .unread-dot { display:inline-block; width:8px; height:8px; margin-right:6px; border-radius:50%; background:var(--danger); vertical-align:1px; }
     .bell-wrap { position:relative; }
     .bell-count { position:absolute; top:-6px; right:-6px; min-width:18px; height:18px; padding:0 4px; color:#fff; border-radius:99px; background:var(--danger); font-size:10px; font-weight:800; line-height:18px; text-align:center; }
+    .nav-icon { position:relative; }
+    .nav-badge,.tab-badge { min-width:16px; height:16px; padding:0 4px; color:#fff; border-radius:99px; background:var(--danger); font:800 9px/16px system-ui, sans-serif; text-align:center; }
+    .nav-badge { position:absolute; top:-7px; right:-10px; }
+    .tab-badge { display:inline-block; margin-left:5px; vertical-align:1px; }
+    .star-picker { display:flex; gap:4px; margin-bottom:12px; }
+    .star-picker button { padding:0; border:0; background:none; color:#d4dae5; font-size:28px; line-height:1; cursor:pointer; }
+    .star-picker button.on { color:#f2b33d; }
+    .review-row { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 0; border-top:1px solid #f3dfa8; }
     .notif-menu { position:absolute; top:calc(100% + 8px); right:0; z-index:30; width:min(86vw,310px); max-height:360px; overflow:auto; padding:6px; border:1px solid var(--line); border-radius:9px; background:#fff; box-shadow:var(--shadow); }
     .notif-menu h3 { margin:6px 8px 8px; font-size:12px; }
     .notif-item { display:block; width:100%; padding:9px 10px; border:0; border-radius:6px; background:transparent; text-align:left; }
@@ -128,7 +136,7 @@
       <div class="workspace" id="workspace-switcher"><small>Acting as</small><button class="workspace-button" id="workspace-button"><strong id="workspace-label">Customer</strong><span class="workspace-caret">⌄</span></button><div class="workspace-menu" id="workspace-menu" hidden></div></div>
       <nav class="navigation" aria-label="Primary navigation">
         <button class="nav-button active" data-view="discover"><span class="nav-icon">⌕</span><span>Discover</span></button>
-        <button class="nav-button" data-view="requests"><span class="nav-icon">◫</span><span>My requests</span></button>
+        <button class="nav-button" data-view="requests"><span class="nav-icon">◫<b class="nav-badge" data-requests-badge hidden></b></span><span>My requests</span></button>
         <button class="nav-button" data-view="saved"><span class="nav-icon">♡</span><span>Saved</span></button>
         <button class="nav-button" data-view="profile"><span class="nav-icon">◉</span><span>Profile preview</span></button>
         <button class="nav-button" data-view="plans"><span class="nav-icon">◆</span><span>Plans</span></button>
@@ -163,7 +171,7 @@
   </div>
   <nav class="mobile-nav" aria-label="Mobile navigation">
     <button class="nav-button active" data-view="discover" type="button"><span class="nav-icon">⌕</span><span>Discover</span></button>
-    <button class="nav-button" data-view="requests" type="button"><span class="nav-icon">◫</span><span>Requests</span></button>
+    <button class="nav-button" data-view="requests" type="button"><span class="nav-icon">◫<b class="nav-badge" data-requests-badge hidden></b></span><span>Requests</span></button>
     <button class="nav-button" data-view="saved" type="button"><span class="nav-icon">♡</span><span>Saved</span></button>
     <button class="nav-button" data-view="plans" type="button"><span class="nav-icon">◆</span><span>Plans</span></button>
   </nav>
@@ -240,6 +248,23 @@
     <div class="field"><label for="invite-company-search">Search companies</label><input id="invite-company-search" placeholder="Company name"></div>
     <div id="invite-company-results" style="max-height:220px;overflow:auto;margin-bottom:12px"></div>
     <div class="modal-actions"><button type="button" class="secondary" id="invite-company-cancel">Cancel</button></div>
+  </div>
+  <div class="modal" id="review-modal" hidden>
+    <h2 id="review-title">Rate your experience</h2>
+    <p class="modal-note">Ratings are only possible after both sides agreed the request is done, so every rating comes from a real interaction.</p>
+    <form id="review-form">
+      <div class="star-picker" id="review-stars" role="radiogroup" aria-label="Rating"><button type="button" data-star="1" aria-label="1 star">★</button><button type="button" data-star="2" aria-label="2 stars">★</button><button type="button" data-star="3" aria-label="3 stars">★</button><button type="button" data-star="4" aria-label="4 stars">★</button><button type="button" data-star="5" aria-label="5 stars">★</button></div>
+      <div class="field"><label for="review-body">What went well, or what could be better?</label><textarea id="review-body" rows="4" minlength="5" maxlength="2000" required></textarea></div>
+      <div class="modal-actions"><button type="button" class="secondary" id="review-cancel">Cancel</button><button type="submit" class="primary" id="review-submit">Submit rating</button></div>
+    </form>
+  </div>
+  <div class="modal" id="dispute-modal" hidden>
+    <h2>Report a problem</h2>
+    <p class="modal-note">Tell us why this request isn't done. Ratings of you stay on hold and our team may contact both sides.</p>
+    <form id="dispute-form">
+      <div class="field"><label for="dispute-reason">What happened?</label><textarea id="dispute-reason" rows="4" minlength="5" maxlength="1000" required></textarea></div>
+      <div class="modal-actions"><button type="button" class="secondary" id="dispute-cancel">Cancel</button><button type="submit" class="primary" id="dispute-submit">Send report</button></div>
+    </form>
   </div>
   <script>
     if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('../sw.js'));
@@ -655,7 +680,7 @@
     document.querySelector('#requests').innerHTML = `
       <div class="page-title"><div><span class="section-tag">My requests</span><h1>One place for every moving part.</h1><p>Track the people, answers, and decisions around your request.</p></div><button class="primary" data-view="discover">+ New request</button></div>
       <div class="request-layout">
-        <aside class="request-panel"><span class="section-tag">Active requests</span><h2 id="requests-count">0 in progress</h2><div style="display:flex;gap:6px;margin-bottom:10px"><button class="pill" type="button" id="requests-tab-sent">Sent by me</button><button class="pill selected" type="button" id="requests-tab-received">Received</button></div><div id="requests-list"><p style="color:var(--muted);font-size:12px;margin:0">Sign in to see your requests.</p></div></aside>
+        <aside class="request-panel"><span class="section-tag">Active requests</span><h2 id="requests-count">0 in progress</h2><div style="display:flex;gap:6px;margin-bottom:10px"><button class="pill" type="button" id="requests-tab-sent">Sent by me<b class="tab-badge" id="requests-tab-sent-badge" hidden></b></button><button class="pill selected" type="button" id="requests-tab-received">Received<b class="tab-badge" id="requests-tab-received-badge" hidden></b></button></div><div id="requests-list"><p style="color:var(--muted);font-size:12px;margin:0">Sign in to see your requests.</p></div></aside>
         <section class="request-panel coordination">
           <div class="coordination-head"><div><span class="section-tag" id="request-detail-tag">No request selected</span><h2 id="request-detail-title">Coordination timeline</h2></div><span class="pill selected" id="request-detail-status">–</span></div>
           <div class="stepper" id="request-stepper"></div>
@@ -720,17 +745,24 @@
       const seen = readSeen();
       return Boolean(seen) && (!seen[request.id] || new Date(request.updated_at) > new Date(seen[request.id]));
     }
-    function needsMyAction(request) { return request.my_role !== 'customer' && request.status === 'submitted'; }
+    function needsMyAction(request) { return Boolean(request.pending_action); }
     function notificationText(request) {
-      if (needsMyAction(request)) return `New request from ${request.counterpart_name}`;
+      if (request.pending_action === 'accept') return `New request from ${request.counterpart_name}`;
+      if (request.pending_action === 'confirm_completion') return `${request.counterpart_name} marked this as done – please confirm`;
+      if (request.pending_action === 'review') return 'Request done – rate your experience';
       if (request.my_role === 'customer' && request.status === 'accepted') return `${request.counterpart_name} accepted your request`;
       return `New update from ${request.counterpart_name}`;
     }
+    function setBadge(element, value) {
+      element.hidden = value === 0;
+      element.textContent = value > 9 ? '9+' : String(value);
+    }
     function updateNotifications() {
       const items = requestsCache.filter((request) => isUnread(request) || needsMyAction(request));
-      const count = document.querySelector('#notif-count');
-      count.hidden = items.length === 0;
-      count.textContent = items.length > 9 ? '9+' : String(items.length);
+      setBadge(document.querySelector('#notif-count'), items.length);
+      document.querySelectorAll('[data-requests-badge]').forEach((badge) => setBadge(badge, items.length));
+      setBadge(document.querySelector('#requests-tab-sent-badge'), items.filter((request) => request.my_role === 'customer').length);
+      setBadge(document.querySelector('#requests-tab-received-badge'), items.filter((request) => request.my_role !== 'customer').length);
       const menu = document.querySelector('#notif-menu');
       menu.innerHTML = '<h3>Notifications</h3>' + (items.length
         ? items.map((request) => `<button class="notif-item" type="button" data-request-id="${escapeHtml(request.id)}"><strong>${escapeHtml(notificationText(request))}</strong><span>${escapeHtml(request.title)} · ${new Date(request.updated_at).toLocaleString()}</span></button>`).join('')
@@ -768,7 +800,7 @@
       filtered.forEach((request) => {
         const item = document.createElement('div');
         item.className = `request-item${request.id === selectedRequestId ? ' active' : ''}`;
-        item.innerHTML = `<strong>${isUnread(request) ? '<span class="unread-dot" title="New update"></span>' : ''}${escapeHtml(request.title)}</strong><span>${escapeHtml(request.counterpart_name)} · ${statusLabel(request.status)}</span>`;
+        item.innerHTML = `<strong>${isUnread(request) || needsMyAction(request) ? '<span class="unread-dot" title="Needs your attention"></span>' : ''}${escapeHtml(request.title)}</strong><span>${escapeHtml(request.counterpart_name)} · ${statusLabel(request.status)}</span>`;
         item.addEventListener('click', () => selectRequest(request.id));
         listBox.appendChild(item);
       });
@@ -808,31 +840,106 @@
         body = isCustomer ? 'You can find another expert or company in Discover.' : 'No further action is needed.';
         if (isCustomer) actions.push('<button class="primary" type="button" data-action="discover">Find another expert</button>');
       } else if (detail.status === 'completed') {
-        title = 'This request is complete.';
-        body = 'Thanks for using RightConnect. Need anything else? We are here to help.';
+        if (detail.pending_action === 'confirm_completion') {
+          title = `${name} marked this request as done.`;
+          body = 'Confirm it is done so ratings can open. If the work isn\'t finished, report a problem instead. If you don\'t respond within 7 days, ratings open automatically.';
+          actions.push('<button class="primary" type="button" data-action="confirm-done">Confirm done</button>');
+          actions.push('<button class="secondary" type="button" data-action="dispute-done">Report a problem</button>');
+        } else {
+          title = 'This request is complete.';
+          body = detail.review_targets.length
+            ? 'Rate the people who helped you. Ratings open once both sides agree the request is done.'
+            : 'Thanks for using RightConnect. Need anything else? We are here to help.';
+        }
       } else if (detail.status === 'submitted') {
         title = isCustomer ? `Waiting for ${name} to accept.` : 'A customer is waiting for you.';
         body = isCustomer
           ? 'Their reply will appear here and on the bell icon at the top. No reply after a day? Tap Follow up to send a reminder.'
           : 'Tap Accept request to see their contact details and start the conversation.';
         if (isCustomer) actions.push('<button class="primary" type="button" data-action="follow-up">Follow up</button>');
+      } else if (detail.pending_action === 'accept') {
+        title = 'You were invited into this request.';
+        body = 'Review the expert track record on the right, then tap Accept request to join the conversation.';
       } else {
         title = isCustomer ? `${name} accepted your request.` : 'You accepted this request.';
         body = isCustomer
-          ? 'Their contact details are now under People in this request. Type a message below to agree a time to talk.'
+          ? 'Their contact details are now under People in this request. Type a message below to agree a time to talk. Got what you needed? Tap Mark as done.'
           : 'Reply below to agree next steps. The customer can now see your contact details.';
+        if (detail.can_mark_done) actions.push('<button class="primary" type="button" data-action="mark-done">Mark as done</button>');
         if (isCustomer) actions.push('<button class="secondary" type="button" data-action="follow-up">Follow up</button>');
       }
       actions.push('<button class="secondary" type="button" data-action="support">Get help (WhatsApp / Email)</button>');
 
+      const REVIEW_STATE_TEXT = {
+        waiting: (target) => `Opens when they confirm, or on ${new Date(target.opens_at).toLocaleDateString()}`,
+        confirm_first: () => 'Confirm done first',
+        disputed: () => 'On hold – they reported a problem',
+        reviewed: () => '✓ Rated',
+      };
+      const reviewRows = (detail.review_targets || []).map((target) => `<div class="review-row"><span><strong style="display:inline;font-size:12px">${escapeHtml(target.name)}</strong> <span style="text-transform:capitalize">(${target.participant_role})</span></span>${target.state === 'open'
+        ? `<button class="primary" type="button" data-review-profile="${escapeHtml(target.profile_id)}" data-review-name="${escapeHtml(target.name)}">Rate</button>`
+        : `<span>${escapeHtml(REVIEW_STATE_TEXT[target.state](target))}</span>`}</div>`).join('');
+
       const box = document.querySelector('#request-next-step');
       box.hidden = false;
-      box.innerHTML = `<strong>${title}</strong>${body}<div class="actions">${actions.join('')}</div>`;
+      box.innerHTML = `<strong>${title}</strong>${body}${reviewRows ? `<div style="margin-top:8px">${reviewRows}</div>` : ''}<div class="actions">${actions.join('')}</div>`;
       box.querySelector('[data-action="support"]').addEventListener('click', () => openSupport(detail.title));
       box.querySelector('[data-action="discover"]')?.addEventListener('click', () => showView('discover'));
+      box.querySelector('[data-action="mark-done"]')?.addEventListener('click', (event) => markRequestDone(detail, event.currentTarget));
+      box.querySelector('[data-action="confirm-done"]')?.addEventListener('click', (event) => postRequestAction(detail.id, 'confirm-completion', null, event.currentTarget, 'Thanks! Ratings are now open.'));
+      box.querySelector('[data-action="dispute-done"]')?.addEventListener('click', () => { document.querySelector('#dispute-form').reset(); openModal('dispute-modal'); });
+      box.querySelectorAll('[data-review-profile]').forEach((button) => button.addEventListener('click', () => openReviewModal(button.dataset.reviewProfile, button.dataset.reviewName)));
       const followUpButton = box.querySelector('[data-action="follow-up"]');
       if (followUpButton) followUpButton.addEventListener('click', () => sendFollowUp(detail, followUpButton));
     }
+
+    async function postRequestAction(requestId, action, payload, button, successMessage) {
+      if (button) setButtonLoading(button, true, 'Saving…');
+      const response = await fetch(`${apiBase}/requests/${requestId}/${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: payload ? JSON.stringify(payload) : undefined,
+      });
+      if (button) setButtonLoading(button, false);
+      if (!response.ok) { showToast(await extractErrorMessage(response, 'Something went wrong. Please try again.'), 'error'); return false; }
+      showToast(successMessage, 'success');
+      renderRequestDetail(await response.json());
+      loadRequests({ silent: true });
+      return true;
+    }
+
+    function markRequestDone(detail, button) {
+      if (!confirm(`Mark "${detail.title}" as done? The expert/company will be asked to confirm, then you can rate them.`)) return;
+      postRequestAction(detail.id, 'complete', null, button, 'Marked as done. You can rate them once they confirm.');
+    }
+
+    let reviewProfileId = null;
+    let reviewRating = 0;
+    function setReviewRating(value) {
+      reviewRating = value;
+      document.querySelectorAll('#review-stars [data-star]').forEach((star) => star.classList.toggle('on', Number(star.dataset.star) <= value));
+    }
+    function openReviewModal(profileId, name) {
+      reviewProfileId = profileId;
+      document.querySelector('#review-form').reset();
+      setReviewRating(0);
+      document.querySelector('#review-title').textContent = `Rate ${name}`;
+      openModal('review-modal');
+    }
+    document.querySelectorAll('#review-stars [data-star]').forEach((star) => star.addEventListener('click', () => setReviewRating(Number(star.dataset.star))));
+    document.querySelector('#review-cancel').addEventListener('click', closeModals);
+    document.querySelector('#review-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!reviewRating) { showToast('Tap a star to choose your rating.', 'error'); return; }
+      const ok = await postRequestAction(selectedRequestId, 'reviews', { profile_id: reviewProfileId, rating: reviewRating, body: document.querySelector('#review-body').value.trim() }, document.querySelector('#review-submit'), 'Thanks for your rating!');
+      if (ok) closeModals();
+    });
+    document.querySelector('#dispute-cancel').addEventListener('click', closeModals);
+    document.querySelector('#dispute-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const ok = await postRequestAction(selectedRequestId, 'dispute-completion', { reason: document.querySelector('#dispute-reason').value.trim() }, document.querySelector('#dispute-submit'), 'Problem reported. Our team will follow up.');
+      if (ok) closeModals();
+    });
 
     async function sendFollowUp(detail, button) {
       const key = `rightconnect-followup-${detail.id}`;
@@ -877,7 +984,7 @@
               : `<div style="margin-top:4px;font-size:11px;color:var(--muted)">Contact hidden until both sides accept</div>`;
             return `<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)">
                 <span class="avatar" title="${escapeHtml(participant.name)}">${initials}</span>
-                <div><strong style="font-size:13px">${escapeHtml(participant.name)}</strong><span style="display:block;font-size:11px;color:var(--muted);text-transform:capitalize">${participant.participant_role}${participant.accepted_at ? '' : ' · pending'}</span>${contact}</div>
+                <div><strong style="font-size:13px">${escapeHtml(participant.name)}</strong><span style="display:block;font-size:11px;color:var(--muted);text-transform:capitalize">${participant.participant_role}${participant.accepted_at ? '' : ' · pending'}${participant.completion_confirmed_at ? ' · confirmed done' : ''}${participant.completion_disputed_at ? ' · reported a problem' : ''}</span>${contact}</div>
               </div>`;
           }).join('')
         : '<span style="color:var(--muted);font-size:12px">Awaiting a match</span>';
@@ -892,8 +999,8 @@
               : '<p style="margin:0 0 12px;font-size:12px;color:var(--muted)">No completed clients recorded yet.</p>'}`
         : '';
 
-      document.querySelector('#request-accept-button').hidden = !(detail.my_role !== 'customer' && detail.status === 'submitted');
-      const iAccepted = detail.my_role === 'expert' && detail.status !== 'submitted' && detail.status !== 'cancelled';
+      document.querySelector('#request-accept-button').hidden = detail.pending_action !== 'accept';
+      const iAccepted = detail.my_role === 'expert' && detail.status !== 'submitted' && detail.status !== 'cancelled' && detail.status !== 'completed';
       const alreadyHasCompany = detail.participants.some((participant) => participant.participant_role === 'company');
       document.querySelector('#request-invite-company-button').hidden = !(iAccepted && !alreadyHasCompany);
       document.querySelector('#request-message-input').disabled = false;
@@ -913,6 +1020,7 @@
       document.querySelector('#invite-company-search').value = '';
       document.querySelector('#invite-company-results').innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Search for a company by name.</p>';
       openModal('invite-company-modal');
+      document.querySelector('#invite-company-search').dispatchEvent(new Event('input'));
     });
     document.querySelector('#invite-company-cancel').addEventListener('click', closeModals);
 
