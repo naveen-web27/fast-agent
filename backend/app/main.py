@@ -46,5 +46,22 @@ if settings.admin_path.startswith("/") and len(settings.admin_path) > 1 and sett
         return FileResponse(admin_page, headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow"})
 
 
+@app.get("/.well-known/assetlinks.json", include_in_schema=False)
+async def android_asset_links() -> list[dict]:
+    fingerprints = [fp.strip().upper() for fp in settings.android_sha256_fingerprints.split(",") if fp.strip()]
+    if not fingerprints:
+        return []
+    return [
+        {
+            "relation": ["delegate_permission/common.handle_all_urls"],
+            "target": {
+                "namespace": "android_app",
+                "package_name": settings.android_package_name,
+                "sha256_cert_fingerprints": fingerprints,
+            },
+        }
+    ]
+
+
 frontend_dir = Path(__file__).resolve().parents[2] / "frontend"
 app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")

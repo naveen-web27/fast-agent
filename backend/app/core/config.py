@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     admin_basic_password: str = ""
     # Comma-separated; when set, only these platform_admin emails may call /admin APIs.
     admin_emails: str = ""
+    # Android TWA: package name + comma-separated SHA-256 cert fingerprints from Play Console > App signing.
+    android_package_name: str = "app.rightconnect.twa"
+    android_sha256_fingerprints: str = ""
 
     @property
     def admin_email_list(self) -> set[str]:

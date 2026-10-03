@@ -37,3 +37,7 @@ services:
         sync: false
       - key: ADMIN_EMAILS
         sync: false
+      - key: ANDROID_PACKAGE_NAME
+        value: app.rightconnect.twa
+      - key: ANDROID_SHA256_FINGERPRINTS
+        sync: false
