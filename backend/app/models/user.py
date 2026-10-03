@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import DateTime, Enum, Select, String, Text, func, select
+from sqlalchemy import Boolean, DateTime, Enum, Select, String, Text, func, select, true
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -34,6 +34,9 @@ class User(Base):
     email: Mapped[str] = mapped_column(String, nullable=False, index=True)
     phone: Mapped[str | None] = mapped_column(String)
     interests: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False, default=list)
+    # Off once the customer's need is finished; experts/companies then stop seeing them as an active lead.
+    looking_for_help: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=true())
+    need_fulfilled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     role: Mapped[UserRole] = mapped_column(
         Enum(
             UserRole,

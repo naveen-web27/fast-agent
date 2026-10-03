@@ -142,6 +142,8 @@ class RequestSummary(BaseModel):
     pending_action: PendingAction | None = None
     # For company viewers: which team member is handling it.
     assigned_to_name: str | None = None
+    # For provider viewers: false once the customer finished their need, so it drops off the leads list.
+    customer_looking: bool = True
     completed_at: datetime | None = None
     created_at: datetime
     updated_at: datetime

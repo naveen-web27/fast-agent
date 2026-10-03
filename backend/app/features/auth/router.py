@@ -17,6 +17,7 @@ from app.features.auth.schemas import (
     IdentitiesResponse,
     InterestRequest,
     InterestsResponse,
+    LookingRequest,
     OnboardingRequest,
     UserResponse,
 )
@@ -38,6 +39,7 @@ from app.features.auth.service import (
     get_user_profile,
     remove_interest,
     send_domain_otp,
+    set_looking,
     verify_domain_otp,
 )
 from app.security.dependencies import get_current_auth_user_id
@@ -65,6 +67,19 @@ async def get_current_user(
     if profile is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Onboarding not completed")
     return profile
+
+
+@router.put("/looking", response_model=UserResponse)
+async def update_looking(
+    payload: LookingRequest,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> UserResponse:
+    """Customer turns 'looking for help' back on with a new need, or off when they're done."""
+    try:
+        return await set_looking(session, auth_user_id, payload.looking, payload.need)
+    except IdentityNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)

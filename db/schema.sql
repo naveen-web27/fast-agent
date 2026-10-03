@@ -17,6 +17,8 @@ CREATE TABLE users (
     phone TEXT,
     role user_role NOT NULL DEFAULT 'customer',
     interests TEXT[] NOT NULL DEFAULT '{}',
+    looking_for_help BOOLEAN NOT NULL DEFAULT TRUE,
+    need_fulfilled_at TIMESTAMPTZ,
     subscription_tier subscription_tier NOT NULL DEFAULT 'free',
     subscription_expires_at TIMESTAMPTZ,
     deleted_at TIMESTAMPTZ,

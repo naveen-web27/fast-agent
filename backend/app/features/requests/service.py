@@ -300,6 +300,7 @@ async def _build_summary(
     session: AsyncSession, request: Request, user: User, my_org_ids: set[UUID], participants: list[RequestParticipant]
 ) -> RequestSummary:
     assigned_to_name = None
+    customer_looking = True
     if request.customer_id == user.id:
         my_role = "customer"
         names = [await _participant_display_name(session, participant) for participant in participants]
@@ -309,6 +310,7 @@ async def _build_summary(
         my_role = mine.participant_role if mine is not None else "expert"
         customer = await session.get(User, request.customer_id)
         counterpart_name = customer.full_name if customer is not None else "Customer"
+        customer_looking = customer is not None and customer.looking_for_help
         if mine is not None and mine.assigned_user_id is not None:
             assignee = await session.get(User, mine.assigned_user_id)
             assigned_to_name = assignee.full_name if assignee is not None else None
@@ -323,6 +325,7 @@ async def _build_summary(
         counterpart_name=counterpart_name,
         pending_action=await _pending_action(session, request, user, my_org_ids, participants),
         assigned_to_name=assigned_to_name,
+        customer_looking=customer_looking,
         completed_at=request.completed_at,
         created_at=request.created_at,
         updated_at=request.updated_at,
@@ -459,6 +462,9 @@ async def create_request(session: AsyncSession, auth_user_id: UUID, payload: Cre
         status=RequestStatus.SUBMITTED,
     )
     session.add(request)
+    # A new request means a new need, so the customer is looking again.
+    user.looking_for_help = True
+    user.need_fulfilled_at = None
     await session.flush()
 
     if profile.kind is ProfileKind.EXPERT:
@@ -737,6 +743,18 @@ async def create_review(
     profile.review_count += 1
     profile.average_rating = round(total / profile.review_count, 1)
     request.updated_at = datetime.now(timezone.utc)
+    if request.customer_id == user.id and user.looking_for_help:
+        still_open = await session.scalar(
+            select(Request.id)
+            .where(
+                Request.customer_id == user.id,
+                Request.status.notin_((RequestStatus.COMPLETED, RequestStatus.CANCELLED)),
+            )
+            .limit(1)
+        )
+        if still_open is None:
+            user.looking_for_help = False
+            user.need_fulfilled_at = request.updated_at
     await session.commit()
     await session.refresh(request)
     return await _build_detail(session, request, user, my_org_ids)

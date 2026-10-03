@@ -72,6 +72,8 @@ function attachSuggest(input, onPick) {
 
 const interestsInput = document.querySelector('#interests-input');
 attachSuggest(interestsInput, (value) => { interestsInput.value = value; document.querySelector('#interests-form').requestSubmit(); });
+const needInput = document.querySelector('#need-input');
+attachSuggest(needInput, (value) => { needInput.value = value; });
 document.querySelector('#interests-cancel').addEventListener('click', () => {
   if (document.querySelector('#dashboard').classList.contains('active')) loadDashboard();
 });
@@ -109,6 +111,7 @@ function wireDashboard() {
   }));
   root.querySelectorAll('[data-team]').forEach((button) => button.addEventListener('click', () => openTeam(button.dataset.team)));
   root.querySelectorAll('[data-interests]').forEach((button) => button.addEventListener('click', () => { renderInterestsModal(); openModal('interests-modal'); }));
+  root.querySelectorAll('[data-new-need]').forEach((button) => button.addEventListener('click', openNeedModal));
 }
 
 async function loadDashboard() {
@@ -141,6 +144,7 @@ function renderCustomerDashboard(data) {
       : `<p class="muted" style="margin:4px 0 12px">No profiles for ${escapeHtml(group.interest)} yet. We're adding more every week.</p>`}`).join('')
     : `${emptyNote('Tell us what you need help with, like insurance, fashion or beauty, and we will suggest trusted people here.')}<button class="primary" type="button" data-interests style="margin-top:12px">Add interests</button>`;
   document.querySelector('#dash-body').innerHTML = `
+    ${currentUser && currentUser.looking_for_help === false ? '<div class="plan-banner free"><span>Your last need is finished, so experts and companies don\'t see you as an active customer.</span><button class="primary" type="button" data-new-need>I have a new need</button></div>' : ''}
     ${data.pending_actions ? `<div class="plan-banner free"><span>${data.pending_actions} request${data.pending_actions === 1 ? ' needs' : 's need'} your action.</span><button class="primary" type="button" data-go="requests">Open My requests</button></div>` : ''}
     <div class="kpi-grid">${kpi('Active requests', counts.active)}${kpi('Waiting for a reply', counts.waiting)}${kpi('Completed', counts.completed)}${kpi('Saved profiles', data.saved_count)}</div>
     <div class="dash-grid">

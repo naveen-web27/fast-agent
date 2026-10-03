@@ -75,6 +75,10 @@
     .toast.show { opacity:1; transform:translate(-50%,0); }
     .toast.error { background:#7a2436; }
     .toast.success { background:#0f5c47; }
+    .api-progress { position:fixed; top:0; left:0; right:0; z-index:200; height:3px; overflow:hidden; background:rgba(12,139,130,.15); pointer-events:none; }
+    .api-progress::before { content:''; position:absolute; top:0; bottom:0; left:-40%; width:40%; border-radius:3px; background:#0c8b82; animation:api-progress 1s ease-in-out infinite; }
+    @keyframes api-progress { to { left:100%; } }
+    .results-loading { opacity:.45; pointer-events:none; transition:opacity .15s; }
     .plans-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
     .plan-card { padding:22px; border:1px solid var(--line); border-radius:11px; background:#fff; }
     .plan-card.featured { border-color:var(--teal); box-shadow:var(--shadow); }
@@ -245,6 +249,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <div class="modal-scrim" id="modal-scrim" hidden></div>
   <div class="toast" id="toast" hidden></div>
+  <div class="api-progress" id="api-progress" role="progressbar" aria-label="Loading" hidden></div>
   <div class="modal" id="expert-modal" hidden>
     <h2>Add your expert profile</h2>
     <form id="expert-form">
@@ -288,10 +293,25 @@
   </div>
   <div class="modal" id="visibility-modal" hidden>
     <h2>Profile settings</h2>
+    <div id="looking-section"></div>
     <p class="modal-note">Show how many customers you've successfully served on your card, so companies and customers can approach you with confidence. Toggle it off any time to keep it private.</p>
     <div id="visibility-list"></div>
     <div class="danger-zone"><h3>Delete</h3><p class="modal-note">Deleting removes it from RightConnect right away. You can sign up or create it again later.</p><div id="danger-list"></div></div>
     <div class="modal-actions"><button type="button" class="secondary" id="visibility-close">Close</button></div>
+  </div>
+  <div class="modal" id="need-modal" role="dialog" aria-modal="true" aria-labelledby="need-title" hidden>
+    <h2 id="need-title">Looking for help again?</h2>
+    <p class="modal-note">Experts and companies will see you as an active customer again. <span id="need-old"></span></p>
+    <form id="need-form">
+      <div class="field"><label for="need-input">What do you need help with now?</label><input id="need-input" maxlength="120" placeholder="e.g. Health insurance" required></div>
+      <div class="modal-actions"><button type="button" class="secondary" data-close-modal>Cancel</button><button type="submit" class="primary" id="need-submit">Yes, start my new need</button></div>
+    </form>
+  </div>
+  <div class="modal" id="need-done-modal" role="dialog" aria-modal="true" aria-labelledby="need-done-title" hidden>
+    <h2 id="need-done-title">Glad your need is sorted!</h2>
+    <p class="modal-note" id="need-done-note"></p>
+    <p class="modal-note">Need help with something new? Turn <strong>Looking for help</strong> back on any time from Profile settings.</p>
+    <div class="modal-actions"><button type="button" class="secondary" data-close-modal>Okay</button><button type="button" class="primary" id="need-done-new">I have a new need</button></div>
   </div>
   <div class="modal" id="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title" hidden>
     <h2 id="delete-title">Delete</h2>
@@ -462,6 +482,30 @@
       return fallback;
     }
 
+    // Every API call shows the top progress bar; network/server failures always tell the user something went wrong.
+    // Pass { background: true } in fetch options for silent polling.
+    const apiProgress = document.querySelector('#api-progress');
+    const nativeFetch = window.fetch.bind(window);
+    let apiInflight = 0;
+    let apiProgressTimer = null;
+    window.fetch = async (input, init = {}) => {
+      const target = new URL(typeof input === 'string' ? input : (input.url || String(input)), window.location.href);
+      if (target.origin !== window.location.origin || !target.pathname.startsWith(apiBase) || init.background) return nativeFetch(input, init);
+      apiInflight += 1;
+      if (apiInflight === 1) apiProgressTimer = setTimeout(() => { apiProgress.hidden = false; }, 120);
+      try {
+        const response = await nativeFetch(input, init);
+        if (response.status >= 500) showToast('Something went wrong on our side. Please try again in a moment.', 'error');
+        return response;
+      } catch (error) {
+        showToast(navigator.onLine ? 'Something went wrong. Please check your connection and try again.' : 'You are offline. Check your internet connection.', 'error');
+        throw error;
+      } finally {
+        apiInflight -= 1;
+        if (apiInflight === 0) { clearTimeout(apiProgressTimer); apiProgress.hidden = true; }
+      }
+    };
+
     let currentPage = 1;
     const pageSize = 12;
     const kindPills = document.querySelectorAll('#kind-toggle .kind-pill');
@@ -520,8 +564,8 @@
       if (!accessToken) { resultCount.textContent = 'Sign in to see customer requests.'; return; }
       resultCount.innerHTML = '<span class="spinner"></span>Loading your customer requests…';
       await loadRequests();
-      const leads = requestsCache.filter((request) => request.my_role !== 'customer');
-      resultCount.textContent = leads.length ? `${leads.length} customer request${leads.length === 1 ? '' : 's'}` : 'No customer requests yet';
+      const leads = requestsCache.filter((request) => request.my_role !== 'customer' && !['completed', 'cancelled'].includes(request.status) && request.customer_looking !== false);
+      resultCount.textContent = leads.length ? `${leads.length} open customer request${leads.length === 1 ? '' : 's'}` : 'No open customer requests. Finished ones stay in My requests.';
       leads.forEach((request) => {
         const card = document.createElement('article');
         card.className = 'profile-card';
@@ -728,6 +772,7 @@
       const kinds = selectedKinds().filter((kind) => kind !== 'customer');
       resultCount.innerHTML = '<span class="spinner"></span>Loading profiles…';
       paginationBar.hidden = true;
+      resultsList.classList.add('results-loading');
       try {
         const params = new URLSearchParams();
         if (query) params.set('q', query);
@@ -751,7 +796,11 @@
         pageNextButton.disabled = data.page >= totalPages;
         paginationBar.hidden = totalPages <= 1;
       } catch (error) {
-        resultCount.textContent = 'Could not load live profiles. Check that the API and database are running.';
+        resultsList.innerHTML = '';
+        resultCount.innerHTML = 'Something went wrong while loading profiles. <button class="secondary" type="button" id="profiles-retry" style="margin-left:8px;padding:4px 10px">Try again</button>';
+        document.querySelector('#profiles-retry').addEventListener('click', loadProfiles);
+      } finally {
+        resultsList.classList.remove('results-loading');
       }
     }
 
@@ -818,7 +867,7 @@
       if (!accessToken) { listBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Sign in to see your requests.</p>'; document.querySelector('#requests-count').textContent = '0 in progress'; return; }
       if (!options.silent) listBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0"><span class="spinner"></span>Loading…</p>';
       try {
-        const response = await fetch(`${apiBase}/requests`, { headers: authHeaders() });
+        const response = await fetch(`${apiBase}/requests`, { headers: authHeaders(), background: Boolean(options.silent) });
         if (!response.ok) throw new Error('Request failed');
         requestsCache = (await response.json()).results;
         // First visit on this device: treat existing requests as already seen so the bell isn't flooded.
@@ -1033,7 +1082,7 @@
       event.preventDefault();
       if (!reviewRating) { showToast('Tap a star to choose your rating.', 'error'); return; }
       const ok = await postRequestAction(selectedRequestId, 'reviews', { profile_id: reviewProfileId, rating: reviewRating, body: document.querySelector('#review-body').value.trim() }, document.querySelector('#review-submit'), 'Thanks for your rating!');
-      if (ok) closeModals();
+      if (ok) { closeModals(); refreshMe(); }
     });
     document.querySelector('#dispute-cancel').addEventListener('click', closeModals);
     document.querySelector('#dispute-form').addEventListener('submit', async (event) => {
@@ -1208,6 +1257,7 @@
     let accessToken = null;
     let identities = null;
     let currentInterests = [];
+    let currentUser = null;
     let pendingOtpOrganizationId = null;
     let pendingOtpEmail = null;
 
@@ -1271,6 +1321,7 @@
     document.querySelector('#profile-settings-button').addEventListener('click', () => { userMenu.hidden = true; renderVisibilityModal(); openModal('visibility-modal'); });
 
     function renderVisibilityModal() {
+      renderLookingSection();
       const list = document.querySelector('#visibility-list');
       const rows = [];
       if (identities?.expert_profile) {
@@ -1288,6 +1339,95 @@
       });
       renderDangerZone();
     }
+
+    const NEED_DONE_SEEN_KEY = 'rightconnect-need-done-seen';
+    function renderLookingSection() {
+      const box = document.querySelector('#looking-section');
+      if (!currentUser) { box.innerHTML = ''; return; }
+      const needs = currentInterests.length ? ` for <strong>${escapeHtml(currentInterests.join(', '))}</strong>` : '';
+      const note = currentUser.looking_for_help
+        ? `On: experts and companies see you as an active customer${needs}.`
+        : 'Off: your last need is finished, so you are not shown as an active customer.';
+      box.innerHTML = `<div class="toggle-row"><div><strong>Looking for help</strong><small>${note}</small></div><input type="checkbox" id="looking-toggle" aria-label="Looking for help" ${currentUser.looking_for_help ? 'checked' : ''}></div>`;
+      box.querySelector('#looking-toggle').addEventListener('change', async (event) => {
+        const checkbox = event.currentTarget;
+        if (checkbox.checked) { checkbox.checked = false; openNeedModal(); return; }
+        if (!confirm('Turn off "Looking for help"? Experts and companies will stop seeing you as an active customer.')) { checkbox.checked = true; return; }
+        checkbox.disabled = true;
+        if (await saveLooking({ looking: false })) showToast('Done. You are no longer shown as an active customer.', 'success');
+        else renderLookingSection();
+      });
+    }
+
+    function openNeedModal() {
+      document.querySelector('#need-old').textContent = currentInterests.length ? `Your new need replaces the old one (${currentInterests.join(', ')}).` : '';
+      document.querySelector('#need-form').reset();
+      closeModals();
+      openModal('need-modal');
+      document.querySelector('#need-input').focus();
+    }
+
+    function applyAccountState(user) {
+      currentUser = { ...(currentUser || {}), ...user };
+      currentInterests = user.interests || [];
+      sessionStorage.setItem('rightconnect-user', JSON.stringify(currentUser));
+      if (!document.querySelector('#visibility-modal').hidden) renderLookingSection();
+      if (document.querySelector('#dashboard').classList.contains('active')) loadDashboard();
+    }
+
+    async function saveLooking(payload) {
+      try {
+        const response = await fetch(`${apiBase}/auth/looking`, { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(payload) });
+        if (!response.ok) { showToast(await extractErrorMessage(response, 'Could not update. Please try again.'), 'error'); return false; }
+        applyAccountState(await response.json());
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function maybeShowNeedDone(user) {
+      if (user.looking_for_help !== false || !user.need_fulfilled_at) return;
+      if (localStorage.getItem(NEED_DONE_SEEN_KEY) === user.need_fulfilled_at) return;
+      localStorage.setItem(NEED_DONE_SEEN_KEY, user.need_fulfilled_at);
+      const needs = (user.interests || []).join(', ');
+      document.querySelector('#need-done-note').textContent = `You rated your experience, so we marked ${needs ? `"${needs}"` : 'your need'} as finished. Experts and companies no longer see you as an active customer.`;
+      closeModals();
+      openModal('need-done-modal');
+    }
+
+    async function refreshMe() {
+      try {
+        const response = await fetch(`${apiBase}/auth/me`, { headers: authHeaders() });
+        if (!response.ok) return;
+        const user = await response.json();
+        applyAccountState(user);
+        maybeShowNeedDone(user);
+      } catch (_) {
+        // The rating already saved; the notice will show on the next visit.
+      }
+    }
+
+    document.querySelector('#need-done-new').addEventListener('click', openNeedModal);
+    document.querySelector('#need-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const need = document.querySelector('#need-input').value.trim();
+      if (!need) return;
+      const button = document.querySelector('#need-submit');
+      setButtonLoading(button, true, 'Saving…');
+      const ok = await saveLooking({ looking: true, need });
+      setButtonLoading(button, false);
+      if (!ok) return;
+      closeModals();
+      showToast(`You're looking for help with ${need}. Experts and companies can see you again.`, 'success');
+      if (getActingType() === 'customer') {
+        document.querySelector('#search-input').value = need;
+        ensureMarketplaceMode();
+        currentPage = 1;
+        showView('discover');
+        loadProfiles();
+      }
+    });
 
     function renderDangerZone() {
       const items = [];
@@ -1546,12 +1686,14 @@
       document.querySelector('#sign-in-link').hidden = true;
       document.querySelector('#bell-wrap').hidden = false;
       sessionStorage.setItem('rightconnect-user', JSON.stringify(user));
+      currentUser = user;
       currentInterests = user.interests || [];
       const searchInput = document.querySelector('#search-input');
-      if (currentInterests.length && !searchInput.value.trim()) {
+      if (user.looking_for_help !== false && currentInterests.length && !searchInput.value.trim()) {
         searchInput.value = currentInterests[currentInterests.length - 1];
         loadProfiles();
       }
+      maybeShowNeedDone(user);
     }
 
     (async function initSession() {

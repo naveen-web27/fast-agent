@@ -77,6 +77,8 @@ async def get_user_profile(session: AsyncSession, auth_user_id: UUID) -> UserRes
         onboarding_status=onboarding_status,
         subscription_tier=user.subscription_tier.value if active else SubscriptionTier.FREE.value,
         subscription_expires_at=user.subscription_expires_at.isoformat() if active else None,
+        looking_for_help=user.looking_for_help,
+        need_fulfilled_at=user.need_fulfilled_at,
     )
 
 
@@ -249,6 +251,8 @@ async def get_identities(session: AsyncSession, auth_user_id: UUID) -> Identitie
             role=user.role.value,
             interests=user.interests,
             onboarding_status=onboarding_status,
+            looking_for_help=user.looking_for_help,
+            need_fulfilled_at=user.need_fulfilled_at,
         ),
         expert_profile=expert_profile,
         companies=companies,
@@ -443,6 +447,19 @@ async def remove_interest(session: AsyncSession, auth_user_id: UUID, interest: s
     await session.commit()
     await session.refresh(user)
     return user.interests
+
+
+async def set_looking(session: AsyncSession, auth_user_id: UUID, looking: bool, need: str | None) -> UserResponse:
+    """Switch 'looking for help' on (the new need replaces the old interests) or off."""
+    user = await session.scalar(active_user_by_auth_id(auth_user_id))
+    if user is None:
+        raise IdentityNotFoundError("Complete onboarding first")
+    user.looking_for_help = looking
+    if looking:
+        user.interests = [need]
+        user.need_fulfilled_at = None
+    await session.commit()
+    return await get_user_profile(session, auth_user_id)
 
 
 async def delete_my_account(session: AsyncSession, auth_user_id: UUID) -> None:

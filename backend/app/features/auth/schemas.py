@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 Role = Literal["customer", "expert", "company_admin", "platform_admin"]
 OnboardingRole = Literal["customer", "expert", "company_admin"]
@@ -67,6 +67,8 @@ class UserResponse(BaseModel):
     onboarding_status: Literal["complete", "verification_pending"]
     subscription_tier: Literal["free", "pro", "enterprise"] = "free"
     subscription_expires_at: str | None = None
+    looking_for_help: bool = True
+    need_fulfilled_at: datetime | None = None
 
 
 class ExpertProfileRequest(BaseModel):
@@ -140,3 +142,17 @@ class InterestRequest(BaseModel):
 
 class InterestsResponse(BaseModel):
     interests: list[str]
+
+
+class LookingRequest(BaseModel):
+    """Turn the customer's 'looking for help' switch on (with a new need) or off."""
+
+    looking: bool
+    need: str | None = Field(default=None, max_length=120)
+
+    @model_validator(mode="after")
+    def _need_when_looking(self) -> "LookingRequest":
+        self.need = (self.need or "").strip() or None
+        if self.looking and self.need is None:
+            raise ValueError("Tell us what you need help with now")
+        return self
