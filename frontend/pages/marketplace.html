@@ -1588,11 +1588,19 @@
       await loadSavedProfileIds();
       const acting = JSON.parse(sessionStorage.getItem('rightconnect-acting-as') || '{"type":"customer","label":"Customer"}');
       applyActingAsDefaultView(acting.type);
+      if (launchView) openLaunchView();
       setInterval(() => { if (!document.hidden) loadRequests({ silent: true }); }, 60000);
     })();
 
-    const sharedProfileId = new URLSearchParams(window.location.search).get('profile');
+    // Launch params come from manifest shortcuts (?view=) and the Android share sheet (?q=).
+    const launchParams = new URLSearchParams(window.location.search);
+    const sharedProfileId = launchParams.get('profile');
+    const launchView = ['requests', 'dashboard', 'saved'].includes(launchParams.get('view')) ? launchParams.get('view') : null;
+    const sharedQuery = (launchParams.get('q') || launchParams.get('title') || '').trim().slice(0, 200);
+    function openLaunchView() { document.querySelector(`.nav-button[data-view="${launchView}"]`).click(); }
+    if (sharedQuery) document.querySelector('#search-input').value = sharedQuery;
     if (sharedProfileId) { openProfile(sharedProfileId, { skipHistory: true }); }
+    else if (launchView) { openLaunchView(); }
     loadProfiles();
   </script>
   <script src="../assets/workspace.js"></script>
