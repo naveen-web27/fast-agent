@@ -34,17 +34,67 @@
     .suggest-list button:hover,.suggest-list button.active { background:#eef7f5; }
     .other-box[hidden],.suggest-list[hidden] { display:none; }
     @media (max-width:800px) { .shell { display:block; }.story { min-height:235px; padding:22px 22px 26px; }.story-copy { margin:28px 0 0; padding:0; }.story h1 { margin:9px 0; font-size:30px; }.story p,.promise { display:none; }.auth { min-height:calc(100svh - 235px); align-items:start; padding:24px 18px 36px; }.auth-card { max-width:480px; }.auth-top { margin-bottom:24px; }.step h2 { font-size:25px; }.role { min-height:76px; }.two { grid-template-columns:1fr; gap:14px; } }
+    .roles { display:grid; gap:10px; }
+    .role-line { display:flex; align-items:center; gap:8px; }
+    .role-line .role { flex:1; }
+    .role-main { min-height:96px; border:2px solid var(--teal); background:linear-gradient(120deg,#fff 0%,#eefaf7 100%); }
+    .role-main strong { font-size:18px; }
+    .role-main .role-icon { width:48px; height:48px; color:#fff; background:var(--teal); font-size:22px; }
+    .role:not(.role-main) { min-height:64px; }
+    .info { display:inline-grid; flex:none; place-items:center; width:26px; height:26px; padding:0; color:var(--teal); border:1px solid #9fd9cd; border-radius:50%; background:#fff; font:italic 800 13px/1 Georgia,serif; }
+    .info[aria-expanded="true"] { color:#fff; background:var(--teal); }
+    .info-text { margin:0; padding:10px 12px; color:#33425e; border-radius:9px; background:var(--mint); font-size:13px; }
+    .info-text[hidden] { display:none; }
+    .progress { display:flex; gap:5px; margin:0 0 14px; }
+    .progress i { flex:1; height:5px; border-radius:5px; background:var(--line); }
+    .progress i.on { background:var(--teal); }
+    .q { display:none; gap:12px; }
+    .q.active { display:grid; animation:up .25s ease; }
+    .q-head { display:flex; align-items:center; gap:8px; margin-top:6px; }
+    .q-head label { color:var(--ink); font-size:22px; font-weight:800; letter-spacing:-.03em; }
+    .q input:not([type="hidden"]) { width:100%; min-height:54px; padding:0 14px; color:var(--ink); border:1px solid var(--line); border-radius:10px; outline:0; background:#fff; font-size:16px; }
+    .q input:focus { border-color:var(--teal); box-shadow:0 0 0 3px rgba(8,138,130,.12); }
+    .q .suggest-list { top:58px; }
+    .interest-chip { min-height:42px; font-size:13px; }
+    .choice-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .choice { min-height:54px; color:#26344b; border:1px solid var(--line); border-radius:10px; background:#fff; font-size:15px; font-weight:800; }
+    .choice[aria-pressed="true"] { color:#06655f; border-color:var(--teal); background:var(--mint); }
+    .wizard-actions { display:flex; gap:10px; margin-top:22px; }
+    .wizard-actions .continue { flex:1; width:auto; min-height:52px; font-size:15px; }
+    .wizard-actions .skip { min-width:96px; min-height:52px; }
+    .wizard-actions .skip[hidden] { display:none; }
+    @media (max-width:800px) { .story { min-height:0; padding:16px 20px 18px; }.story-copy { margin:12px 0 0; }.story h1 { margin:0; font-size:24px; }.auth { min-height:0; padding-top:18px; } }
   </style>
 </head>
 <body>
   <main class="shell">
-    <section class="story"><div class="brand"><img src="../assets/rightconnect-mark.svg" alt="RightConnect"><span>RightConnect</span></div><div class="story-copy"><span class="eyebrow">A better way to choose</span><h1>Start with the right connection.</h1><p>RightConnect brings customers, independent experts, and companies into one clear, accountable conversation.</p></div><div class="promise"><div class="promise-item"><i class="check">✓</i> Identity and credentials are reviewed</div><div class="promise-item"><i class="check">✓</i> Reviews follow a verified interaction</div><div class="promise-item"><i class="check">✓</i> You decide who joins your request</div></div></section>
+    <section class="story"><div class="brand"><img src="../assets/rightconnect-mark.svg" alt="RightConnect"><span>RightConnect</span></div><div class="story-copy"><h1>Find the right help.</h1><p>Verified experts and companies.</p></div><div class="promise"><div class="promise-item"><i class="check">✓</i> Verified people</div><div class="promise-item"><i class="check">✓</i> Real reviews</div><div class="promise-item"><i class="check">✓</i> Free for customers</div></div></section>
     <section class="auth"><div class="auth-card">
-      <div class="auth-top"><button class="back" id="back" hidden>← Back</button><span class="help">Already have an account? <a href="#sign-in" id="sign-in-link">Sign in</a></span></div>
-      <section class="step active" id="role-step"><span class="eyebrow" style="color:#088a82">Join RightConnect</span><h2>What brings you here?</h2><p>Your choice controls the setup questions and the tools you see after sign-in.</p><div class="roles"><button class="role" data-role="customer"><span class="role-icon">⌕</span><span><strong>I need help choosing</strong><small>Find, compare, and contact trusted experts or companies.</small></span><span class="arrow">›</span></button><button class="role expert" data-role="expert"><span class="role-icon">✦</span><span><strong>I am an expert</strong><small>Offer guidance and build a verified professional profile.</small></span><span class="arrow">›</span></button><button class="role company" data-role="company"><span class="role-icon">▣</span><span><strong>I represent a company</strong><small>Receive qualified requests and manage your organization.</small></span><span class="arrow">›</span></button></div></section>
-      <section class="step" id="auth-step"><span class="eyebrow" style="color:#088a82" id="role-label">Customer account</span><h2>Secure your account.</h2><p>Sign in securely with your Google account.</p><div class="sign-in"><button class="oauth" id="google-button"><i class="google-g"></i> Continue with Google</button></div></section>
-      <section class="step" id="details-step"><span class="eyebrow" style="color:#088a82" id="details-label">Customer profile</span><h2 id="details-title">A few details, then you can start.</h2><p id="details-copy">This helps experts and companies respond with the right context.</p><form class="form" id="details-form"><div class="field"><label for="name">Your name</label><input id="name" placeholder="Your full name" required></div><div class="field"><label for="phone-number">Mobile number</label><div class="phone-row"><input id="phone-code" value="+91" inputmode="tel" maxlength="5" aria-label="Country code" required><input id="phone-number" type="tel" inputmode="numeric" placeholder="98765 43210" maxlength="16" autocomplete="tel-national" required></div><small class="field-hint" id="phone-hint">We may call or message this number to verify your account.</small></div><div class="two"><div class="field"><label for="city">City</label><input id="city" placeholder="Chennai"></div><div class="field"><label for="language">Preferred language</label><select id="language"><option>English</option><option>Tamil</option><option>Hindi</option><option>Telugu</option></select></div></div><div class="role-fields" id="customer-fields"><div class="field"><label>What are you looking for help with? <span style="font-weight:600;color:var(--muted)">Pick as many as you like</span></label><div class="interest-chips" id="interest-chips" role="group" aria-label="Areas of interest"></div><div class="other-box" id="interest-other" hidden><input id="interest-other-input" placeholder="Type a service, e.g. beauty" autocomplete="off" aria-label="Other service"><div class="suggest-list" id="interest-suggest" role="listbox" hidden></div><small class="field-hint">Choose a suggestion or press Enter to add what you typed.</small></div></div></div><div class="role-fields" id="expert-fields" hidden><div class="two"><div class="field"><label for="service">Primary service</label><input id="service" placeholder="Health insurance"></div><div class="field"><label for="experience">Years of experience</label><input id="experience" type="number" min="0" placeholder="5"></div></div><div class="field"><label for="credential">Credential or licence number</label><input id="credential" placeholder="Add for verification"></div></div><div class="role-fields" id="company-fields" hidden><div class="field"><label for="company">Company name</label><input id="company" placeholder="Your registered business name"></div><div class="two"><div class="field"><label for="work-email">Business email</label><input id="work-email" type="email" placeholder="name@company.com"></div><div class="field"><label for="website">Website</label><input id="website" type="url" placeholder="https://"></div></div><div class="field"><label for="registration">Business registration or licence</label><input id="registration" placeholder="Add for verification"></div></div><p class="terms">By continuing, you agree to the RightConnect <a href="#terms">Terms</a> and <a href="#privacy">Privacy Policy</a>. Experts and companies agree to verification before appearing in search.</p><button class="continue" type="submit" id="details-submit">Create account</button></form></section>
-      <section class="step" id="success-step"><div class="success"><div class="success-mark">✓</div><span class="eyebrow" style="color:#088a82">Account created</span><h2 id="success-title">You are ready to explore.</h2><p id="success-copy">Start comparing verified people and companies when you are ready.</p><a class="continue" id="success-link" href="marketplace.html" style="text-decoration:none">Open RightConnect</a></div></section>
+      <div class="auth-top"><button class="back" id="back" hidden>← Back</button><span class="help">Have an account? <a href="#sign-in" id="sign-in-link">Sign in</a></span></div>
+      <section class="step active" id="role-step"><h2>Welcome</h2><p>What do you want to do?</p><div class="roles">
+        <div class="role-line"><button class="role role-main" data-role="customer"><span class="role-icon">⌕</span><span><strong>Find help</strong><small>Free</small></span><span class="arrow">›</span></button><button type="button" class="info" aria-expanded="false" aria-controls="info-customer" aria-label="About finding help">i</button></div>
+        <p class="info-text" id="info-customer" hidden>Search verified experts and companies, send a free request, chat and decide.</p>
+        <div class="divider">or offer services</div>
+        <div class="role-line"><button class="role expert" data-role="expert"><span class="role-icon">✦</span><span><strong>I'm an expert</strong></span><span class="arrow">›</span></button><button type="button" class="info" aria-expanded="false" aria-controls="info-expert" aria-label="About expert accounts">i</button></div>
+        <p class="info-text" id="info-expert" hidden>For advisors, consultants and agents. We verify you before you appear in search.</p>
+        <div class="role-line"><button class="role company" data-role="company"><span class="role-icon">▣</span><span><strong>I'm a company</strong></span><span class="arrow">›</span></button><button type="button" class="info" aria-expanded="false" aria-controls="info-company" aria-label="About company accounts">i</button></div>
+        <p class="info-text" id="info-company" hidden>For businesses. Get customer requests and manage your team. We verify you before you appear in search.</p>
+      </div></section>
+      <section class="step" id="auth-step"><span class="eyebrow" style="color:#088a82" id="role-label">Customer account</span><h2>Sign in</h2><p>One tap with Google.</p><div class="sign-in"><button class="oauth" id="google-button"><i class="google-g"></i> Continue with Google</button></div><p class="terms" style="margin:16px 0 0">By continuing you accept our <a href="#terms">Terms</a> &amp; <a href="#privacy">Privacy</a>.</p></section>
+      <section class="step" id="details-step"><div class="progress" id="wizard-progress" aria-hidden="true"></div><span class="eyebrow" style="color:#088a82" id="details-label">Step 1</span>
+        <form class="form" id="details-form" novalidate>
+          <div class="q" data-for="customer expert company"><div class="q-head"><label for="name">Your name</label></div><input id="name" placeholder="Full name" autocomplete="name" maxlength="120" required></div>
+          <div class="q" data-for="customer expert company"><div class="q-head"><label for="phone-number">Mobile number</label><button type="button" class="info" aria-expanded="false" aria-controls="info-phone" aria-label="Why we ask">i</button></div><p class="info-text" id="info-phone" hidden>We use it to verify you. Only people you work with on a request can see it.</p><div class="phone-row"><input id="phone-code" value="+91" inputmode="tel" maxlength="5" aria-label="Country code" required><input id="phone-number" type="tel" inputmode="numeric" placeholder="98765 43210" maxlength="16" autocomplete="tel-national" required></div><small class="field-hint" id="phone-hint"></small></div>
+          <div class="q" data-for="customer"><div class="q-head"><label id="need-label">What do you need?</label><button type="button" class="info" aria-expanded="false" aria-controls="info-need" aria-label="About this question">i</button></div><p class="info-text" id="info-need" hidden>Tap one or more. We show the right experts first. You can change this later.</p><div class="interest-chips" id="interest-chips" role="group" aria-labelledby="need-label"></div><div class="other-box" id="interest-other" hidden><input id="interest-other-input" placeholder="Type, e.g. beauty" autocomplete="off" aria-label="Other service"><div class="suggest-list" id="interest-suggest" role="listbox" hidden></div></div></div>
+          <div class="q" data-for="expert"><div class="q-head"><label for="service">Your main service</label><button type="button" class="info" aria-expanded="false" aria-controls="info-service" aria-label="About this question">i</button></div><p class="info-text" id="info-service" hidden>Shown on your profile, e.g. "Health insurance".</p><input id="service" placeholder="Health insurance" maxlength="120" required></div>
+          <div class="q" data-for="company"><div class="q-head"><label for="company">Company name</label></div><input id="company" placeholder="Business name" autocomplete="organization" maxlength="160" required></div>
+          <div class="q" data-for="expert company" data-optional><div class="q-head"><label for="city">Your city</label></div><input id="city" placeholder="Chennai" autocomplete="address-level2" maxlength="100"></div>
+          <div class="q" data-for="expert" data-optional><div class="q-head"><label>Language</label></div><div class="choice-grid" id="language-choices"><button type="button" class="choice" data-language="English">English</button><button type="button" class="choice" data-language="Tamil">Tamil</button><button type="button" class="choice" data-language="Hindi">Hindi</button><button type="button" class="choice" data-language="Telugu">Telugu</button></div><input type="hidden" id="language" value=""></div>
+          <div class="q" data-for="expert" data-optional><div class="q-head"><label for="experience">Years of experience</label></div><input id="experience" type="number" inputmode="numeric" min="0" max="80" placeholder="5"></div>
+          <div class="q" data-for="company" data-optional><div class="q-head"><label for="website">Website</label></div><input id="website" inputmode="url" autocomplete="url" placeholder="yourcompany.com" maxlength="255"></div>
+          <div class="wizard-actions"><button type="button" class="outline skip" id="details-skip" hidden>Skip</button><button class="continue" type="submit" id="details-submit">Next</button></div>
+        </form></section>
+      <section class="step" id="success-step"><div class="success"><div class="success-mark">✓</div><h2 id="success-title">All set!</h2><p id="success-copy">Find the right help now.</p><a class="continue" id="success-link" href="marketplace.html" style="text-decoration:none">Start</a></div></section>
     </div></section>
   </main>
   <div class="toast" id="toast" hidden></div>
@@ -97,7 +147,7 @@
       const { error } = await authClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/pages/auth.html` } });
       if (error) alert(error.message);
     });
-    const PHONE_HINT = 'We may call or message this number to verify your account.';
+    const PHONE_HINT = '';
     function phoneError(code, digits) {
       if (!/^\+[1-9]\d{0,3}$/.test(code)) return 'Country code should look like +91.';
       if (code === '+91') {
@@ -192,11 +242,55 @@
       if (event.key === 'Escape') suggestBox.hidden = true;
     });
     renderInterestChips();
-    document.querySelector('#details-form').addEventListener('submit', async (event) => {
+    document.querySelectorAll('.info').forEach((button) => button.addEventListener('click', (event) => {
       event.preventDefault();
+      const open = button.getAttribute('aria-expanded') !== 'true';
+      button.setAttribute('aria-expanded', String(open));
+      document.getElementById(button.getAttribute('aria-controls')).hidden = !open;
+    }));
+
+    // Details are asked one question per screen; questions are tagged with the roles they apply to.
+    const detailsForm = document.querySelector('#details-form');
+    const nextButton = document.querySelector('#details-submit');
+    const skipButton = document.querySelector('#details-skip');
+    const languageChoices = document.querySelectorAll('#language-choices [data-language]');
+    let questionIndex = 0;
+    function roleQuestions() { return [...detailsForm.querySelectorAll('.q')].filter((q) => q.dataset.for.split(' ').includes(role)); }
+    function showQuestion(index) {
+      const questions = roleQuestions();
+      questionIndex = Math.max(0, Math.min(index, questions.length - 1));
+      const question = questions[questionIndex];
+      detailsForm.querySelectorAll('.q').forEach((q) => q.classList.toggle('active', q === question));
+      document.querySelector('#details-label').textContent = `Step ${questionIndex + 1} of ${questions.length}`;
+      document.querySelector('#wizard-progress').innerHTML = questions.map((_, i) => `<i class="${i <= questionIndex ? 'on' : ''}"></i>`).join('');
+      nextButton.textContent = questionIndex === questions.length - 1 ? 'Create account' : 'Next →';
+      skipButton.hidden = !('optional' in question.dataset);
+      question.querySelector('input:not([type="hidden"]):not(#phone-code)')?.focus();
+    }
+    function currentQuestionValid() {
+      const question = roleQuestions()[questionIndex];
+      if (question.querySelector('#phone-number')) return Boolean(validatedPhone());
+      return [...question.querySelectorAll('input:not([type="hidden"])')].every((input) => input.reportValidity());
+    }
+    skipButton.addEventListener('click', () => {
+      roleQuestions()[questionIndex].querySelectorAll('input').forEach((input) => { input.value = ''; });
+      if (roleQuestions()[questionIndex].contains(languageChoices[0])) languageChoices.forEach((item) => item.setAttribute('aria-pressed', 'false'));
+      if (questionIndex === roleQuestions().length - 1) detailsForm.requestSubmit(); else showQuestion(questionIndex + 1);
+    });
+    languageChoices.forEach((button) => button.addEventListener('click', () => {
+      document.querySelector('#language').value = button.dataset.language;
+      languageChoices.forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+      detailsForm.requestSubmit();
+    }));
+
+    detailsForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!currentQuestionValid()) return;
+      if (questionIndex < roleQuestions().length - 1) { showQuestion(questionIndex + 1); return; }
       if (!authSession) { show('auth-step'); return; }
       const phone = validatedPhone();
       if (!phone) return;
+      const website = document.querySelector('#website').value.trim();
       const payload = {
         full_name: document.querySelector('#name').value,
         email: authSession.user.email,
@@ -208,11 +302,11 @@
         interests: role === 'customer' ? [...selectedInterests] : [],
         primary_service: document.querySelector('#service').value || null,
         years_experience: Number(document.querySelector('#experience').value) || null,
-        credential_number: document.querySelector('#credential').value || null,
+        credential_number: null,
         company_name: document.querySelector('#company').value || null,
-        work_email: document.querySelector('#work-email').value || null,
-        website: document.querySelector('#website').value || null,
-        business_registration: document.querySelector('#registration').value || null,
+        work_email: null,
+        website: website ? (/^https?:\/\//i.test(website) ? website : `https://${website}`) : null,
+        business_registration: null,
       };
       const submitButton = document.querySelector('#details-submit');
       setButtonLoading(submitButton, true, 'Creating account…');
@@ -225,16 +319,20 @@
       show('success-step');
     });
     document.querySelector('#sign-in-link').addEventListener('click', (event) => { event.preventDefault(); role = 'customer'; show('auth-step'); });
-    back.addEventListener('click', () => { const previous = { 'auth-step':'role-step', 'details-step':'auth-step' }; show(previous[current] || 'role-step'); });
-    const detailTitle = document.querySelector('#details-title');
-    const detailCopy = document.querySelector('#details-copy');
-    const detailLabel = document.querySelector('#details-label');
-    const expertFields = document.querySelector('#expert-fields');
-    const companyFields = document.querySelector('#company-fields');
-    const customerFields = document.querySelector('#customer-fields');
-    const detailsStep = document.querySelector('#details-step');
+    back.addEventListener('click', () => {
+      if (current === 'details-step' && questionIndex > 0) { showQuestion(questionIndex - 1); return; }
+      const previous = { 'auth-step':'role-step', 'details-step':'auth-step' };
+      show(previous[current] || 'role-step');
+    });
     const originalShow = show;
-    show = (id) => { originalShow(id); if (id === 'details-step') { detailLabel.textContent = `${roleNames[role]} profile`; expertFields.hidden = role !== 'expert'; companyFields.hidden = role !== 'company'; customerFields.hidden = role !== 'customer'; detailTitle.textContent = role === 'customer' ? 'A few details, then you can start.' : role === 'expert' ? 'Set up your professional profile.' : 'Set up your company profile.'; detailCopy.textContent = role === 'customer' ? 'This helps experts and companies respond with the right context.' : role === 'expert' ? 'You can complete credentials now; our team verifies them before you appear in search.' : 'Your business stays private until your organization and representative are verified.'; } if (id === 'success-step') { document.querySelector('#success-title').textContent = role === 'customer' ? 'You are ready to explore.' : role === 'expert' ? 'Your expert profile is started.' : 'Your company profile is started.'; document.querySelector('#success-copy').textContent = role === 'customer' ? 'Start comparing verified people and companies when you are ready.' : 'We will let you know when verification is complete. You can finish the remaining profile details next.'; } };
+    show = (id) => {
+      originalShow(id);
+      if (id === 'details-step') showQuestion(0);
+      if (id === 'success-step') {
+        document.querySelector('#success-title').textContent = role === 'customer' ? 'All set!' : 'Profile started';
+        document.querySelector('#success-copy').textContent = role === 'customer' ? 'Find the right help now.' : "We'll verify you soon. Add more details any time.";
+      }
+    };
     (async () => {
       const savedRole = sessionStorage.getItem('rightconnect-role');
       if (savedRole && roleNames[savedRole]) role = savedRole;
