@@ -38,6 +38,7 @@ class ProfileUpdate(BaseModel):
     languages: list[str] | None = Field(default=None, max_length=10)
     avatar_url: OptionalLink = None
     services: list[str] | None = Field(default=None, max_length=10)
+    keywords: list[str] | None = Field(default=None, max_length=20)
     intro_video_url: OptionalLink = None
     portfolio_url: OptionalLink = None
 
@@ -48,6 +49,14 @@ class ProfileUpdate(BaseModel):
             return None
         cleaned = [value.strip()[:120] for value in values if value and value.strip()]
         return list({value.lower(): value for value in cleaned}.values())
+
+    @field_validator("keywords")
+    @classmethod
+    def _clean_keywords(cls, values: list[str] | None) -> list[str] | None:
+        if values is None:
+            return None
+        cleaned = [" ".join(value.split()).lower()[:40] for value in values if value and value.strip()]
+        return list(dict.fromkeys(cleaned))
 
 
 class SocialLinkIn(BaseModel):
@@ -138,6 +147,9 @@ class ManagedProfile(BaseModel):
     languages: list[str]
     avatar_url: str | None
     services: list[str]
+    keywords: list[str]
+    # Everyday words customers use for these services, offered as one-tap additions.
+    suggested_keywords: list[str]
     intro_video_url: str | None
     portfolio_url: str | None
     social_links: list[SocialLinkOut]

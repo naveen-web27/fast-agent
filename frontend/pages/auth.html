@@ -64,6 +64,17 @@
     .wizard-actions .skip { min-width:96px; min-height:52px; }
     .wizard-actions .skip[hidden] { display:none; }
     @media (max-width:800px) { .story { min-height:0; padding:16px 20px 18px; }.story-copy { margin:12px 0 0; }.story h1 { margin:0; font-size:24px; }.auth { min-height:0; padding-top:18px; } }
+    .loading-screen { position:fixed; inset:0; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; background:rgba(244,246,250,.94); }
+    .loading-screen[hidden] { display:none; }
+    .loading-screen img { width:62px; height:62px; border-radius:16px; animation:rc-pulse 1.2s ease-in-out infinite; }
+    .loading-dots { display:flex; gap:7px; }
+    .loading-dots i { width:10px; height:10px; border-radius:50%; background:var(--teal); animation:rc-dot 1s ease-in-out infinite; }
+    .loading-dots i:nth-child(2) { animation-delay:.15s; }
+    .loading-dots i:nth-child(3) { animation-delay:.3s; }
+    @keyframes rc-dot { 0%,80%,100% { opacity:.3; transform:translateY(0); } 40% { opacity:1; transform:translateY(-7px); } }
+    @keyframes rc-pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.06); } }
+    @media (prefers-reduced-motion:reduce) { .loading-screen img,.loading-dots i { animation-duration:2.4s; } }
+    .loading-screen p { margin:0; color:var(--ink); font-size:16px; font-weight:800; }
   </style>
 </head>
 <body>
@@ -98,6 +109,7 @@
     </div></section>
   </main>
   <div class="toast" id="toast" hidden></div>
+  <div class="loading-screen" id="loading-screen" role="status" aria-live="polite" hidden><img src="../assets/rightconnect-mark.svg" alt=""><span class="loading-dots" aria-hidden="true"><i></i><i></i><i></i></span><p id="loading-text">Signing you in…</p></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const steps = document.querySelectorAll('.step');
@@ -141,11 +153,20 @@
       }
     }
     let show = (id) => { steps.forEach((step) => step.classList.toggle('active', step.id === id)); current = id; back.hidden = ['role-step', 'success-step'].includes(id); };
+    const OAUTH_PENDING_KEY = 'rightconnect-oauth-pending';
+    function setLoading(text) {
+      document.querySelector('#loading-screen').hidden = !text;
+      if (text) document.querySelector('#loading-text').textContent = text;
+    }
+    // Coming back from Google with the browser Back button restores this page from cache with the spinner still on.
+    window.addEventListener('pageshow', (event) => { if (event.persisted) setLoading(null); });
     document.querySelectorAll('[data-role]').forEach((button) => button.addEventListener('click', () => { role = button.dataset.role; sessionStorage.setItem('rightconnect-role', role); document.querySelector('#role-label').textContent = `${roleNames[role]} account`; show('auth-step'); }));
     document.querySelector('#google-button').addEventListener('click', async () => {
       if (!authClient) { alert('Google sign-in is not configured yet. Add Supabase URL and publishable key in Render.'); return; }
+      sessionStorage.setItem(OAUTH_PENDING_KEY, '1');
+      setLoading('Opening Google…');
       const { error } = await authClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/pages/auth.html` } });
-      if (error) alert(error.message);
+      if (error) { sessionStorage.removeItem(OAUTH_PENDING_KEY); setLoading(null); showToast(error.message, 'error'); }
     });
     const PHONE_HINT = '';
     function phoneError(code, digits) {
@@ -337,6 +358,12 @@
       const savedRole = sessionStorage.getItem('rightconnect-role');
       if (savedRole && roleNames[savedRole]) role = savedRole;
       if (!['http:', 'https:'].includes(window.location.protocol)) return;
+      const returningFromGoogle = sessionStorage.getItem(OAUTH_PENDING_KEY) === '1' || /access_token|[?&]code=|error=/.test(location.hash + location.search);
+      const oauthError = new URLSearchParams(location.hash.slice(1) || location.search).get('error_description');
+      sessionStorage.removeItem(OAUTH_PENDING_KEY);
+      if (returningFromGoogle && !oauthError) setLoading('Signing you in…');
+      if (oauthError) showToast(`Google sign-in failed: ${oauthError}`, 'error');
+      let leaving = false;
       try {
         const configResponse = await fetch(`${apiBase}/auth/provider-config`);
         const config = await configResponse.json();
@@ -357,6 +384,8 @@
               sessionStorage.setItem('rightconnect-user', JSON.stringify(await meResponse.json()));
               const destination = sessionStorage.getItem('rightconnect-auth-return') === 'plans' ? 'plans.html' : 'marketplace.html';
               sessionStorage.removeItem('rightconnect-auth-return');
+              leaving = true;
+              setLoading('Opening RightConnect…');
               window.location.href = destination;
               return;
             }
@@ -364,7 +393,9 @@
           }
         }
       } catch (_) {
-        // Local file previews work without a server; Google sign-in is enabled after deployment.
+        if (returningFromGoogle) showToast('Sign-in failed. Please check your internet and try again.', 'error');
+      } finally {
+        if (!leaving) setLoading(null);
       }
     })();
   </script>

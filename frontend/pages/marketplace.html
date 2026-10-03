@@ -79,6 +79,15 @@
     .api-progress::before { content:''; position:absolute; top:0; bottom:0; left:-40%; width:40%; border-radius:3px; background:#0c8b82; animation:api-progress 1s ease-in-out infinite; }
     @keyframes api-progress { to { left:100%; } }
     .results-loading { opacity:.45; pointer-events:none; transition:opacity .15s; }
+    .api-spinner { position:fixed; left:50%; top:50%; z-index:210; display:flex; flex-direction:column; align-items:center; gap:10px; padding:18px 26px; color:var(--ink); border-radius:16px; background:rgba(255,255,255,.97); box-shadow:0 18px 50px rgba(22,35,58,.22); font-size:13px; font-weight:800; transform:translate(-50%,-50%); pointer-events:none; }
+    .api-spinner[hidden] { display:none; }
+    .api-spinner img { width:44px; height:44px; border-radius:12px; animation:rc-pulse 1.2s ease-in-out infinite; }
+    .loading-dots { display:flex; gap:6px; }
+    .loading-dots i { width:8px; height:8px; border-radius:50%; background:var(--teal); animation:rc-dot 1s ease-in-out infinite; }
+    .loading-dots i:nth-child(2) { animation-delay:.15s; }
+    .loading-dots i:nth-child(3) { animation-delay:.3s; }
+    @keyframes rc-dot { 0%,80%,100% { opacity:.3; transform:translateY(0); } 40% { opacity:1; transform:translateY(-6px); } }
+    @keyframes rc-pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.06); } }
     .plans-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
     .plan-card { padding:22px; border:1px solid var(--line); border-radius:11px; background:#fff; }
     .plan-card.featured { border-color:var(--teal); box-shadow:var(--shadow); }
@@ -176,6 +185,7 @@
     .slot-grid button { min-height:32px; padding:0 10px; color:#06655f; border:1px solid #b8e5dc; border-radius:7px; background:var(--mint); font-size:12px; font-weight:800; }
     .suggest-wrap { position:relative; }
     .suggest-wrap > input { width:100%; }
+    .search-field .suggest-wrap { flex:1; min-width:0; }
     .suggest-list { position:absolute; top:100%; left:0; right:0; z-index:80; display:grid; margin-top:3px; padding:5px; border:1px solid var(--line); border-radius:8px; background:#fff; box-shadow:var(--shadow); }
     .suggest-list button { padding:7px 9px; color:var(--ink); border:0; border-radius:6px; background:transparent; font-size:12px; font-weight:700; text-align:left; }
     .suggest-list button:hover { background:#eef7f5; }
@@ -273,6 +283,7 @@
   <div class="modal-scrim" id="modal-scrim" hidden></div>
   <div class="toast" id="toast" hidden></div>
   <div class="api-progress" id="api-progress" role="progressbar" aria-label="Loading" hidden></div>
+  <div class="api-spinner" id="api-spinner" role="status" aria-live="polite" hidden><img src="../assets/rightconnect-mark.svg" alt=""><span class="loading-dots" aria-hidden="true"><i></i><i></i><i></i></span>Loading…</div>
   <div class="modal" id="expert-modal" hidden>
     <h2>Add your expert profile</h2>
     <form id="expert-form">
@@ -508,14 +519,20 @@
     // Every API call shows the top progress bar; network/server failures always tell the user something went wrong.
     // Pass { background: true } in fetch options for silent polling.
     const apiProgress = document.querySelector('#api-progress');
+    const apiSpinner = document.querySelector('#api-spinner');
     const nativeFetch = window.fetch.bind(window);
     let apiInflight = 0;
     let apiProgressTimer = null;
+    let apiSpinnerTimer = null;
     window.fetch = async (input, init = {}) => {
       const target = new URL(typeof input === 'string' ? input : (input.url || String(input)), window.location.href);
       if (target.origin !== window.location.origin || !target.pathname.startsWith(apiBase) || init.background) return nativeFetch(input, init);
       apiInflight += 1;
-      if (apiInflight === 1) apiProgressTimer = setTimeout(() => { apiProgress.hidden = false; }, 120);
+      if (apiInflight === 1) {
+        apiProgressTimer = setTimeout(() => { apiProgress.hidden = false; }, 120);
+        // Only slow calls get the round spinner so quick clicks don't flash it.
+        apiSpinnerTimer = setTimeout(() => { apiSpinner.hidden = false; }, 400);
+      }
       try {
         const response = await nativeFetch(input, init);
         if (response.status >= 500) showToast('Something went wrong on our side. Please try again in a moment.', 'error');
@@ -525,7 +542,7 @@
         throw error;
       } finally {
         apiInflight -= 1;
-        if (apiInflight === 0) { clearTimeout(apiProgressTimer); apiProgress.hidden = true; }
+        if (apiInflight === 0) { clearTimeout(apiProgressTimer); clearTimeout(apiSpinnerTimer); apiProgress.hidden = true; apiSpinner.hidden = true; }
       }
     };
 

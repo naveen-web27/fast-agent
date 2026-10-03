@@ -1,10 +1,13 @@
 """Query logic for searching live marketplace profiles."""
+from functools import reduce
+from operator import add
 from uuid import UUID
 
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import case, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.plans import CREDENTIAL_LIMIT, SOCIAL_LINK_LIMIT, profile_plan_active
+from app.features.marketplace.catalog import search_terms
 from app.features.marketplace.schemas import (
     ProfileDetail,
     ProfileLink,
@@ -80,6 +83,31 @@ async def _to_summary(session: AsyncSession, profile: Profile) -> ProfileSummary
     )
 
 
+def _like(value: str) -> str:
+    escaped = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
+def _relevance(query: str):
+    """Match each meaningful word (and the service areas it implies) against services, search words,
+    name, headline and bio. Returns (filter, score) or None when the query has no usable words."""
+    words, related_services = search_terms(query)
+    if not words and not related_services:
+        return None
+    keywords_text = func.array_to_string(Profile.keywords, " ")
+    scored = []
+    for word in words:
+        pattern = _like(word)
+        scored.append((or_(Profile.services.any(Service.name.ilike(pattern, escape="\\")), keywords_text.ilike(pattern, escape="\\")), 3))
+        scored.append((or_(Profile.display_name.ilike(pattern, escape="\\"), Profile.headline.ilike(pattern, escape="\\")), 2))
+        scored.append((Profile.bio.ilike(pattern, escape="\\"), 1))
+    for name in related_services:
+        pattern = _like(name)
+        scored.append((or_(Profile.services.any(Service.name.ilike(pattern, escape="\\")), Profile.headline.ilike(pattern, escape="\\")), 4))
+    score = reduce(add, [case((condition, weight), else_=0) for condition, weight in scored])
+    return or_(*[condition for condition, _ in scored]), score
+
+
 async def search_profiles(
     session: AsyncSession,
     query: str | None = None,
@@ -88,25 +116,23 @@ async def search_profiles(
     page: int = 1,
     page_size: int = 12,
 ) -> ProfileListResponse:
-    """Return a page of verified profiles matching the optional search filters."""
+    """Return a page of profiles matching the search, best matches first."""
     stmt = select(Profile).where(Profile.blocked_at.is_(None), Profile.deleted_at.is_(None))
-    if query:
-        pattern = f"%{query}%"
-        stmt = stmt.where(
-            or_(
-                Profile.display_name.ilike(pattern),
-                Profile.headline.ilike(pattern),
-                Profile.services.any(Service.name.ilike(pattern)),
-            )
-        )
+    # A search of only filler words ("I need help") lists everyone rather than nothing.
+    relevance = _relevance(query) if query else None
+    if relevance is not None:
+        stmt = stmt.where(relevance[0])
     if city:
-        stmt = stmt.where(Profile.city.ilike(f"%{city}%"))
+        stmt = stmt.where(Profile.city.ilike(_like(city), escape="\\"))
     if kind:
         stmt = stmt.where(Profile.kind == kind)
 
     total = (await session.scalar(select(func.count()).select_from(stmt.subquery()))) or 0
 
-    stmt = stmt.order_by(Profile.average_rating.desc(), Profile.review_count.desc())
+    ordering = [Profile.average_rating.desc(), Profile.review_count.desc()]
+    if relevance is not None:
+        ordering.insert(0, relevance[1].desc())
+    stmt = stmt.order_by(*ordering)
     stmt = stmt.offset((page - 1) * page_size).limit(page_size)
     profiles = (await session.scalars(stmt)).all()
     results = [await _to_summary(session, profile) for profile in profiles]

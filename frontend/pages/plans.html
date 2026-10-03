@@ -24,6 +24,16 @@
     .login-dialog { width:min(420px,calc(100vw - 32px)); padding:26px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); box-shadow:0 20px 70px rgba(20,41,40,.24); }.login-dialog::backdrop { background:rgba(10,32,30,.55); }.login-dialog h2 { margin:0 0 8px; font-size:22px; }.login-dialog p { margin:0 0 22px; color:var(--muted); }.login-actions { display:grid; gap:10px; }.login-actions button,.login-actions a { display:grid; place-items:center; min-height:46px; border:1px solid var(--green); border-radius:7px; background:var(--green); color:#fff; font:800 14px Manrope,sans-serif; text-decoration:none; }.login-actions .cancel { border-color:var(--line); background:#fff; color:var(--ink); }
     @media(max-width:760px) { .topbar { padding:12px 18px; }.back { max-width:110px; text-align:right; }.grid { grid-template-columns:1fr; }.plan { padding:21px; }.intro { margin-bottom:25px; } main { padding:28px 18px calc(40px + env(safe-area-inset-bottom)); }.price { min-height:0; }.plan ul { margin-bottom:20px; } }
     @media(prefers-reduced-motion:reduce) { .plan { animation:none; } }
+    .loading-screen { position:fixed; inset:0; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; background:rgba(244,246,250,.94); }
+    .loading-screen[hidden] { display:none; }
+    .loading-screen img { width:62px; height:62px; border-radius:16px; animation:rc-pulse 1.2s ease-in-out infinite; }
+    .loading-dots { display:flex; gap:7px; }
+    .loading-dots i { width:10px; height:10px; border-radius:50%; background:#088a82; animation:rc-dot 1s ease-in-out infinite; }
+    .loading-dots i:nth-child(2) { animation-delay:.15s; }
+    .loading-dots i:nth-child(3) { animation-delay:.3s; }
+    .loading-screen p { margin:0; font-size:16px; font-weight:800; }
+    @keyframes rc-dot { 0%,80%,100% { opacity:.3; transform:translateY(0); } 40% { opacity:1; transform:translateY(-7px); } }
+    @keyframes rc-pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.06); } }
   </style>
 </head>
 <body>
@@ -44,18 +54,27 @@
     <p id="login-copy">Sign in with Google to buy this plan. You can review the payment before paying.</p>
     <div class="login-actions"><button id="login-google" type="button">Continue with Google</button><a id="login-link" href="auth.html?return=plans">Create an account</a><button class="cancel" id="login-cancel" type="button">Not now</button></div>
   </dialog>
+  <div class="loading-screen" id="loading-screen" role="status" aria-live="polite" hidden><img src="../assets/rightconnect-mark.svg" alt=""><span class="loading-dots" aria-hidden="true"><i></i><i></i><i></i></span><p id="loading-text">Loading…</p></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const statusBox = document.querySelector('#status');
     const buttons = { pro: document.querySelector('#pro-button'), enterprise: document.querySelector('#enterprise-button') };
     const loginDialog = document.querySelector('#login-dialog');
+    function setLoading(text) {
+      document.querySelector('#loading-screen').hidden = !text;
+      if (text) document.querySelector('#loading-text').textContent = text;
+    }
+    window.addEventListener('pageshow', (event) => { if (event.persisted) setLoading(null); });
     document.querySelector('#login-cancel').addEventListener('click', () => loginDialog.close());
     loginDialog.addEventListener('click', (event) => { if (event.target === loginDialog) loginDialog.close(); });
     document.querySelector('#login-google').addEventListener('click', async () => {
       if (!authClient) { message('Google sign-in is unavailable right now.', true); return; }
       sessionStorage.setItem('rightconnect-auth-return', 'plans');
+      sessionStorage.setItem('rightconnect-oauth-pending', '1');
+      loginDialog.close();
+      setLoading('Opening Google…');
       const { error } = await authClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${location.origin}/pages/auth.html` } });
-      if (error) message(error.message, true);
+      if (error) { sessionStorage.removeItem('rightconnect-oauth-pending'); setLoading(null); message(error.message, true); }
     });
     let authClient;
     function message(text, error = false) { statusBox.textContent = text; statusBox.classList.toggle('error', error); statusBox.classList.add('show'); }
@@ -82,6 +101,7 @@
     }
     async function load() {
       if (new URLSearchParams(location.search).has('payment')) message('Returned from Razorpay. Confirming payment with the provider may take a moment.');
+      const slow = setTimeout(() => setLoading('Loading plans…'), 400);
       try {
         const [configResponse, plansResponse] = await Promise.all([fetch('/api/v1/auth/provider-config'), fetch('/api/v1/payments/plans')]);
         if (!configResponse.ok || !plansResponse.ok) throw new Error('Plans could not be loaded.');
@@ -102,6 +122,9 @@
       } catch (_) {
         for (const plan of Object.keys(buttons)) document.querySelector(`#${plan}-price`).textContent = 'Unavailable';
         message('Plans are unavailable. Please try again later.', true);
+      } finally {
+        clearTimeout(slow);
+        setLoading(null);
       }
     }
     async function checkout(plan) {
@@ -114,6 +137,7 @@
       const button = buttons[plan];
       button.disabled = true;
       button.textContent = 'Opening Razorpay…';
+      setLoading('Opening payment…');
       try {
         const response = await fetch(`/api/v1/payments/checkout?plan=${plan}`, { method:'POST', headers: { Authorization: `Bearer ${token}` } });
         if (!response.ok) {
@@ -121,7 +145,7 @@
           throw new Error(typeof body.detail === 'string' ? body.detail : 'Checkout is unavailable right now.');
         }
         location.assign((await response.json()).checkout_url);
-      } catch (error) { message(error.message, true); button.disabled = false; button.textContent = 'Buy plan'; }
+      } catch (error) { setLoading(null); message(error.message, true); button.disabled = false; button.textContent = 'Buy plan'; }
     }
     Object.entries(buttons).forEach(([plan, button]) => button.addEventListener('click', () => checkout(plan)));
     load();

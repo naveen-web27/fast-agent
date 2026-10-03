@@ -90,6 +90,8 @@ class Profile(Base):
     city: Mapped[str | None] = mapped_column(String)
     years_experience: Mapped[int | None] = mapped_column(SmallInteger)
     languages: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False, default=list)
+    # Owner-chosen search words; matched by search but not shown on the card.
+    keywords: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False, default=list)
     avatar_url: Mapped[str | None] = mapped_column(String)
     verification: Mapped[VerificationStatus] = mapped_column(
         _enum(VerificationStatus, "verification_status"), nullable=False, default=VerificationStatus.PENDING

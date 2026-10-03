@@ -74,6 +74,9 @@ const interestsInput = document.querySelector('#interests-input');
 attachSuggest(interestsInput, (value) => { interestsInput.value = value; document.querySelector('#interests-form').requestSubmit(); });
 const needInput = document.querySelector('#need-input');
 attachSuggest(needInput, (value) => { needInput.value = value; });
+// Typing "ads" offers "Digital marketing"; picking one searches straight away.
+const discoverSearchInput = document.querySelector('#search-input');
+attachSuggest(discoverSearchInput, (value) => { discoverSearchInput.value = value; document.querySelector('#search-button').click(); });
 document.querySelector('#interests-cancel').addEventListener('click', () => {
   if (document.querySelector('#dashboard').classList.contains('active')) loadDashboard();
 });
@@ -221,6 +224,7 @@ function renderProviderDashboard(data) {
 
 let editorProfile = null;
 let editorServices = [];
+let editorKeywords = [];
 let editorWindows = [];
 
 async function openProfileEditor(profileId, focus) {
@@ -242,6 +246,7 @@ function field(id, label, value, attrs = '') {
 function renderEditor(profile) {
   editorProfile = profile;
   editorServices = [...profile.services];
+  editorKeywords = [...profile.keywords];
   editorWindows = profile.availability.map((window) => ({ weekday: window.weekday, start_time: window.start_time.slice(0, 5), end_time: window.end_time.slice(0, 5) }));
   const paid = profile.plan_active;
   const plan = planLabel(profile.plan);
@@ -261,6 +266,7 @@ function renderEditor(profile) {
         </div>
         <div class="field"><label for="ed-bio">About</label><textarea id="ed-bio" rows="3" maxlength="2000">${escapeHtml(profile.bio ?? '')}</textarea></div>
         <div class="field"><label for="ed-service-input">Services you offer</label><div class="tag-list" id="ed-services"></div><input id="ed-service-input" placeholder="Type a service, e.g. beauty, then pick or press Enter"></div>
+        <div class="field"><div class="q-head"><label for="ed-keyword-input">Search words</label><button type="button" class="info" aria-expanded="false" aria-controls="info-keywords" aria-label="About search words">i</button></div><p class="info-text" id="info-keywords" hidden>Words customers may type to find you, e.g. ads, facebook ads, leads. Not shown on your profile. Up to 20.</p><div class="tag-list" id="ed-keywords"></div><input id="ed-keyword-input" maxlength="40" placeholder="Type a word and press Enter"><div class="tag-list" id="ed-keyword-suggest" style="margin-top:6px"></div></div>
         <div class="editor-grid">
           ${field('ed-video', `Intro video link ${lock}`, profile.intro_video_url, `type="url" placeholder="https://youtube.com/..." ${paid ? '' : 'disabled'}`)}
           ${field('ed-portfolio', `Portfolio link ${lock}`, profile.portfolio_url, `type="url" placeholder="https://" ${paid ? '' : 'disabled'}`)}
@@ -292,6 +298,14 @@ function renderEditor(profile) {
         : upgrade}
     </section>`;
   renderEditorServices();
+  renderEditorKeywords();
+  const keywordInput = document.querySelector('#ed-keyword-input');
+  keywordInput.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ',') return;
+    event.preventDefault();
+    addEditorKeyword(keywordInput.value);
+    keywordInput.value = '';
+  });
   const serviceInput = document.querySelector('#ed-service-input');
   attachSuggest(serviceInput, addEditorService);
   serviceInput.addEventListener('keydown', (event) => {
@@ -301,6 +315,31 @@ function renderEditor(profile) {
   });
   if (paid) renderWindows();
   wireEditor(profile);
+}
+
+function renderEditorKeywords() {
+  const box = document.querySelector('#ed-keywords');
+  box.innerHTML = editorKeywords.length
+    ? editorKeywords.map((word, index) => `<span class="tag">${escapeHtml(word)}<button type="button" data-remove-keyword="${index}" aria-label="Remove ${escapeHtml(word)}">×</button></span>`).join('')
+    : '<span class="muted">No search words yet.</span>';
+  box.querySelectorAll('[data-remove-keyword]').forEach((button) => button.addEventListener('click', () => {
+    editorKeywords.splice(Number(button.dataset.removeKeyword), 1);
+    renderEditorKeywords();
+  }));
+  const suggestions = editorProfile.suggested_keywords.filter((word) => !editorKeywords.includes(word));
+  const suggestBox = document.querySelector('#ed-keyword-suggest');
+  suggestBox.innerHTML = suggestions.length
+    ? `<span class="muted">Tap to add:</span> ${suggestions.map((word) => `<button type="button" class="pill" data-add-keyword="${escapeHtml(word)}">+ ${escapeHtml(word)}</button>`).join('')}`
+    : '';
+  suggestBox.querySelectorAll('[data-add-keyword]').forEach((button) => button.addEventListener('click', () => addEditorKeyword(button.dataset.addKeyword)));
+}
+
+function addEditorKeyword(value) {
+  const word = value.replace(/,/g, ' ').trim().replace(/\s+/g, ' ').toLowerCase().slice(0, 40);
+  if (!word || editorKeywords.includes(word)) return;
+  if (editorKeywords.length >= 20) { showToast('You can add up to 20 search words.', 'error'); return; }
+  editorKeywords.push(word);
+  renderEditorKeywords();
 }
 
 function renderEditorServices() {
@@ -356,6 +395,7 @@ function wireEditor(profile) {
   const value = (id) => document.querySelector(id)?.value.trim() ?? '';
   document.querySelector('#editor-basics').addEventListener('submit', (event) => {
     event.preventDefault();
+    addEditorKeyword(value('#ed-keyword-input'));
     const payload = {
       display_name: value('#ed-name'),
       headline: value('#ed-headline'),
@@ -364,6 +404,7 @@ function wireEditor(profile) {
       avatar_url: value('#ed-avatar') || null,
       bio: value('#ed-bio') || null,
       services: editorServices,
+      keywords: editorKeywords,
     };
     if (profile.kind === 'expert') payload.years_experience = value('#ed-years') === '' ? null : Number(value('#ed-years'));
     if (profile.plan_active) {

@@ -12,6 +12,7 @@ from app.core.plans import (
     profile_plan_active,
     require_plan,
 )
+from app.features.marketplace.catalog import related_words_for
 from app.features.profiles.schemas import (
     AvailabilityUpdate,
     AvailabilityWindow,
@@ -114,6 +115,10 @@ async def _managed(session: AsyncSession, profile: Profile) -> ManagedProfile:
         languages=profile.languages,
         avatar_url=profile.avatar_url,
         services=[service.name for service in profile.services],
+        keywords=profile.keywords,
+        suggested_keywords=[
+            word for word in related_words_for([service.name for service in profile.services]) if word not in profile.keywords
+        ],
         intro_video_url=profile.intro_video_url,
         portfolio_url=profile.portfolio_url,
         social_links=[SocialLinkOut(platform=link.platform, url=link.url) for link in links],
@@ -159,6 +164,8 @@ async def update_profile(session: AsyncSession, auth_user_id: UUID, profile_id: 
             setattr(profile, field, changes[field])
     if changes.get("languages") is not None:
         profile.languages = changes["languages"]
+    if changes.get("keywords") is not None:
+        profile.keywords = changes["keywords"]
     if changes.get("services") is not None:
         await session.refresh(profile, ["services"])
         profile.services = await _services_by_name(session, changes["services"])

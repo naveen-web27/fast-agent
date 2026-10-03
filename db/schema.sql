@@ -92,6 +92,7 @@ CREATE TABLE profiles (
     city TEXT,
     years_experience SMALLINT,
     languages TEXT[] NOT NULL DEFAULT '{}',
+    keywords TEXT[] NOT NULL DEFAULT '{}',
     avatar_url TEXT,
     verification verification_status NOT NULL DEFAULT 'pending',
     average_rating NUMERIC(2,1) NOT NULL DEFAULT 0,
