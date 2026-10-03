@@ -191,6 +191,28 @@
     .mobile-nav { display:none; }
     @media (max-width:720px) { .app { display:block; padding-bottom:72px; }.main { grid-column:auto; }.sidebar { display:none; }.topbar { position:sticky; top:0; z-index:40; padding:12px 16px; }.mobile-menu { display:grid; }.page { padding:22px 16px 10px; }.page-title { align-items:start; }.page-title h1 { font-size:25px; }.page-title > .primary { display:none; }.search-panel { flex-direction:column; align-items:stretch; }.search-panel .search-field,.search-panel .select,.search-panel .kind-toggle,.search-panel .primary { flex:0 0 auto; width:100%; }.kind-toggle { justify-content:center; }.dashboard-grid,.request-layout { grid-template-columns:1fr; }.profile-card { grid-template-columns:55px minmax(0,1fr); gap:12px; }.portrait { width:55px; height:55px; }.profile-score { grid-column:2; text-align:left; align-items:flex-start; }.profile-score .secondary { margin-top:7px; }.profile-summary { display:block; }.profile-summary .portrait { width:88px; height:88px; margin-bottom:14px; }.trust-bar { grid-template-columns:1fr; }.trust-item + .trust-item { border-top:1px solid var(--line); border-left:0; }.top-actions #request-expert,.user-chip span:last-child { display:none; }.request-layout > :last-child { grid-column:auto; }.mobile-nav { position:fixed; inset:auto 0 0; z-index:50; display:grid; grid-template-columns:repeat(4,1fr); padding:8px 8px calc(8px + env(safe-area-inset-bottom)); border-top:1px solid rgba(227,232,240,.95); background:rgba(255,255,255,.94); box-shadow:0 -8px 24px rgba(22,35,58,.08); backdrop-filter:blur(18px); }.mobile-nav .nav-button { display:grid; justify-items:center; gap:2px; padding:4px 2px; color:var(--muted); border-radius:8px; text-align:center; font-size:10px; }.mobile-nav .nav-button.active { color:var(--teal); background:var(--mint); }.mobile-nav .nav-icon { width:auto; font-size:17px; } }
     @media (max-width:720px) { .mobile-nav { grid-template-columns:repeat(5,1fr); } }
+    .nav-button[hidden] { display:none !important; }
+    @media (max-width:720px) { .mobile-nav.four { grid-template-columns:repeat(4,1fr); } }
+    .how-steps { display:flex; align-items:center; gap:8px; }
+    .how-steps[hidden] { display:none; }
+    .how-step { flex:1; align-items:center; justify-content:center; min-width:0; padding:10px 8px; }
+    .how-step strong { font-size:13px; }
+    .info { display:inline-grid; flex:none; place-items:center; width:26px; height:26px; padding:0; color:var(--teal); border:1px solid #9fd9cd; border-radius:50%; background:#fff; font:italic 800 13px/1 Georgia,serif; cursor:pointer; }
+    .info[aria-expanded="true"] { color:#fff; background:var(--teal); }
+    .info-text { margin:8px 0 12px; padding:10px 12px; color:#33425e; border-radius:9px; background:var(--mint); font-size:13px; }
+    .info-text[hidden] { display:none; }
+    .q-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .flow-progress { display:flex; gap:5px; margin:4px 0 16px; }
+    .flow-progress i { flex:1; height:5px; border-radius:5px; background:var(--line); }
+    .flow-progress i.on { background:var(--teal); }
+    .q { display:none; gap:10px; margin-bottom:6px; }
+    .q.active { display:grid; }
+    .q-title { color:var(--ink); font-size:18px; font-weight:800; letter-spacing:-.02em; }
+    .q input,.q textarea { width:100%; min-height:50px; padding:12px; color:var(--ink); border:1px solid var(--line); border-radius:9px; outline:0; background:#fff; font:inherit; font-size:16px; }
+    .q input:focus,.q textarea:focus { border-color:var(--teal); box-shadow:0 0 0 3px rgba(8,138,130,.12); }
+    .q .star-picker button { font-size:40px; }
+    .modal-actions [hidden] { display:none; }
+    @media (max-width:720px) { .how-steps { display:flex; } .how-step b { display:none; } .how-step { padding:9px 4px; } .how-step strong { font-size:12px; } }
   </style>
 </head>
 <body>
@@ -211,30 +233,31 @@
       <div class="side-bottom" id="side-bottom" hidden><span class="section-tag">Signed in as</span><div class="profile-mini"><span class="avatar" id="sidebar-avatar">?</span><span id="sidebar-name"></span></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="top-actions"><button class="icon-button mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="crumb"><strong>RightConnect</strong> / Marketplace</div></div><div class="top-actions"><div class="bell-wrap" id="bell-wrap" hidden><button class="icon-button" id="notif-button" type="button" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="bell-count" id="notif-count" hidden>0</span></button><div class="notif-menu" id="notif-menu" hidden></div></div><a class="secondary" href="auth.html" id="sign-in-link">Sign in or join</a><button class="secondary" id="request-expert">Become an expert</button><div class="user-chip" id="user-chip" hidden><button class="user-chip-button" id="user-menu-button"><span class="avatar" id="chip-avatar">?</span><span id="chip-name"></span></button><div class="user-menu" id="user-menu" hidden><button id="manage-interests-button">Manage interests</button><button id="profile-settings-button">Profile settings</button><button id="menu-support-button">Help &amp; support</button><button id="sign-out-button">Sign out</button></div></div></div></header>
+      <header class="topbar"><div class="top-actions"><button class="icon-button mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="crumb"><strong>RightConnect</strong> / Marketplace</div></div><div class="top-actions"><div class="bell-wrap" id="bell-wrap" hidden><button class="icon-button" id="notif-button" type="button" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="bell-count" id="notif-count" hidden>0</span></button><div class="notif-menu" id="notif-menu" hidden></div></div><a class="secondary" href="auth.html" id="sign-in-link">Sign in or join</a><button class="secondary" id="request-expert">Become an expert</button><div class="user-chip" id="user-chip" hidden><button class="user-chip-button" id="user-menu-button"><span class="avatar" id="chip-avatar">?</span><span id="chip-name"></span></button><div class="user-menu" id="user-menu" hidden><button id="manage-interests-button">Interests</button><button id="profile-settings-button">Settings</button><button id="menu-support-button">Help</button><button id="sign-out-button">Sign out</button></div></div></div></header>
       <div class="page">
         <section class="view active" id="discover">
-          <div class="page-title"><div><span class="section-tag">Find trusted help</span><h1>Choose the right person for the decision.</h1><p>Compare verified specialists and companies before you commit.</p></div><button class="primary" id="match-button">✦ Get matched</button></div>
-          <div class="how-steps" id="how-steps" aria-label="How it works"><div class="how-step"><b>1</b><div><strong>Search</strong><span>Type what you need, e.g. "health insurance".</span></div></div><div class="how-step"><b>2</b><div><strong>Send a free request</strong><span>Open a profile and tap "Send a free request".</span></div></div><div class="how-step"><b>3</b><div><strong>Watch the bell</strong><span>You'll see when they accept or reply.</span></div></div><div class="how-step"><b>4</b><div><strong>Talk &amp; decide</strong><span>Chat in My requests. Stuck? Tap Help.</span></div></div></div>
-          <div class="search-panel"><label class="search-field">⌕ <input id="search-input" placeholder="What do you need help with?"></label><button class="select">Any location <span>⌄</span></button><div class="kind-toggle" id="kind-toggle" role="group" aria-label="Profile type filter"><button type="button" class="pill kind-pill selected" data-kind="expert">Experts</button><button type="button" class="pill kind-pill selected" data-kind="company">Companies</button><button type="button" class="pill kind-pill" id="kind-customer-pill" data-kind="customer" hidden>Customers</button></div><button class="primary" id="search-button">Search</button></div>
-          <div class="dashboard-grid"><div><div class="filter-row"><h2 id="result-count">Loading profiles…</h2><div class="filter-pills"><button class="pill selected">Top match</button><button class="pill">Verified only</button><button class="pill">Available today</button></div></div><div class="results" id="results"></div><div class="pagination" id="pagination" hidden><button class="secondary" id="page-prev" type="button">← Prev</button><span id="page-indicator">Page 1</span><button class="secondary" id="page-next" type="button">Next →</button></div></div><aside><div class="insight-card"><span class="section-tag">RightConnect match</span><h2>Tell us your need. We will coordinate the right introduction.</h2><p>Share your requirements once. We keep the conversation clear between you, the expert, and the company.</p><div class="match-list" id="match-list"></div></div><div class="stat-grid"><div class="stat"><small>Verified reviews</small><strong id="stat-reviews">–</strong></div><div class="stat"><small>Average first response</small><strong id="stat-response">–</strong></div></div></aside></div>
+          <div class="page-title"><div><h1>Find help</h1></div><button class="primary" id="match-button">✦ Get matched</button></div>
+          <div class="how-steps" id="how-steps" aria-label="How it works"><div class="how-step"><b>1</b><strong>Search</strong></div><div class="how-step"><b>2</b><strong>Request</strong></div><div class="how-step"><b>3</b><strong>Reply</strong></div><div class="how-step"><b>4</b><strong>Decide</strong></div><button type="button" class="info" aria-expanded="false" aria-controls="info-how" aria-label="How it works">i</button></div>
+          <p class="info-text" id="info-how" hidden>Search what you need. Open a profile and tap <strong>Send request</strong> (free). Watch the bell for their reply, then chat in <strong>My requests</strong>. Stuck? Tap <strong>Help</strong>.</p>
+          <div class="search-panel"><label class="search-field">⌕ <input id="search-input" placeholder="What do you need?"></label><div class="kind-toggle" id="kind-toggle" role="group" aria-label="Profile type filter"><button type="button" class="pill kind-pill selected" data-kind="expert">Experts</button><button type="button" class="pill kind-pill selected" data-kind="company">Companies</button><button type="button" class="pill kind-pill" id="kind-customer-pill" data-kind="customer" hidden>Customers</button></div><button class="primary" id="search-button">Search</button></div>
+          <div class="dashboard-grid"><div><div class="filter-row"><h2 id="result-count">Loading profiles…</h2></div><div class="results" id="results"></div><div class="pagination" id="pagination" hidden><button class="secondary" id="page-prev" type="button">← Prev</button><span id="page-indicator">Page 1</span><button class="secondary" id="page-next" type="button">Next →</button></div></div><aside><div class="insight-card"><span class="section-tag">Top picks</span><div class="match-list" id="match-list"></div></div><div class="stat-grid"><div class="stat"><small>Reviews</small><strong id="stat-reviews">–</strong></div><div class="stat"><small>Avg. reply</small><strong id="stat-response">–</strong></div></div></aside></div>
         </section>
         <section class="view" id="dashboard">
           <div class="page-title"><div><span class="section-tag" id="dash-tag">Dashboard</span><h1 id="dash-title">Your overview</h1><p id="dash-copy">Everything that needs your attention, in one place.</p></div><div class="top-actions" id="dash-actions"></div></div>
           <div id="dash-body"><p class="muted">Sign in to see your dashboard.</p></div>
         </section>
         <section class="view" id="profile">
-          <div class="page-title"><div><span class="section-tag">Profile preview</span><h1>Trusted information, before the conversation.</h1></div><button class="secondary" data-view="discover">← Back to discover</button></div>
-          <div class="profile-layout"><div><article class="profile-hero"><div class="profile-summary"><div class="portrait" id="profile-portrait"></div><div><span class="verified" id="profile-verified" hidden>● Identity and credentials verified</span><h1 id="profile-name">Select a profile</h1><p id="profile-subtitle"></p><div class="tags" id="profile-tags"></div><div class="resolved-badge" id="profile-resolved" hidden></div></div></div><div class="trust-bar"><div class="trust-item"><small>Rating</small><strong id="profile-rating">–</strong></div><div class="trust-item"><small>Verified reviews</small><strong id="profile-review-count">–</strong></div><div class="trust-item"><small>Typical reply</small><strong id="profile-reply">–</strong></div></div></article><article class="content-card" id="profile-bio-card" hidden><h2 id="profile-bio-heading">About</h2><p id="profile-bio"></p></article><div id="profile-extras"></div><article class="content-card"><h2>Customer reviews</h2><div id="profile-reviews"><p style="color:var(--muted);font-size:12px;margin:0">Open a profile from Discover to see its reviews.</p></div></article></div><aside class="booking"><span class="section-tag">Request introduction</span><h2>Start with a 20-minute consultation.</h2><p>Tell them what you need. Once they accept, you can chat in My requests and see their contact details.</p><button class="primary" id="book-button">Send a free request</button><button class="secondary" id="detail-save-button" type="button" style="width:100%;margin-top:10px">♡ Save profile</button><button class="secondary" id="share-profile-button" type="button" style="width:100%;margin-top:8px">Copy profile link</button><div class="assurance">✓ No fee to submit a request</div><div class="assurance" id="profile-bookable" hidden>✓ Pick a meeting time online once they accept</div><div class="assurance">✓ You control who can see your details</div></aside></div>
+          <div class="page-title"><div></div><button class="secondary" data-view="discover">← Back</button></div>
+          <div class="profile-layout"><div><article class="profile-hero"><div class="profile-summary"><div class="portrait" id="profile-portrait"></div><div><span class="verified" id="profile-verified" hidden>● Verified</span><h1 id="profile-name">Select a profile</h1><p id="profile-subtitle"></p><div class="tags" id="profile-tags"></div><div class="resolved-badge" id="profile-resolved" hidden></div></div></div><div class="trust-bar"><div class="trust-item"><small>Rating</small><strong id="profile-rating">–</strong></div><div class="trust-item"><small>Reviews</small><strong id="profile-review-count">–</strong></div><div class="trust-item"><small>Replies in</small><strong id="profile-reply">–</strong></div></div></article><article class="content-card" id="profile-bio-card" hidden><h2 id="profile-bio-heading">About</h2><p id="profile-bio"></p></article><div id="profile-extras"></div><article class="content-card"><h2>Reviews</h2><div id="profile-reviews"><p style="color:var(--muted);font-size:12px;margin:0">No reviews yet.</p></div></article></div><aside class="booking"><div class="q-head"><h2 style="margin:0">Free request</h2><button type="button" class="info" aria-expanded="false" aria-controls="info-book" aria-label="What happens next">i</button></div><p class="info-text" id="info-book" hidden>Tell them what you need. When they accept, you can chat in My requests and see their contact.</p><button class="primary" id="book-button" style="margin-top:12px">Send request</button><button class="secondary" id="detail-save-button" type="button" style="width:100%;margin-top:10px">♡ Save</button><button class="secondary" id="share-profile-button" type="button" style="width:100%;margin-top:8px">Share link</button><div class="assurance">✓ No fee</div><div class="assurance" id="profile-bookable" hidden>✓ Book a time online</div><div class="assurance">✓ Your details stay private</div></aside></div>
         </section>
         <section class="view" id="requests">
           <div class="page-title"><div><span class="section-tag">My requests</span><h1>One place for every moving part.</h1><p>Track the people, answers, and decisions around your request.</p></div><button class="primary" data-view="discover">+ New request</button></div>
           <div class="request-layout"><aside class="request-panel"><span class="section-tag">Active requests</span><h2>3 in progress</h2><div class="request-item active"><strong>Family health cover</strong><span>Riya Menon · Meeting booked</span></div><div class="request-item"><strong>Home solar quotation</strong><span>Awaiting company response</span></div><div class="request-item"><strong>Office access control</strong><span>2 companies comparing</span></div></aside><section class="request-panel coordination"><div class="coordination-head"><div><span class="section-tag">Family health cover</span><h2>Coordination timeline</h2></div><span class="pill selected">Active</span></div><div class="timeline"><div class="event"><i class="event-dot"></i><time>Today · 10:12</time><strong>Riya accepted your request</strong><p>Your request is now visible to you and Riya. No company has been invited yet.</p></div><div class="event"><i class="event-dot"></i><time>Today · 10:18</time><strong>Consultation time proposed</strong><p>Riya suggested Wednesday, 4:30 PM. You can confirm or propose another time.</p></div><div class="event"><i class="event-dot"></i><time>Upcoming</time><strong>Compare suitable providers</strong><p>After the consultation, choose whether to invite providers into this workspace.</p></div></div><div class="note-box">Add a question or note for everyone in this request...</div></section><aside class="request-panel"><span class="section-tag">People in this request</span><h2>Participants</h2><div class="participants"><span class="avatar">NK</span><span class="avatar">RM</span><span class="avatar">+</span></div><div class="meeting"><strong>Video consultation</strong><span>Wednesday · 4:30 PM · 20 minutes</span></div><h2 style="margin-top:22px">Checklist</h2><div class="checklist"><div class="check"><i>✓</i> Need submitted</div><div class="check"><i>✓</i> Expert accepted</div><div class="check"><i>3</i> Confirm consultation</div><div class="check"><i>4</i> Invite a provider, if needed</div></div></aside></div>
         </section>
         <section class="view" id="saved">
-          <div class="page-title"><div><span class="section-tag">Saved profiles</span><h1>Your comparison list.</h1><p>Experts and companies you saved while comparing options.</p></div></div>
+          <div class="page-title"><div><h1>Saved</h1></div></div>
           <div class="results" id="saved-results"></div>
-          <div class="empty" id="saved-empty" hidden><h2>Your comparison list will live here.</h2><p>Save experts and companies while you compare options.</p><button class="primary" style="margin-top:18px" data-view="discover">Discover profiles</button></div>
+          <div class="empty" id="saved-empty" hidden><h2>Nothing saved yet.</h2><p>Tap ♡ on a profile to save it.</p><button class="primary" style="margin-top:18px" data-view="discover">Find experts</button></div>
         </section>
       </div>
     </main>
@@ -284,34 +307,32 @@
   </div>
   <div class="modal" id="interests-modal" hidden>
     <h2>Your interests</h2>
-    <p class="modal-note">We use these to recommend the right experts and companies. Add or remove areas any time.</p>
     <div class="tag-list" id="interests-list"></div>
     <form id="interests-form">
-      <div class="field"><label for="interests-input">Add an interest</label><input id="interests-input" placeholder="e.g. Real estate"></div>
+      <div class="field"><label for="interests-input">Add</label><input id="interests-input" placeholder="e.g. Real estate"></div>
       <div class="modal-actions"><button type="button" class="secondary" id="interests-cancel">Close</button><button type="submit" class="primary" id="interests-submit">Add</button></div>
     </form>
   </div>
   <div class="modal" id="visibility-modal" hidden>
-    <h2>Profile settings</h2>
+    <h2>Settings</h2>
     <div id="looking-section"></div>
-    <p class="modal-note">Show how many customers you've successfully served on your card, so companies and customers can approach you with confidence. Toggle it off any time to keep it private.</p>
+    <p class="modal-note" id="visibility-note">Show how many clients you helped on your card.</p>
     <div id="visibility-list"></div>
-    <div class="danger-zone"><h3>Delete</h3><p class="modal-note">Deleting removes it from RightConnect right away. You can sign up or create it again later.</p><div id="danger-list"></div></div>
+    <div class="danger-zone"><h3>Delete</h3><p class="modal-note">Removes it right away. You can sign up again later.</p><div id="danger-list"></div></div>
     <div class="modal-actions"><button type="button" class="secondary" id="visibility-close">Close</button></div>
   </div>
   <div class="modal" id="need-modal" role="dialog" aria-modal="true" aria-labelledby="need-title" hidden>
-    <h2 id="need-title">Looking for help again?</h2>
-    <p class="modal-note">Experts and companies will see you as an active customer again. <span id="need-old"></span></p>
+    <h2 id="need-title">New need?</h2>
+    <p class="modal-note">You'll show as looking for help again. <span id="need-old"></span></p>
     <form id="need-form">
-      <div class="field"><label for="need-input">What do you need help with now?</label><input id="need-input" maxlength="120" placeholder="e.g. Health insurance" required></div>
-      <div class="modal-actions"><button type="button" class="secondary" data-close-modal>Cancel</button><button type="submit" class="primary" id="need-submit">Yes, start my new need</button></div>
+      <div class="field"><label for="need-input">What do you need now?</label><input id="need-input" maxlength="120" placeholder="e.g. Health insurance" required></div>
+      <div class="modal-actions"><button type="button" class="secondary" data-close-modal>Cancel</button><button type="submit" class="primary" id="need-submit">Start</button></div>
     </form>
   </div>
   <div class="modal" id="need-done-modal" role="dialog" aria-modal="true" aria-labelledby="need-done-title" hidden>
-    <h2 id="need-done-title">Glad your need is sorted!</h2>
+    <h2 id="need-done-title">Need sorted!</h2>
     <p class="modal-note" id="need-done-note"></p>
-    <p class="modal-note">Need help with something new? Turn <strong>Looking for help</strong> back on any time from Profile settings.</p>
-    <div class="modal-actions"><button type="button" class="secondary" data-close-modal>Okay</button><button type="button" class="primary" id="need-done-new">I have a new need</button></div>
+    <div class="modal-actions"><button type="button" class="secondary" data-close-modal>Okay</button><button type="button" class="primary" id="need-done-new">New need</button></div>
   </div>
   <div class="modal" id="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title" hidden>
     <h2 id="delete-title">Delete</h2>
@@ -322,19 +343,20 @@
     </form>
   </div>
   <div class="modal" id="request-modal" hidden>
-    <h2>Request a consultation</h2>
+    <div class="q-head"><h2 style="margin:0">Send a request</h2><button type="button" class="info" aria-expanded="false" aria-controls="info-request" aria-label="What happens next">i</button></div>
+    <p class="info-text" id="info-request" hidden>It's free. Their reply shows on the bell and in My requests. Your contact is shared only after they accept.</p>
     <p class="modal-note" id="request-modal-target"></p>
-    <form id="request-form">
-      <div class="field"><label for="request-title">What do you need help with?</label><input id="request-title" placeholder="e.g. Health insurance for my family" minlength="3" maxlength="160" required></div>
-      <div class="field"><label for="request-requirements">Tell them a little more</label><textarea id="request-requirements" rows="4" placeholder="e.g. Family of 4, budget around ₹20,000 a year, want to talk this week." minlength="10" maxlength="4000" required></textarea></div>
-      <div class="field"><label for="request-city">Your city (optional)</label><input id="request-city" placeholder="Chennai"></div>
-      <p class="modal-note">What happens next: they get your request, and you'll see their reply in My requests and on the bell icon at the top. Your contact details are shared only after they accept.</p>
-      <div class="modal-actions"><button type="button" class="secondary" id="request-cancel">Cancel</button><button type="submit" class="primary" id="request-submit">Send request</button></div>
+    <form id="request-form" novalidate>
+      <div class="flow-progress" aria-hidden="true"></div>
+      <div class="q"><label class="q-title" for="request-title">What do you need?</label><input id="request-title" placeholder="e.g. Family health insurance" minlength="3" maxlength="160" required></div>
+      <div class="q"><div class="q-head"><label class="q-title" for="request-requirements">Tell them more</label><button type="button" class="info" aria-expanded="false" aria-controls="info-request-more" aria-label="What to write">i</button></div><p class="info-text" id="info-request-more" hidden>Budget, timing, family size – anything that helps them reply faster.</p><textarea id="request-requirements" rows="4" placeholder="e.g. Family of 4, budget ₹20,000 a year, talk this week" minlength="10" maxlength="4000" required></textarea></div>
+      <div class="q" data-optional><label class="q-title" for="request-city">Your city</label><input id="request-city" placeholder="Chennai" maxlength="100"></div>
+      <div class="modal-actions"><button type="button" class="secondary" data-back>Cancel</button><button type="button" class="secondary" data-skip hidden>Skip</button><button type="submit" class="primary" id="request-submit">Send</button></div>
     </form>
   </div>
   <div class="modal" id="support-modal" hidden role="dialog" aria-labelledby="support-title">
     <h2 id="support-title">Need help?</h2>
-    <p class="modal-note">Stuck sending a request, waiting for a reply, or not sure what to do next? Message us and our team will help.</p>
+    <p class="modal-note">Message us. We'll help you.</p>
     <a class="support-option" id="support-whatsapp" href="https://wa.me/916382595243" target="_blank" rel="noopener"><i class="support-icon wa">WA</i><div><strong>Chat on WhatsApp</strong><span>+91 63825 95243 · fastest reply</span></div></a>
     <a class="support-option" id="support-email" href="mailto:rightconnect.co@gmail.com"><i class="support-icon">@</i><div><strong>Email us</strong><span>rightconnect.co@gmail.com</span></div></a>
     <div class="modal-actions"><button type="button" class="secondary" id="support-close">Close</button></div>
@@ -349,11 +371,11 @@
   </div>
   <div class="modal" id="review-modal" hidden>
     <h2 id="review-title">Rate your experience</h2>
-    <p class="modal-note">Ratings are only possible after both sides agreed the request is done, so every rating comes from a real interaction.</p>
-    <form id="review-form">
-      <div class="star-picker" id="review-stars" role="radiogroup" aria-label="Rating"><button type="button" data-star="1" aria-label="1 star">★</button><button type="button" data-star="2" aria-label="2 stars">★</button><button type="button" data-star="3" aria-label="3 stars">★</button><button type="button" data-star="4" aria-label="4 stars">★</button><button type="button" data-star="5" aria-label="5 stars">★</button></div>
-      <div class="field"><label for="review-body">What went well, or what could be better?</label><textarea id="review-body" rows="4" minlength="5" maxlength="2000" required></textarea></div>
-      <div class="modal-actions"><button type="button" class="secondary" id="review-cancel">Cancel</button><button type="submit" class="primary" id="review-submit">Submit rating</button></div>
+    <form id="review-form" novalidate>
+      <div class="flow-progress" aria-hidden="true"></div>
+      <div class="q" data-validate="stars"><label class="q-title">How was it?</label><div class="star-picker" id="review-stars" role="radiogroup" aria-label="Rating"><button type="button" data-star="1" aria-label="1 star">★</button><button type="button" data-star="2" aria-label="2 stars">★</button><button type="button" data-star="3" aria-label="3 stars">★</button><button type="button" data-star="4" aria-label="4 stars">★</button><button type="button" data-star="5" aria-label="5 stars">★</button></div></div>
+      <div class="q"><label class="q-title" for="review-body">What went well?</label><textarea id="review-body" rows="4" minlength="5" maxlength="2000" placeholder="A few words" required></textarea></div>
+      <div class="modal-actions"><button type="button" class="secondary" data-back>Cancel</button><button type="submit" class="primary" id="review-submit">Submit</button></div>
     </form>
   </div>
   <div class="modal" id="dispute-modal" hidden>
@@ -376,7 +398,7 @@
   </div>
   <div class="modal wide" id="booking-modal" role="dialog" aria-modal="true" aria-labelledby="booking-title" hidden>
     <h2 id="booking-title">Book a meeting</h2>
-    <p class="modal-note">Times are in India time (IST). Each meeting is 30 minutes and is confirmed right away.</p>
+    <p class="modal-note">India time · 30 min · confirmed right away</p>
     <div id="booking-body"></div>
     <div class="modal-actions"><button type="button" class="secondary" data-close-modal>Close</button></div>
   </div>
@@ -403,7 +425,8 @@
     document.querySelector('#book-button').addEventListener('click', () => {
       if (!accessToken) { window.location.href = 'auth.html'; return; }
       if (!currentProfileId) return;
-      document.querySelector('#request-modal-target').textContent = currentProfileName ? `This goes to ${currentProfileName}.` : '';
+      document.querySelector('#request-modal-target').textContent = currentProfileName ? `To: ${currentProfileName}` : '';
+      requestFlow.start();
       openModal('request-modal');
     });
     document.querySelector('#match-button').addEventListener('click', () => { document.querySelector('#search-input').focus(); });
@@ -505,6 +528,61 @@
         if (apiInflight === 0) { clearTimeout(apiProgressTimer); apiProgress.hidden = true; }
       }
     };
+
+    // "i" buttons reveal the extra explanation named in aria-controls (works for content rendered later too).
+    document.addEventListener('click', (event) => {
+      const button = event.target.closest('.info');
+      if (!button) return;
+      event.preventDefault();
+      const open = button.getAttribute('aria-expanded') !== 'true';
+      button.setAttribute('aria-expanded', String(open));
+      document.getElementById(button.getAttribute('aria-controls')).hidden = !open;
+    });
+
+    // Modal forms that ask one question (.q) per screen with Next / Back / Skip (data-optional).
+    function stepFlow(form, onFinish, validators = {}) {
+      const questions = [...form.querySelectorAll('.q')];
+      const submit = form.querySelector('[type="submit"]');
+      const backButton = form.querySelector('[data-back]');
+      const skipButton = form.querySelector('[data-skip]');
+      const progress = form.querySelector('.flow-progress');
+      const finishLabel = submit.textContent;
+      let index = 0;
+      const flow = {
+        show(next) {
+          index = Math.max(0, Math.min(next, questions.length - 1));
+          questions.forEach((q, i) => q.classList.toggle('active', i === index));
+          if (progress) progress.innerHTML = questions.map((_, i) => `<i class="${i <= index ? 'on' : ''}"></i>`).join('');
+          submit.textContent = index === questions.length - 1 ? finishLabel : 'Next →';
+          backButton.textContent = index === 0 ? 'Cancel' : '← Back';
+          if (skipButton) skipButton.hidden = !('optional' in questions[index].dataset);
+          questions[index].querySelector('input, textarea')?.focus();
+        },
+        start() { form.reset(); flow.show(0); },
+      };
+      const valid = () => {
+        const question = questions[index];
+        if (question.dataset.validate) return validators[question.dataset.validate]();
+        return [...question.querySelectorAll('input, textarea')].every((field) => {
+          const value = field.value.trim();
+          const min = Number(field.getAttribute('minlength')) || 0;
+          field.setCustomValidity(field.required && !value ? 'Please fill this in.' : value && value.length < min ? `Please write at least ${min} characters.` : '');
+          return field.reportValidity();
+        });
+      };
+      backButton.addEventListener('click', () => { if (index === 0) closeModals(); else flow.show(index - 1); });
+      skipButton?.addEventListener('click', () => {
+        questions[index].querySelectorAll('input, textarea').forEach((field) => { field.value = ''; });
+        if (index === questions.length - 1) form.requestSubmit(); else flow.show(index + 1);
+      });
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!valid()) return;
+        if (index < questions.length - 1) { flow.show(index + 1); return; }
+        onFinish();
+      });
+      return flow;
+    }
 
     let currentPage = 1;
     const pageSize = 12;
@@ -635,7 +713,7 @@
         resultsBox.innerHTML = '';
         if (data.results.length === 0) {
           emptyBox.hidden = false;
-          emptyBox.querySelector('h2').textContent = 'Your comparison list will live here.';
+          emptyBox.querySelector('h2').textContent = 'Nothing saved yet.';
           return;
         }
         data.results.forEach((profile) => resultsBox.appendChild(renderProfileCard(profile)));
@@ -652,23 +730,23 @@
         ? profile.headline
         : `${profile.headline}${profile.city ? ` · ${profile.city}` : ''}`;
       const metaLine = profile.kind === 'expert'
-        ? `${profile.years_experience ? `${profile.years_experience} years experience` : ''}${profile.languages.length ? ` · ${profile.languages.join(', ')}` : ''}`
-        : (profile.response_minutes ? `Replies in under ${profile.response_minutes} minutes` : '');
+        ? `${profile.years_experience ? `${profile.years_experience} yrs` : ''}${profile.languages.length ? ` · ${profile.languages.join(', ')}` : ''}`
+        : (profile.response_minutes ? `Replies in ${profile.response_minutes} min` : '');
       const locked = isPeerLocked(profile.kind, getActingType()) && !isPremiumUser();
       article.className = `profile-card${locked ? ' locked' : ''}`;
       article.innerHTML = `
         <div class="portrait">${profile.avatar_url ? `<img src="${safeHref(profile.avatar_url)}" alt="${escapeHtml(profile.display_name)}">` : ''}</div>
         <div>
-          <div class="profile-head"><h3>${escapeHtml(profile.display_name)}</h3>${profile.verified ? `<span class="verified">● Verified ${profile.kind}</span>` : ''}</div>
+          <div class="profile-head"><h3>${escapeHtml(profile.display_name)}</h3>${profile.verified ? `<span class="verified">● Verified</span>` : ''}</div>
           <div class="profile-role">${escapeHtml(roleLine)}</div>
           <div class="profile-meta">${escapeHtml(metaLine)}</div>
           <div class="tags">${profile.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
-          ${profile.resolved_clients_count != null ? `<div class="resolved-badge">✓ ${profile.resolved_clients_count} client${profile.resolved_clients_count === 1 ? '' : 's'} resolved</div>` : ''}
+          ${profile.resolved_clients_count != null ? `<div class="resolved-badge">✓ ${profile.resolved_clients_count} helped</div>` : ''}
         </div>
         <div class="profile-score">
           <div class="score">★ <strong>${profile.average_rating.toFixed(1)}</strong></div>
-          <div class="review-count">${profile.review_count} verified reviews</div>
-          <button class="secondary profile-open">View profile</button>
+          <div class="review-count">${profile.review_count} reviews</div>
+          <button class="secondary profile-open">View</button>
           <button class="secondary save-toggle" type="button" style="margin-top:6px">${savedProfileIds.has(profile.id) ? '♥ Saved' : '♡ Save'}</button>
         </div>
         ${locked ? `<div class="lock-overlay"><span>🔒 Premium</span><button class="primary upgrade-button" type="button">Upgrade to view</button></div>` : ''}`;
@@ -730,7 +808,7 @@
       const detailResolvedBadge = document.querySelector('#profile-resolved');
       if (profile.resolved_clients_count != null) {
         detailResolvedBadge.hidden = false;
-        detailResolvedBadge.textContent = `✓ ${profile.resolved_clients_count} client${profile.resolved_clients_count === 1 ? '' : 's'} resolved`;
+        detailResolvedBadge.textContent = `✓ ${profile.resolved_clients_count} helped`;
       } else {
         detailResolvedBadge.hidden = true;
       }
@@ -738,8 +816,8 @@
       document.querySelector('#profile-review-count').textContent = profile.review_count || '0';
       document.querySelector('#profile-reply').textContent = profile.response_minutes ? `${profile.response_minutes} min` : '–';
       const detailSaveButton = document.querySelector('#detail-save-button');
-      detailSaveButton.textContent = savedProfileIds.has(profile.id) ? '♥ Saved' : '♡ Save profile';
-      detailSaveButton.onclick = () => toggleSaved(profile.id, detailSaveButton, (saved) => { detailSaveButton.textContent = saved ? '♥ Saved' : '♡ Save profile'; });
+      detailSaveButton.textContent = savedProfileIds.has(profile.id) ? '♥ Saved' : '♡ Save';
+      detailSaveButton.onclick = () => toggleSaved(profile.id, detailSaveButton, (saved) => { detailSaveButton.textContent = saved ? '♥ Saved' : '♡ Save'; });
       const bioCard = document.querySelector('#profile-bio-card');
       bioCard.hidden = !profile.bio;
       if (profile.bio) {
@@ -826,25 +904,25 @@
     document.querySelectorAll('.pill:not(.kind-pill)').forEach((pill) => pill.addEventListener('click', () => pill.classList.toggle('selected')));
 
     document.querySelector('#requests').innerHTML = `
-      <div class="page-title"><div><span class="section-tag">My requests</span><h1>One place for every moving part.</h1><p>Track the people, answers, and decisions around your request.</p></div><button class="primary" data-view="discover">+ New request</button></div>
+      <div class="page-title"><div><h1>My requests</h1></div><button class="primary" data-view="discover">+ New request</button></div>
       <div class="request-layout">
-        <aside class="request-panel"><span class="section-tag">Active requests</span><h2 id="requests-count">0 in progress</h2><div style="display:flex;gap:6px;margin-bottom:10px"><button class="pill" type="button" id="requests-tab-sent">Sent by me<b class="tab-badge" id="requests-tab-sent-badge" hidden></b></button><button class="pill selected" type="button" id="requests-tab-received">Received<b class="tab-badge" id="requests-tab-received-badge" hidden></b></button></div><div id="requests-list"><p style="color:var(--muted);font-size:12px;margin:0">Sign in to see your requests.</p></div></aside>
+        <aside class="request-panel"><h2 id="requests-count">0 requests</h2><div id="requests-tabs" style="display:flex;gap:6px;margin-bottom:10px" hidden><button class="pill" type="button" id="requests-tab-sent">Sent<b class="tab-badge" id="requests-tab-sent-badge" hidden></b></button><button class="pill selected" type="button" id="requests-tab-received">Received<b class="tab-badge" id="requests-tab-received-badge" hidden></b></button></div><div id="requests-list"><p style="color:var(--muted);font-size:12px;margin:0">Sign in to see your requests.</p></div></aside>
         <section class="request-panel coordination">
-          <div class="coordination-head"><div><span class="section-tag" id="request-detail-tag">No request selected</span><h2 id="request-detail-title">Coordination timeline</h2></div><span class="pill selected" id="request-detail-status">–</span></div>
+          <div class="coordination-head"><div><span class="section-tag" id="request-detail-tag">No request selected</span><h2 id="request-detail-title">Chat</h2></div><span class="pill selected" id="request-detail-status">–</span></div>
           <div class="stepper" id="request-stepper"></div>
           <div class="next-step" id="request-next-step" hidden></div>
-          <div class="timeline" id="request-timeline"><p style="color:var(--muted);font-size:12px;margin:0">Select a request from the left to see its timeline.</p></div>
+          <div class="timeline" id="request-timeline"><p style="color:var(--muted);font-size:12px;margin:0">Pick a request.</p></div>
           <div style="display:flex;gap:8px;margin:10px 0">
             <button class="primary" id="request-accept-button" hidden>Accept request</button>
             <button class="secondary" id="request-invite-company-button" hidden>+ Invite a company</button>
           </div>
-          <form id="request-message-form" style="display:flex;gap:8px;margin-top:10px"><input id="request-message-input" placeholder="Add a question or note for everyone in this request..." style="flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:7px;font:inherit" disabled><button class="primary" type="submit" id="request-message-send" disabled>Send</button></form>
+          <form id="request-message-form" style="display:flex;gap:8px;margin-top:10px"><input id="request-message-input" placeholder="Type a message…" style="flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:7px;font:inherit" disabled><button class="primary" type="submit" id="request-message-send" disabled>Send</button></form>
         </section>
         <aside class="request-panel">
           <div id="request-expert-referral"></div>
           <div id="request-assign"></div>
           <div id="request-meetings"></div>
-          <span class="section-tag">People in this request</span><h2>Participants</h2><div id="request-participants"><span style="color:var(--muted);font-size:12px">Select a request to see its participants.</span></div>
+          <h2>People</h2><div id="request-participants"><span style="color:var(--muted);font-size:12px">Pick a request.</span></div>
         </aside>
       </div>`;
     document.querySelectorAll('#requests [data-view]').forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
@@ -916,7 +994,7 @@
       const menu = document.querySelector('#notif-menu');
       menu.innerHTML = '<h3>Notifications</h3>' + (items.length
         ? items.map((request) => `<button class="notif-item" type="button" data-request-id="${escapeHtml(request.id)}"><strong>${escapeHtml(notificationText(request))}</strong><span>${escapeHtml(request.title)} · ${new Date(request.updated_at).toLocaleString()}</span></button>`).join('')
-        : '<p class="notif-empty">You\'re all caught up. Replies and updates on your requests will show here.</p>');
+        : '<p class="notif-empty">All caught up.</p>');
       menu.querySelectorAll('[data-request-id]').forEach((button) => button.addEventListener('click', () => {
         const request = requestsCache.find((item) => item.id === button.dataset.requestId);
         menu.hidden = true;
@@ -935,11 +1013,12 @@
 
     function renderRequestsList() {
       const listBox = document.querySelector('#requests-list');
-      const filtered = requestsCache.filter((request) => (requestsTab === 'sent' ? request.my_role === 'customer' : request.my_role !== 'customer'));
-      document.querySelector('#requests-count').textContent = `${filtered.length} in progress`;
+      const tab = document.querySelector('#requests-tabs').hidden ? 'sent' : requestsTab;
+      const filtered = requestsCache.filter((request) => (tab === 'sent' ? request.my_role === 'customer' : request.my_role !== 'customer'));
+      document.querySelector('#requests-count').textContent = `${filtered.length} request${filtered.length === 1 ? '' : 's'}`;
       if (filtered.length === 0) {
-        if (requestsTab === 'sent') {
-          listBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">You have not sent any requests yet. Find an expert, open their profile, and tap "Send a free request".</p><button class="primary" type="button" id="requests-empty-cta" style="margin-top:12px;width:100%">Find an expert</button>';
+        if (tab === 'sent') {
+          listBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">No requests yet.</p><button class="primary" type="button" id="requests-empty-cta" style="margin-top:12px;width:100%">Find an expert</button>';
           document.querySelector('#requests-empty-cta').addEventListener('click', () => showView('discover'));
         } else {
           listBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">No incoming requests yet.</p>';
@@ -970,7 +1049,7 @@
       }
     }
 
-    const PROGRESS_STEPS = ['Request sent', 'Accepted', 'Talk & decide', 'Done'];
+    const PROGRESS_STEPS = ['Sent', 'Accepted', 'Talk', 'Done'];
     const STEPS_DONE = { submitted: 1, accepted: 2, meeting_booked: 2, provider_invited: 2, completed: 4 };
     const FOLLOW_UP_GAP_MS = 12 * 60 * 60 * 1000;
 
@@ -986,39 +1065,39 @@
       let title;
       let body;
       if (detail.status === 'cancelled') {
-        title = 'This request was cancelled.';
-        body = isCustomer ? 'You can find another expert or company in Discover.' : 'No further action is needed.';
-        if (isCustomer) actions.push('<button class="primary" type="button" data-action="discover">Find another expert</button>');
+        title = 'Cancelled.';
+        body = isCustomer ? 'Find someone else in Discover.' : 'Nothing more to do.';
+        if (isCustomer) actions.push('<button class="primary" type="button" data-action="discover">Find another</button>');
       } else if (detail.status === 'completed') {
         if (detail.pending_action === 'confirm_completion') {
-          title = `${name} marked this request as done.`;
-          body = 'Confirm it is done so ratings can open. If the work isn\'t finished, report a problem instead. If you don\'t respond within 7 days, ratings open automatically.';
-          actions.push('<button class="primary" type="button" data-action="confirm-done">Confirm done</button>');
-          actions.push('<button class="secondary" type="button" data-action="dispute-done">Report a problem</button>');
+          title = `${name} says it's done.`;
+          body = 'Confirm to open ratings. Not finished? Tap Report problem. No answer in 7 days opens ratings anyway.';
+          actions.push('<button class="primary" type="button" data-action="confirm-done">Confirm</button>');
+          actions.push('<button class="secondary" type="button" data-action="dispute-done">Report problem</button>');
         } else {
-          title = 'This request is complete.';
+          title = 'Done!';
           body = detail.review_targets.length
-            ? 'Rate the people who helped you. Ratings open once both sides agree the request is done.'
-            : 'Thanks for using RightConnect. Need anything else? We are here to help.';
+            ? 'Rate the people who helped you. Ratings open when both sides agree it is done.'
+            : 'Thanks for using RightConnect.';
         }
       } else if (detail.status === 'submitted') {
-        title = isCustomer ? `Waiting for ${name} to accept.` : 'A customer is waiting for you.';
+        title = isCustomer ? `Waiting for ${name}.` : 'New customer request.';
         body = isCustomer
-          ? 'Their reply will appear here and on the bell icon at the top. No reply after a day? Tap Follow up to send a reminder.'
-          : 'Tap Accept request to see their contact details and start the conversation.';
+          ? 'Their reply shows here and on the bell. No reply in a day? Tap Follow up.'
+          : 'Accept to see their contact and start chatting.';
         if (isCustomer) actions.push('<button class="primary" type="button" data-action="follow-up">Follow up</button>');
       } else if (detail.pending_action === 'accept') {
-        title = 'You were invited into this request.';
-        body = 'Review the expert track record on the right, then tap Accept request to join the conversation.';
+        title = 'You are invited.';
+        body = 'Check the expert track record, then tap Accept.';
       } else {
-        title = isCustomer ? `${name} accepted your request.` : 'You accepted this request.';
+        title = isCustomer ? `${name} accepted!` : 'You accepted.';
         body = isCustomer
-          ? 'Their contact details are now under People in this request. Type a message below to agree a time to talk. Got what you needed? Tap Mark as done.'
-          : 'Reply below to agree next steps. The customer can now see your contact details.';
+          ? 'Their contact is under People. Chat below to agree a time. All sorted? Tap Mark as done.'
+          : 'Reply below to agree next steps. The customer can now see your contact.';
         if (detail.can_mark_done) actions.push('<button class="primary" type="button" data-action="mark-done">Mark as done</button>');
         if (isCustomer) actions.push('<button class="secondary" type="button" data-action="follow-up">Follow up</button>');
       }
-      actions.push('<button class="secondary" type="button" data-action="support">Get help (WhatsApp / Email)</button>');
+      actions.push('<button class="secondary" type="button" data-action="support">Help</button>');
 
       const REVIEW_STATE_TEXT = {
         waiting: (target) => `Opens when they confirm, or on ${new Date(target.opens_at).toLocaleDateString()}`,
@@ -1032,7 +1111,7 @@
 
       const box = document.querySelector('#request-next-step');
       box.hidden = false;
-      box.innerHTML = `<strong>${title}</strong>${body}${reviewRows ? `<div style="margin-top:8px">${reviewRows}</div>` : ''}<div class="actions">${actions.join('')}</div>`;
+      box.innerHTML = `<div class="q-head"><strong>${title}</strong><button type="button" class="info" aria-expanded="false" aria-controls="info-next-step" aria-label="What to do">i</button></div><p class="info-text" id="info-next-step" hidden>${body}</p>${reviewRows ? `<div style="margin-top:8px">${reviewRows}</div>` : ''}<div class="actions">${actions.join('')}</div>`;
       box.querySelector('[data-action="support"]').addEventListener('click', () => openSupport(detail.title));
       box.querySelector('[data-action="discover"]')?.addEventListener('click', () => showView('discover'));
       box.querySelector('[data-action="mark-done"]')?.addEventListener('click', (event) => markRequestDone(detail, event.currentTarget));
@@ -1059,8 +1138,8 @@
     }
 
     function markRequestDone(detail, button) {
-      if (!confirm(`Mark "${detail.title}" as done? The expert/company will be asked to confirm, then you can rate them.`)) return;
-      postRequestAction(detail.id, 'complete', null, button, 'Marked as done. You can rate them once they confirm.');
+      if (!confirm(`Is "${detail.title}" done? They confirm, then you can rate them.`)) return;
+      postRequestAction(detail.id, 'complete', null, button, 'Marked as done.');
     }
 
     let reviewProfileId = null;
@@ -1071,19 +1150,16 @@
     }
     function openReviewModal(profileId, name) {
       reviewProfileId = profileId;
-      document.querySelector('#review-form').reset();
+      reviewFlow.start();
       setReviewRating(0);
       document.querySelector('#review-title').textContent = `Rate ${name}`;
       openModal('review-modal');
     }
-    document.querySelectorAll('#review-stars [data-star]').forEach((star) => star.addEventListener('click', () => setReviewRating(Number(star.dataset.star))));
-    document.querySelector('#review-cancel').addEventListener('click', closeModals);
-    document.querySelector('#review-form').addEventListener('submit', async (event) => {
-      event.preventDefault();
-      if (!reviewRating) { showToast('Tap a star to choose your rating.', 'error'); return; }
+    const reviewFlow = stepFlow(document.querySelector('#review-form'), async () => {
       const ok = await postRequestAction(selectedRequestId, 'reviews', { profile_id: reviewProfileId, rating: reviewRating, body: document.querySelector('#review-body').value.trim() }, document.querySelector('#review-submit'), 'Thanks for your rating!');
       if (ok) { closeModals(); refreshMe(); }
-    });
+    }, { stars: () => { if (!reviewRating) showToast('Tap a star.', 'error'); return Boolean(reviewRating); } });
+    document.querySelectorAll('#review-stars [data-star]').forEach((star) => star.addEventListener('click', () => { setReviewRating(Number(star.dataset.star)); reviewFlow.show(1); }));
     document.querySelector('#dispute-cancel').addEventListener('click', closeModals);
     document.querySelector('#dispute-form').addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -1229,9 +1305,7 @@
       loadRequests();
     });
 
-    document.querySelector('#request-cancel').addEventListener('click', closeModals);
-    document.querySelector('#request-form').addEventListener('submit', async (event) => {
-      event.preventDefault();
+    const requestFlow = stepFlow(document.querySelector('#request-form'), async () => {
       if (!currentProfileId) return;
       const payload = {
         profile_id: currentProfileId,
@@ -1247,7 +1321,7 @@
       const created = await response.json();
       closeModals();
       document.querySelector('#request-form').reset();
-      showToast('Request sent. Watch the bell icon for their reply.', 'success');
+      showToast('Sent! Watch the bell for a reply.', 'success');
       await loadRequests();
       showView('requests');
       selectRequest(created.id);
@@ -1332,8 +1406,9 @@
         if (company.profile_id) rows.push({ profileId: company.profile_id, label: company.name, count: company.resolved_clients_count, checked: company.show_resolved_count });
       });
       list.innerHTML = rows.length
-        ? rows.map((row) => `<div class="toggle-row"><div><strong>${row.label}</strong><small>${row.count} client${row.count === 1 ? '' : 's'} resolved</small></div><input type="checkbox" data-profile-id="${row.profileId}" ${row.checked ? 'checked' : ''}></div>`).join('')
-        : '<p class="modal-note">Add an expert or company profile to manage this.</p>';
+        ? rows.map((row) => `<div class="toggle-row"><div><strong>${row.label}</strong><small>${row.count} helped</small></div><input type="checkbox" data-profile-id="${row.profileId}" ${row.checked ? 'checked' : ''}></div>`).join('')
+        : '';
+      document.querySelector('#visibility-note').hidden = rows.length === 0;
       list.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
         checkbox.addEventListener('change', () => updateResolvedVisibility(checkbox.dataset.profileId, checkbox.checked, checkbox));
       });
@@ -1344,23 +1419,23 @@
     function renderLookingSection() {
       const box = document.querySelector('#looking-section');
       if (!currentUser) { box.innerHTML = ''; return; }
-      const needs = currentInterests.length ? ` for <strong>${escapeHtml(currentInterests.join(', '))}</strong>` : '';
+      const needs = currentInterests.length ? `: <strong>${escapeHtml(currentInterests.join(', '))}</strong>` : '';
       const note = currentUser.looking_for_help
-        ? `On: experts and companies see you as an active customer${needs}.`
-        : 'Off: your last need is finished, so you are not shown as an active customer.';
+        ? `On. Experts see your need${needs}`
+        : 'Off. Your last need is done.';
       box.innerHTML = `<div class="toggle-row"><div><strong>Looking for help</strong><small>${note}</small></div><input type="checkbox" id="looking-toggle" aria-label="Looking for help" ${currentUser.looking_for_help ? 'checked' : ''}></div>`;
       box.querySelector('#looking-toggle').addEventListener('change', async (event) => {
         const checkbox = event.currentTarget;
         if (checkbox.checked) { checkbox.checked = false; openNeedModal(); return; }
-        if (!confirm('Turn off "Looking for help"? Experts and companies will stop seeing you as an active customer.')) { checkbox.checked = true; return; }
+        if (!confirm('Turn off "Looking for help"? Experts will stop seeing your need.')) { checkbox.checked = true; return; }
         checkbox.disabled = true;
-        if (await saveLooking({ looking: false })) showToast('Done. You are no longer shown as an active customer.', 'success');
+        if (await saveLooking({ looking: false })) showToast('Turned off.', 'success');
         else renderLookingSection();
       });
     }
 
     function openNeedModal() {
-      document.querySelector('#need-old').textContent = currentInterests.length ? `Your new need replaces the old one (${currentInterests.join(', ')}).` : '';
+      document.querySelector('#need-old').textContent = currentInterests.length ? `Replaces: ${currentInterests.join(', ')}.` : '';
       document.querySelector('#need-form').reset();
       closeModals();
       openModal('need-modal');
@@ -1391,7 +1466,7 @@
       if (localStorage.getItem(NEED_DONE_SEEN_KEY) === user.need_fulfilled_at) return;
       localStorage.setItem(NEED_DONE_SEEN_KEY, user.need_fulfilled_at);
       const needs = (user.interests || []).join(', ');
-      document.querySelector('#need-done-note').textContent = `You rated your experience, so we marked ${needs ? `"${needs}"` : 'your need'} as finished. Experts and companies no longer see you as an active customer.`;
+      document.querySelector('#need-done-note').textContent = `${needs ? `"${needs}"` : 'Your need'} is marked done. Experts won't see you as looking now. New need? Tap below.`;
       closeModals();
       openModal('need-done-modal');
     }
@@ -1419,7 +1494,7 @@
       setButtonLoading(button, false);
       if (!ok) return;
       closeModals();
-      showToast(`You're looking for help with ${need}. Experts and companies can see you again.`, 'success');
+      showToast(`Looking for help with ${need}.`, 'success');
       if (getActingType() === 'customer') {
         document.querySelector('#search-input').value = need;
         ensureMarketplaceMode();
@@ -1520,6 +1595,7 @@
     }
 
     function applyActingAsDefaultView(type) {
+      applyNavForActing(type);
       // Stay on the dashboard if it's open (it reloads for the new identity); otherwise go to discover.
       showView(document.querySelector('#dashboard').classList.contains('active') ? 'dashboard' : 'discover');
       currentPage = 1;
@@ -1527,6 +1603,13 @@
       customerPill.hidden = type === 'customer';
       setKindSelection(type === 'customer' ? ['expert', 'company'] : ['customer']);
       refreshDiscoverResults();
+    }
+
+    // Customers never pay and don't need Plans/Payment/Profile preview in their menu.
+    function applyNavForActing(type) {
+      const provider = type !== 'customer';
+      document.querySelectorAll('.nav-button[data-view="plans"], #payment-nav-button, .navigation .nav-button[data-view="profile"]').forEach((button) => { button.hidden = !provider; });
+      document.querySelector('.mobile-nav').classList.toggle('four', !provider);
     }
 
     function renderWorkspaceMenu() {
@@ -1564,6 +1647,8 @@
       workspaceMenu.querySelectorAll('[data-verify-org]').forEach((button) => button.addEventListener('click', () => { workspaceMenu.hidden = true; openOtpModal(button.dataset.verifyOrg, ''); }));
 
       document.querySelector('#request-expert').hidden = Boolean(identities.expert_profile);
+      document.querySelector('#requests-tabs').hidden = !(identities.expert_profile || identities.companies.length);
+      renderRequestsList();
     }
 
     async function loadIdentities() {
@@ -1741,6 +1826,7 @@
     const sharedQuery = (launchParams.get('q') || launchParams.get('title') || '').trim().slice(0, 200);
     function openLaunchView() { document.querySelector(`.nav-button[data-view="${launchView}"]`).click(); }
     if (sharedQuery) document.querySelector('#search-input').value = sharedQuery;
+    applyNavForActing(getActingType());
     if (sharedProfileId) { openProfile(sharedProfileId, { skipHistory: true }); }
     else if (launchView) { openLaunchView(); }
     loadProfiles();

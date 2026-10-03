@@ -133,24 +133,24 @@ async function loadDashboard() {
 }
 
 function renderCustomerDashboard(data) {
-  document.querySelector('#dash-tag').textContent = 'Customer dashboard · always free';
-  document.querySelector('#dash-title').textContent = 'Your requests and picks';
-  document.querySelector('#dash-copy').textContent = 'Add every area you need help with. We line up trusted people for each one.';
-  document.querySelector('#dash-actions').innerHTML = '<button class="secondary" type="button" data-interests>Manage interests</button><button class="primary" type="button" data-go="discover">+ New request</button>';
+  document.querySelector('#dash-tag').textContent = 'Dashboard';
+  document.querySelector('#dash-title').textContent = currentUser?.full_name ? `Hi ${currentUser.full_name.split(' ')[0]}` : 'Your dashboard';
+  document.querySelector('#dash-copy').textContent = '';
+  document.querySelector('#dash-actions').innerHTML = '<button class="secondary" type="button" data-interests>Interests</button><button class="primary" type="button" data-go="discover">+ New request</button>';
   const counts = data.requests;
   const recommendations = data.recommendations.length
     ? data.recommendations.map((group) => `<h3 style="margin:10px 0 0;font-size:13px">${escapeHtml(group.interest)}</h3>${group.profiles.length
       ? `<div class="mini-cards">${group.profiles.map(miniCard).join('')}</div>`
-      : `<p class="muted" style="margin:4px 0 12px">No profiles for ${escapeHtml(group.interest)} yet. We're adding more every week.</p>`}`).join('')
-    : `${emptyNote('Tell us what you need help with, like insurance, fashion or beauty, and we will suggest trusted people here.')}<button class="primary" type="button" data-interests style="margin-top:12px">Add interests</button>`;
+      : `<p class="muted" style="margin:4px 0 12px">No one for ${escapeHtml(group.interest)} yet.</p>`}`).join('')
+    : `${emptyNote('Add what you need and we will suggest people.')}<button class="primary" type="button" data-interests style="margin-top:12px">Add interests</button>`;
   document.querySelector('#dash-body').innerHTML = `
-    ${currentUser && currentUser.looking_for_help === false ? '<div class="plan-banner free"><span>Your last need is finished, so experts and companies don\'t see you as an active customer.</span><button class="primary" type="button" data-new-need>I have a new need</button></div>' : ''}
-    ${data.pending_actions ? `<div class="plan-banner free"><span>${data.pending_actions} request${data.pending_actions === 1 ? ' needs' : 's need'} your action.</span><button class="primary" type="button" data-go="requests">Open My requests</button></div>` : ''}
-    <div class="kpi-grid">${kpi('Active requests', counts.active)}${kpi('Waiting for a reply', counts.waiting)}${kpi('Completed', counts.completed)}${kpi('Saved profiles', data.saved_count)}</div>
+    ${currentUser && currentUser.looking_for_help === false ? '<div class="plan-banner free"><span>Your last need is done.</span><button class="primary" type="button" data-new-need>New need</button></div>' : ''}
+    ${data.pending_actions ? `<div class="plan-banner free"><span>${data.pending_actions} need${data.pending_actions === 1 ? 's' : ''} your action</span><button class="primary" type="button" data-go="requests">Open</button></div>` : ''}
+    <div class="kpi-grid">${kpi('Active', counts.active)}${kpi('Waiting', counts.waiting)}${kpi('Done', counts.completed)}${kpi('Saved', data.saved_count)}</div>
     <div class="dash-grid">
-      <div class="dash-card"><h2>Upcoming meetings</h2>${meetingRows(data.upcoming_meetings, 'No meetings booked. When an expert offers online booking, you can pick a time inside the request.')}</div>
-      <div class="dash-card"><h2>How it works</h2><div class="row"><span>1. Search or pick from your interests</span></div><div class="row"><span>2. Send a free request</span></div><div class="row"><span>3. Chat, book a time, decide</span></div><div class="row"><span>4. Mark done and leave a verified review</span></div></div>
-      <div class="dash-card full"><h2>Picked for your interests</h2>${recommendations}</div>
+      <div class="dash-card"><h2>Meetings</h2>${meetingRows(data.upcoming_meetings, 'No meetings yet.')}</div>
+      <div class="dash-card"><h2>How it works</h2><div class="row"><span>1. Search</span></div><div class="row"><span>2. Send request (free)</span></div><div class="row"><span>3. Chat &amp; book a time</span></div><div class="row"><span>4. Mark done &amp; rate</span></div></div>
+      <div class="dash-card full"><h2>For you</h2>${recommendations}</div>
     </div>`;
   wireDashboard();
 }
@@ -467,14 +467,14 @@ function renderTeam(team) {
 /* ---------- Requests: meetings, booking and assignment ---------- */
 
 async function openBooking(requestId, profileId, name) {
-  document.querySelector('#booking-title').textContent = `Book a meeting with ${name}`;
+  document.querySelector('#booking-title').textContent = `Pick a time · ${name}`;
   const body = document.querySelector('#booking-body');
   body.innerHTML = '<p class="muted"><span class="spinner"></span>Finding open times…</p>';
   openModal('booking-modal');
   try {
     const data = await api(`/requests/${encodeURIComponent(requestId)}/slots?${new URLSearchParams({ profile_id: profileId })}`);
     if (!data.slots.length) {
-      body.innerHTML = emptyNote('No open times in the next 2 weeks. Send them a message in the timeline to agree a time.');
+      body.innerHTML = emptyNote('No free times in the next 2 weeks. Message them to agree a time.');
       return;
     }
     const days = new Map();
@@ -535,11 +535,11 @@ function renderRequestExtras(detail) {
       const active = ACTIVE_MEETING.includes(meeting.status);
       return `<div class="meeting" style="margin:6px 0;${active ? '' : 'opacity:.6'}"><strong>${active ? '' : '<s>'}${escapeHtml(formatWhen(meeting.starts_at))}${active ? '' : '</s>'}</strong><span>${escapeHtml(meeting.with_name)} · 30 min · ${meeting.status}</span>${active && open ? `<button class="secondary" type="button" data-cancel-meeting="${escapeHtml(meeting.id)}" style="min-height:28px;margin-top:6px;font-size:11px">Cancel meeting</button>` : ''}</div>`;
     }).join('')}
-    ${detail.bookable_profiles.map((target) => `<button class="primary" type="button" data-book-profile="${escapeHtml(target.profile_id)}" data-book-name="${escapeHtml(target.name)}" style="width:100%;margin-top:6px">📅 Book a time with ${escapeHtml(target.name)}</button>`).join('')}
+    ${detail.bookable_profiles.map((target) => `<button class="primary" type="button" data-book-profile="${escapeHtml(target.profile_id)}" data-book-name="${escapeHtml(target.name)}" style="width:100%;margin-top:6px">📅 Book a time${detail.bookable_profiles.length > 1 ? ` · ${escapeHtml(target.name)}` : ''}</button>`).join('')}
     <div style="height:18px"></div>`;
   meetingsBox.querySelectorAll('[data-book-profile]').forEach((button) => button.addEventListener('click', () => openBooking(detail.id, button.dataset.bookProfile, button.dataset.bookName)));
   meetingsBox.querySelectorAll('[data-cancel-meeting]').forEach((button) => button.addEventListener('click', async () => {
-    if (!confirm('Cancel this meeting? Everyone on the request will see it in the timeline.')) return;
+    if (!confirm('Cancel this meeting?')) return;
     setButtonLoading(button, true, 'Cancelling…');
     try {
       renderRequestDetail(await api(`/requests/${encodeURIComponent(detail.id)}/appointments/${encodeURIComponent(button.dataset.cancelMeeting)}/cancel`, { method: 'POST' }));
