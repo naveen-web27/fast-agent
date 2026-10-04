@@ -980,8 +980,28 @@
         updateNotifications();
         const selected = requestsCache.find((request) => request.id === selectedRequestId);
         if (options.silent && selected && isUnread(selected) && document.querySelector('#requests').classList.contains('active')) selectRequest(selected.id, { silent: true });
+        prefetchRequestDetails();
       } catch (_) {
         if (!options.silent) listBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Could not load your requests.</p>';
+      }
+    }
+
+    // Chats are slow to build on the server, so keep the latest copy of each and warm up recent ones in the background.
+    const requestDetailCache = new Map();
+    let prefetching = false;
+    async function prefetchRequestDetails() {
+      if (prefetching) return;
+      prefetching = true;
+      try {
+        const stale = requestsCache.filter((request) => requestDetailCache.get(request.id)?.updated_at !== request.updated_at).slice(0, 5);
+        for (const request of stale) {
+          const response = await fetch(`${apiBase}/requests/${request.id}`, { headers: authHeaders(), background: true });
+          if (response.ok) requestDetailCache.set(request.id, await response.json());
+        }
+      } catch (_) {
+        // Best effort only; opening the chat fetches it again.
+      } finally {
+        prefetching = false;
       }
     }
 
@@ -1069,6 +1089,11 @@
       selectedRequestId = requestId;
       renderRequestsList();
       const timeline = document.querySelector('#request-timeline');
+      const cached = requestDetailCache.get(requestId);
+      if (cached && !options.silent) {
+        renderRequestDetail(cached);
+        options = { ...options, silent: true };
+      }
       if (!options.silent) {
         // Show what we already know straight away so the chat never looks stuck.
         const summary = requestsCache.find((request) => request.id === requestId);
@@ -1089,6 +1114,7 @@
         const detail = await response.json();
         // The user may have opened another request while this one was loading.
         if (selectedRequestId !== requestId) return;
+        if (JSON.stringify(detail) === renderedDetailJson) return;
         renderRequestDetail(detail);
       } catch (_) {
         if (selectedRequestId !== requestId || options.silent) return;
@@ -1235,7 +1261,10 @@
       loadRequests({ silent: true });
     }
 
+    let renderedDetailJson = null;
     function renderRequestDetail(detail) {
+      requestDetailCache.set(detail.id, detail);
+      renderedDetailJson = JSON.stringify(detail);
       markRequestSeen(detail.id, detail.updated_at);
       document.querySelector('#request-detail-tag').textContent = detail.counterpart_name;
       document.querySelector('#request-detail-title').textContent = detail.title;
