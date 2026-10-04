@@ -65,9 +65,8 @@
     .profile-card.locked > *:not(.lock-overlay) { filter:blur(6px); pointer-events:none; user-select:none; }
     .lock-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:rgba(255,255,255,.7); }
     .lock-overlay span { color:#8a5a00; font-size:11px; font-weight:800; }
-    .spinner { display:inline-block; width:13px; height:13px; margin-right:7px; vertical-align:-2px; border:2px solid rgba(8,138,130,.25); border-top-color:var(--teal); border-radius:50%; animation:rc-spin .65s linear infinite; }
-    .spinner-light { border-color:rgba(255,255,255,.35); border-top-color:#fff; }
-    @keyframes rc-spin { to { transform:rotate(360deg); } }
+    /* The centred RightConnect icon (#api-spinner) is the only loading indicator. */
+    .spinner { display:none; }
     button.is-loading { cursor:progress; }
     .save-toggle { transition:transform .15s ease; }
     .save-toggle:active { transform:scale(.92); }
@@ -75,9 +74,6 @@
     .toast.show { opacity:1; transform:translate(-50%,0); }
     .toast.error { background:#7a2436; }
     .toast.success { background:#0f5c47; }
-    .api-progress { position:fixed; top:0; left:0; right:0; z-index:200; height:3px; overflow:hidden; background:rgba(12,139,130,.15); pointer-events:none; }
-    .api-progress::before { content:''; position:absolute; top:0; bottom:0; left:-40%; width:40%; border-radius:3px; background:#0c8b82; animation:api-progress 1s ease-in-out infinite; }
-    @keyframes api-progress { to { left:100%; } }
     .results-loading { opacity:.45; pointer-events:none; transition:opacity .15s; }
     .api-spinner { position:fixed; left:50%; top:50%; z-index:210; display:flex; flex-direction:column; align-items:center; gap:10px; padding:18px 26px; color:var(--ink); border-radius:16px; background:rgba(255,255,255,.97); box-shadow:0 18px 50px rgba(22,35,58,.22); font-size:13px; font-weight:800; transform:translate(-50%,-50%); pointer-events:none; }
     .api-spinner[hidden] { display:none; }
@@ -282,7 +278,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <div class="modal-scrim" id="modal-scrim" hidden></div>
   <div class="toast" id="toast" hidden></div>
-  <div class="api-progress" id="api-progress" role="progressbar" aria-label="Loading" hidden></div>
   <div class="api-spinner" id="api-spinner" role="status" aria-live="polite" hidden><img src="../assets/rightconnect-mark.svg" alt=""><span class="loading-dots" aria-hidden="true"><i></i><i></i><i></i></span>Loading…</div>
   <div class="modal" id="expert-modal" hidden>
     <h2>Add your expert profile</h2>
@@ -436,6 +431,8 @@
     document.querySelector('#book-button').addEventListener('click', () => {
       if (!accessToken) { window.location.href = 'auth.html'; return; }
       if (!currentProfileId) return;
+      const ownProfile = identities && (identities.expert_profile?.id === currentProfileId || identities.companies.some((company) => company.profile_id === currentProfileId));
+      if (ownProfile) { showToast('This is your own profile. You can\'t send a request to yourself.', 'error'); return; }
       document.querySelector('#request-modal-target').textContent = currentProfileName ? `To: ${currentProfileName}` : '';
       requestFlow.start();
       openModal('request-modal');
@@ -516,23 +513,18 @@
       return fallback;
     }
 
-    // Every API call shows the top progress bar; network/server failures always tell the user something went wrong.
+    // Slow API calls show the centred RightConnect icon; network/server failures always tell the user something went wrong.
     // Pass { background: true } in fetch options for silent polling.
-    const apiProgress = document.querySelector('#api-progress');
     const apiSpinner = document.querySelector('#api-spinner');
     const nativeFetch = window.fetch.bind(window);
     let apiInflight = 0;
-    let apiProgressTimer = null;
     let apiSpinnerTimer = null;
     window.fetch = async (input, init = {}) => {
       const target = new URL(typeof input === 'string' ? input : (input.url || String(input)), window.location.href);
       if (target.origin !== window.location.origin || !target.pathname.startsWith(apiBase) || init.background) return nativeFetch(input, init);
       apiInflight += 1;
-      if (apiInflight === 1) {
-        apiProgressTimer = setTimeout(() => { apiProgress.hidden = false; }, 120);
-        // Only slow calls get the round spinner so quick clicks don't flash it.
-        apiSpinnerTimer = setTimeout(() => { apiSpinner.hidden = false; }, 400);
-      }
+      // Only slow calls show the icon so quick clicks don't flash it.
+      if (apiInflight === 1) apiSpinnerTimer = setTimeout(() => { apiSpinner.hidden = false; }, 400);
       try {
         const response = await nativeFetch(input, init);
         if (response.status >= 500) showToast('Something went wrong on our side. Please try again in a moment.', 'error');
@@ -542,7 +534,7 @@
         throw error;
       } finally {
         apiInflight -= 1;
-        if (apiInflight === 0) { clearTimeout(apiProgressTimer); clearTimeout(apiSpinnerTimer); apiProgress.hidden = true; apiSpinner.hidden = true; }
+        if (apiInflight === 0) { clearTimeout(apiSpinnerTimer); apiSpinner.hidden = true; }
       }
     };
 
@@ -672,7 +664,7 @@
             <div class="profile-meta">Status: ${request.status.replace('_', ' ')}</div>
           </div>
           <div class="profile-score"><button class="secondary open-lead">Open request</button></div>`;
-        card.querySelector('.open-lead').addEventListener('click', () => { setRequestsTab('received'); showView('requests'); selectRequest(request.id); });
+        card.querySelector('.open-lead').addEventListener('click', () => { markRequestSeen(request.id, request.updated_at); setRequestsTab('received'); showView('requests'); selectRequest(request.id); });
         resultsList.appendChild(card);
       });
     }
@@ -793,8 +785,11 @@
       try {
         const response = await fetch(`${apiBase}/profiles/${profileId}`);
         if (!response.ok) throw new Error('Request failed');
-        renderProfileDetail(await response.json());
+        const profile = await response.json();
+        if (currentProfileId !== profileId) return;
+        renderProfileDetail(profile);
       } catch (error) {
+        if (currentProfileId !== profileId) return;
         reviewsBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Could not load this profile.</p>';
       }
     }
@@ -862,7 +857,9 @@
       document.querySelector('#stat-response').textContent = avgResponse ? `${avgResponse} min` : '–';
     }
 
+    let profilesTicket = 0;
     async function loadProfiles() {
+      const ticket = ++profilesTicket;
       const query = document.querySelector('#search-input').value.trim();
       const kinds = selectedKinds().filter((kind) => kind !== 'customer');
       resultCount.innerHTML = '<span class="spinner"></span>Loading profiles…';
@@ -877,10 +874,21 @@
         const response = await fetch(`${apiBase}/profiles?${params.toString()}`);
         if (!response.ok) throw new Error('Request failed');
         const data = await response.json();
+        // An older search finished after a newer one started; keep the newer results.
+        if (ticket !== profilesTicket) return;
         resultsList.innerHTML = '';
         renderInsights(data.results);
         if (data.results.length === 0) {
           resultCount.textContent = `No profiles yet for ${query || 'your search'}`;
+          if (query) {
+            const showAll = document.createElement('button');
+            showAll.className = 'secondary';
+            showAll.type = 'button';
+            showAll.style.cssText = 'margin-left:8px;padding:4px 10px';
+            showAll.textContent = 'Show everyone';
+            showAll.addEventListener('click', () => { document.querySelector('#search-input').value = ''; currentPage = 1; loadProfiles(); });
+            resultCount.appendChild(showAll);
+          }
           return;
         }
         data.results.forEach((profile) => resultsList.appendChild(renderProfileCard(profile)));
@@ -891,11 +899,12 @@
         pageNextButton.disabled = data.page >= totalPages;
         paginationBar.hidden = totalPages <= 1;
       } catch (error) {
+        if (ticket !== profilesTicket) return;
         resultsList.innerHTML = '';
         resultCount.innerHTML = 'Something went wrong while loading profiles. <button class="secondary" type="button" id="profiles-retry" style="margin-left:8px;padding:4px 10px">Try again</button>';
         document.querySelector('#profiles-retry').addEventListener('click', loadProfiles);
       } finally {
-        resultsList.classList.remove('results-loading');
+        if (ticket === profilesTicket) resultsList.classList.remove('results-loading');
       }
     }
 
@@ -965,12 +974,12 @@
         const response = await fetch(`${apiBase}/requests`, { headers: authHeaders(), background: Boolean(options.silent) });
         if (!response.ok) throw new Error('Request failed');
         requestsCache = (await response.json()).results;
-        // First visit on this device: treat existing requests as already seen so the bell isn't flooded.
-        if (readSeen() === null) localStorage.setItem(SEEN_KEY, JSON.stringify(Object.fromEntries(requestsCache.map((request) => [request.id, request.updated_at]))));
+        // First visit on this device: treat existing requests as already seen so the bell isn't flooded (things you still need to do stay).
+        if (readSeen() === null) localStorage.setItem(SEEN_KEY, JSON.stringify(Object.fromEntries(requestsCache.filter((request) => !request.pending_action).map((request) => [request.id, request.updated_at]))));
         renderRequestsList();
         updateNotifications();
         const selected = requestsCache.find((request) => request.id === selectedRequestId);
-        if (options.silent && selected && isUnread(selected) && document.querySelector('#requests').classList.contains('active')) selectRequest(selected.id);
+        if (options.silent && selected && isUnread(selected) && document.querySelector('#requests').classList.contains('active')) selectRequest(selected.id, { silent: true });
       } catch (_) {
         if (!options.silent) listBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Could not load your requests.</p>';
       }
@@ -982,15 +991,16 @@
     }
     function markRequestSeen(requestId, updatedAt) {
       const seen = readSeen() || {};
+      if (seen[requestId] && new Date(seen[requestId]) >= new Date(updatedAt)) return;
       seen[requestId] = updatedAt;
       localStorage.setItem(SEEN_KEY, JSON.stringify(seen));
+      renderRequestsList();
       updateNotifications();
     }
     function isUnread(request) {
       const seen = readSeen();
       return Boolean(seen) && (!seen[request.id] || new Date(request.updated_at) > new Date(seen[request.id]));
     }
-    function needsMyAction(request) { return Boolean(request.pending_action); }
     function notificationText(request) {
       if (request.pending_action === 'accept') return `New request from ${request.counterpart_name}`;
       if (request.pending_action === 'confirm_completion') return `${request.counterpart_name} marked this as done – please confirm`;
@@ -1003,7 +1013,8 @@
       element.textContent = value > 9 ? '9+' : String(value);
     }
     function updateNotifications() {
-      const items = requestsCache.filter((request) => isUnread(request) || needsMyAction(request));
+      // Opening a notification (or the request) dismisses it until something new happens on that request.
+      const items = requestsCache.filter(isUnread);
       setBadge(document.querySelector('#notif-count'), items.length);
       document.querySelectorAll('[data-requests-badge]').forEach((badge) => setBadge(badge, items.length));
       setBadge(document.querySelector('#requests-tab-sent-badge'), items.filter((request) => request.my_role === 'customer').length);
@@ -1015,6 +1026,7 @@
       menu.querySelectorAll('[data-request-id]').forEach((button) => button.addEventListener('click', () => {
         const request = requestsCache.find((item) => item.id === button.dataset.requestId);
         menu.hidden = true;
+        if (request) markRequestSeen(request.id, request.updated_at);
         setRequestsTab(request && request.my_role === 'customer' ? 'sent' : 'received');
         showView('requests');
         selectRequest(button.dataset.requestId);
@@ -1046,23 +1058,42 @@
       filtered.forEach((request) => {
         const item = document.createElement('div');
         item.className = `request-item${request.id === selectedRequestId ? ' active' : ''}`;
-        item.innerHTML = `<strong>${isUnread(request) || needsMyAction(request) ? '<span class="unread-dot" title="Needs your attention"></span>' : ''}${escapeHtml(request.title)}</strong><span>${escapeHtml(request.counterpart_name)} · ${statusLabel(request.status)}${request.assigned_to_name ? ` · → ${escapeHtml(request.assigned_to_name)}` : ''}</span>`;
-        item.addEventListener('click', () => selectRequest(request.id));
+        item.innerHTML = `<strong>${isUnread(request) ? '<span class="unread-dot" title="New"></span>' : ''}${escapeHtml(request.title)}</strong><span>${escapeHtml(request.counterpart_name)} · ${statusLabel(request.status)}${request.assigned_to_name ? ` · → ${escapeHtml(request.assigned_to_name)}` : ''}</span>`;
+        item.addEventListener('click', () => { markRequestSeen(request.id, request.updated_at); selectRequest(request.id); });
         listBox.appendChild(item);
       });
     }
 
-    async function selectRequest(requestId) {
+    async function selectRequest(requestId, options = {}) {
+      const switching = selectedRequestId !== requestId;
       selectedRequestId = requestId;
       renderRequestsList();
       const timeline = document.querySelector('#request-timeline');
-      timeline.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0"><span class="spinner"></span>Loading…</p>';
+      if (!options.silent) {
+        // Show what we already know straight away so the chat never looks stuck.
+        const summary = requestsCache.find((request) => request.id === requestId);
+        if (summary && switching) {
+          document.querySelector('#request-detail-tag').textContent = summary.counterpart_name;
+          document.querySelector('#request-detail-title').textContent = summary.title;
+          document.querySelector('#request-detail-status').textContent = statusLabel(summary.status);
+        }
+        if (switching || !timeline.querySelector('.event')) timeline.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Loading messages…</p>';
+        if (switching) {
+          document.querySelector('#request-message-input').disabled = true;
+          document.querySelector('#request-message-send').disabled = true;
+        }
+      }
       try {
-        const response = await fetch(`${apiBase}/requests/${requestId}`, { headers: authHeaders() });
+        const response = await fetch(`${apiBase}/requests/${requestId}`, { headers: authHeaders(), background: Boolean(options.silent) });
         if (!response.ok) throw new Error('Request failed');
-        renderRequestDetail(await response.json());
+        const detail = await response.json();
+        // The user may have opened another request while this one was loading.
+        if (selectedRequestId !== requestId) return;
+        renderRequestDetail(detail);
       } catch (_) {
-        timeline.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Could not load this request.</p>';
+        if (selectedRequestId !== requestId || options.silent) return;
+        timeline.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Could not load this chat. <button class="secondary" type="button" id="request-retry" style="margin-left:6px;padding:4px 10px">Try again</button></p>';
+        document.querySelector('#request-retry').addEventListener('click', () => selectRequest(requestId));
       }
     }
 
@@ -1251,12 +1282,21 @@
       renderRequestExtras(detail);
     }
 
-    document.querySelector('#request-accept-button').addEventListener('click', async () => {
+    document.querySelector('#request-accept-button').addEventListener('click', async (event) => {
       if (!selectedRequestId) return;
-      const response = await fetch(`${apiBase}/requests/${selectedRequestId}/accept`, { method: 'POST', headers: authHeaders() });
-      if (!response.ok) { alert('Could not accept this request.'); return; }
-      renderRequestDetail(await response.json());
-      loadRequests();
+      const button = event.currentTarget;
+      setButtonLoading(button, true, 'Accepting…');
+      try {
+        const response = await fetch(`${apiBase}/requests/${selectedRequestId}/accept`, { method: 'POST', headers: authHeaders() });
+        if (!response.ok) { showToast(await extractErrorMessage(response, 'Could not accept this request.'), 'error'); return; }
+        showToast('Accepted. You can now chat and see their contact.', 'success');
+        renderRequestDetail(await response.json());
+        loadRequests({ silent: true });
+      } catch (_) {
+        // The fetch wrapper already told the user.
+      } finally {
+        setButtonLoading(button, false);
+      }
     });
 
     document.querySelector('#request-invite-company-button').addEventListener('click', () => {
@@ -1295,7 +1335,7 @@
             closeModals();
             showToast('Company invited.', 'success');
             renderRequestDetail(await response.json());
-            loadRequests();
+            loadRequests({ silent: true });
           }));
         } catch (_) {
           resultsBox.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Could not search companies.</p>';
@@ -1306,20 +1346,30 @@
     document.querySelector('#request-message-form').addEventListener('submit', async (event) => {
       event.preventDefault();
       if (!selectedRequestId) return;
+      const requestId = selectedRequestId;
       const input = document.querySelector('#request-message-input');
+      const sendButton = document.querySelector('#request-message-send');
       const message = input.value.trim();
-      if (!message) return;
-      const response = await fetch(`${apiBase}/requests/${selectedRequestId}/events`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ message }) });
-      if (!response.ok) { alert('Could not send your message.'); return; }
-      input.value = '';
-      renderRequestDetail(await response.json());
-      loadRequests();
+      if (!message || sendButton.disabled) return;
+      setButtonLoading(sendButton, true, 'Sending…');
+      try {
+        const response = await fetch(`${apiBase}/requests/${requestId}/events`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ message }) });
+        if (!response.ok) { showToast(await extractErrorMessage(response, 'Could not send your message.'), 'error'); return; }
+        const detail = await response.json();
+        if (selectedRequestId === requestId) { input.value = ''; renderRequestDetail(detail); }
+        loadRequests({ silent: true });
+      } catch (_) {
+        // The fetch wrapper already told the user.
+      } finally {
+        setButtonLoading(sendButton, false);
+      }
     });
 
     document.querySelector('.nav-button[data-view="requests"]').addEventListener('click', () => {
       const acting = JSON.parse(sessionStorage.getItem('rightconnect-acting-as') || '{"type":"customer"}');
       setRequestsTab(acting.type === 'customer' ? 'sent' : 'received');
-      loadRequests();
+      // Show the list we already have instantly and refresh it quietly.
+      loadRequests({ silent: requestsCache.length > 0 });
     });
 
     const requestFlow = stepFlow(document.querySelector('#request-form'), async () => {
@@ -1339,9 +1389,11 @@
       closeModals();
       document.querySelector('#request-form').reset();
       showToast('Sent! Watch the bell for a reply.', 'success');
-      await loadRequests();
+      setRequestsTab('sent');
       showView('requests');
-      selectRequest(created.id);
+      selectedRequestId = created.id;
+      renderRequestDetail(created);
+      loadRequests({ silent: true });
     });
 
     let authClient = null;
@@ -1833,7 +1885,15 @@
       const acting = JSON.parse(sessionStorage.getItem('rightconnect-acting-as') || '{"type":"customer","label":"Customer"}');
       applyActingAsDefaultView(acting.type);
       if (launchView) openLaunchView();
-      setInterval(() => { if (!document.hidden) loadRequests({ silent: true }); }, 60000);
+      // Check for replies every 20s while a chat is open, otherwise every minute.
+      let lastPoll = Date.now();
+      setInterval(() => {
+        if (document.hidden) return;
+        const chatOpen = document.querySelector('#requests').classList.contains('active') && selectedRequestId;
+        if (Date.now() - lastPoll < (chatOpen ? 20000 : 60000)) return;
+        lastPoll = Date.now();
+        loadRequests({ silent: true });
+      }, 5000);
     })();
 
     // Launch params come from manifest shortcuts (?view=) and the Android share sheet (?q=).

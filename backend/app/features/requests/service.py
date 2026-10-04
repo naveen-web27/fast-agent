@@ -332,10 +332,17 @@ async def _build_summary(
     )
 
 
-async def _build_detail(session: AsyncSession, request: Request, user: User, my_org_ids: set[UUID]) -> RequestDetail:
-    participants = (
-        await session.scalars(select(RequestParticipant).where(RequestParticipant.request_id == request.id))
-    ).all()
+async def _build_detail(
+    session: AsyncSession,
+    request: Request,
+    user: User,
+    my_org_ids: set[UUID],
+    participants: list[RequestParticipant] | None = None,
+) -> RequestDetail:
+    if participants is None:
+        participants = (
+            await session.scalars(select(RequestParticipant).where(RequestParticipant.request_id == request.id))
+        ).all()
     summary = await _build_summary(session, request, user, my_org_ids, list(participants))
 
     # The customer never gets an explicit request_participants row, so synthesize their entry here.
@@ -452,6 +459,10 @@ async def create_request(session: AsyncSession, auth_user_id: UUID, payload: Cre
     profile = await session.get(Profile, payload.profile_id)
     if profile is None or profile.blocked_at is not None or profile.deleted_at is not None:
         raise ProfileTargetError("This profile could not be found")
+    if profile.user_id == user.id or (
+        profile.organization_id is not None and profile.organization_id in await _my_organization_ids(session, user.id)
+    ):
+        raise ProfileTargetError("This is your own profile. You can't send a request to yourself.")
 
     request = Request(
         customer_id=user.id,
@@ -502,14 +513,20 @@ async def list_requests(session: AsyncSession, auth_user_id: UUID) -> list[Reque
         .order_by(Request.updated_at.desc())
     )
     requests = rows.all()
+    if not requests:
+        return []
 
-    summaries = []
-    for request in requests:
-        participants = (
-            await session.scalars(select(RequestParticipant).where(RequestParticipant.request_id == request.id))
-        ).all()
-        summaries.append(await _build_summary(session, request, user, my_org_ids, list(participants)))
-    return summaries
+    participants_by_request: dict[UUID, list[RequestParticipant]] = {request.id: [] for request in requests}
+    all_participants = await session.scalars(
+        select(RequestParticipant).where(RequestParticipant.request_id.in_(participants_by_request.keys()))
+    )
+    for participant in all_participants.all():
+        participants_by_request[participant.request_id].append(participant)
+
+    return [
+        await _build_summary(session, request, user, my_org_ids, participants_by_request[request.id])
+        for request in requests
+    ]
 
 
 def _or(conditions):
@@ -532,7 +549,7 @@ async def get_request_detail(session: AsyncSession, auth_user_id: UUID, request_
     if not _is_participant(request, user, my_org_ids, list(participants)):
         raise RequestAccessError("You do not have access to this request")
 
-    return await _build_detail(session, request, user, my_org_ids)
+    return await _build_detail(session, request, user, my_org_ids, list(participants))
 
 
 async def add_event(session: AsyncSession, auth_user_id: UUID, request_id: UUID, message: str) -> RequestDetail:
@@ -554,7 +571,7 @@ async def add_event(session: AsyncSession, auth_user_id: UUID, request_id: UUID,
     await session.commit()
     await session.refresh(request)
 
-    return await _build_detail(session, request, user, my_org_ids)
+    return await _build_detail(session, request, user, my_org_ids, list(participants))
 
 
 async def accept_request(session: AsyncSession, auth_user_id: UUID, request_id: UUID) -> RequestDetail:

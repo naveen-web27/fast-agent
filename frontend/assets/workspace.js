@@ -97,11 +97,11 @@ function miniCard(profile) {
 
 function wireDashboard() {
   const root = document.querySelector('#dashboard');
-  root.querySelectorAll('[data-open-request]').forEach((button) => button.addEventListener('click', async () => {
+  root.querySelectorAll('[data-open-request]').forEach((button) => button.addEventListener('click', () => {
     setRequestsTab(actingAs().type === 'customer' ? 'sent' : 'received');
     showView('requests');
-    await loadRequests();
     selectRequest(button.dataset.openRequest);
+    loadRequests({ silent: requestsCache.length > 0 });
   }));
   root.querySelectorAll('[data-open-profile]').forEach((button) => button.addEventListener('click', () => openProfile(button.dataset.openProfile)));
   root.querySelectorAll('[data-go]').forEach((button) => button.addEventListener('click', () => {

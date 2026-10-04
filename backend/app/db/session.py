@@ -3,7 +3,6 @@ import uuid
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import NullPool
 
 from app.core.config import get_settings
 
@@ -22,14 +21,16 @@ def _as_asyncpg_url(url: str) -> str:
 if settings.database_url:
     engine = create_async_engine(
         _as_asyncpg_url(settings.database_url),
-        # Supabase's pooler (pgbouncer, transaction mode) multiplexes many client
-        # connections onto few backend sessions, so a SQLAlchemy-pooled asyncpg
-        # connection can hit a backend that already has a same-named prepared
-        # statement from a different client. NullPool + unique statement names
-        # (per SQLAlchemy's asyncpg+pgbouncer docs) avoids that collision.
-        poolclass=NullPool,
+        # Opening a new TLS connection to Supabase costs ~1.5s, so keep a small pool.
+        # Supabase's pooler (transaction mode) can hand each transaction a different
+        # backend, so no statement may be cached across transactions and names must be unique.
+        pool_size=5,
+        max_overflow=5,
+        pool_pre_ping=True,
+        pool_recycle=300,
         connect_args={
             "statement_cache_size": 0,
+            "prepared_statement_cache_size": 0,
             "prepared_statement_name_func": lambda: f"__asyncpg_{uuid.uuid4()}__",
         },
     )
