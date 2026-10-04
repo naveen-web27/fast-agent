@@ -10,6 +10,8 @@
 
 ## Local Setup
 
+For setting up a new dev or production environment on Render + Supabase (regions, env vars, auth, payments), see [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md).
+
 1. Use Python 3.12.8 (pinned in the repository's `.python-version`).
 2. Create `backend/.env` from `backend/.env.example` and add the real Supabase database URL.
 3. Install dependencies: `python3 -m pip install -r backend/requirements.txt`.

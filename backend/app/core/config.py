@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     app_name: str = "RightConnect API"
     api_prefix: str = "/api/v1"
     database_url: str = ""
+    # Only enable with Supabase's session pooler (port 5432) or a direct connection, never port 6543.
+    db_statement_cache: bool = False
     cors_origins: str = "http://localhost:8000,http://127.0.0.1:8000"
     supabase_url: str = ""
     supabase_publishable_key: str = ""

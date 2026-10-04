@@ -19,20 +19,26 @@ def _as_asyncpg_url(url: str) -> str:
 
 
 if settings.database_url:
+    # Transaction-mode pooler (port 6543) can hand each transaction a different backend, so nothing
+    # may be cached and statement names must be unique. Session mode (5432) keeps one backend per
+    # connection, so DB_STATEMENT_CACHE=true can reuse prepared statements and save a round trip per query.
+    cache_args = (
+        {}
+        if settings.db_statement_cache
+        else {
+            "statement_cache_size": 0,
+            "prepared_statement_cache_size": 0,
+            "prepared_statement_name_func": lambda: f"__asyncpg_{uuid.uuid4()}__",
+        }
+    )
     engine = create_async_engine(
         _as_asyncpg_url(settings.database_url),
-        # Opening a new TLS connection to Supabase costs ~1.5s, so keep a small pool.
-        # Supabase's pooler (transaction mode) can hand each transaction a different
-        # backend, so no statement may be cached across transactions and names must be unique.
+        # Opening a new TLS connection to Supabase is slow, so keep a small pool.
         pool_size=5,
         max_overflow=5,
         pool_pre_ping=True,
         pool_recycle=300,
-        connect_args={
-            "statement_cache_size": 0,
-            "prepared_statement_cache_size": 0,
-            "prepared_statement_name_func": lambda: f"__asyncpg_{uuid.uuid4()}__",
-        },
+        connect_args=cache_args,
     )
     SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 else:
