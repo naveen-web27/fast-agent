@@ -65,8 +65,9 @@
     .profile-card.locked > *:not(.lock-overlay) { filter:blur(6px); pointer-events:none; user-select:none; }
     .lock-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:rgba(255,255,255,.7); }
     .lock-overlay span { color:#8a5a00; font-size:11px; font-weight:800; }
-    /* The centred RightConnect icon (#api-spinner) is the only loading indicator. */
-    .spinner { display:none; }
+    .spinner { display:inline-block; width:13px; height:13px; margin-right:7px; vertical-align:-2px; border:2px solid rgba(8,138,130,.25); border-top-color:var(--teal); border-radius:50%; animation:rc-spin .65s linear infinite; }
+    .spinner-light { border-color:rgba(255,255,255,.35); border-top-color:#fff; }
+    @keyframes rc-spin { to { transform:rotate(360deg); } }
     button.is-loading { cursor:progress; }
     .save-toggle { transition:transform .15s ease; }
     .save-toggle:active { transform:scale(.92); }
@@ -75,9 +76,9 @@
     .toast.error { background:#7a2436; }
     .toast.success { background:#0f5c47; }
     .results-loading { opacity:.45; pointer-events:none; transition:opacity .15s; }
-    .api-spinner { position:fixed; left:50%; top:50%; z-index:210; display:flex; flex-direction:column; align-items:center; gap:10px; padding:18px 26px; color:var(--ink); border-radius:16px; background:rgba(255,255,255,.97); box-shadow:0 18px 50px rgba(22,35,58,.22); font-size:13px; font-weight:800; transform:translate(-50%,-50%); pointer-events:none; }
+    .api-spinner { position:fixed; inset:0; z-index:210; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; color:var(--ink); background:rgba(244,246,250,.96); font-size:16px; font-weight:800; }
     .api-spinner[hidden] { display:none; }
-    .api-spinner img { width:44px; height:44px; border-radius:12px; animation:rc-pulse 1.2s ease-in-out infinite; }
+    .api-spinner img { width:62px; height:62px; border-radius:16px; animation:rc-pulse 1.2s ease-in-out infinite; }
     .loading-dots { display:flex; gap:6px; }
     .loading-dots i { width:8px; height:8px; border-radius:50%; background:var(--teal); animation:rc-dot 1s ease-in-out infinite; }
     .loading-dots i:nth-child(2) { animation-delay:.15s; }
@@ -219,6 +220,27 @@
     .q .star-picker button { font-size:40px; }
     .modal-actions [hidden] { display:none; }
     @media (max-width:720px) { .how-steps { display:flex; } .how-step b { display:none; } .how-step { padding:9px 4px; } .how-step strong { font-size:12px; } }
+    .chat-head { justify-content:flex-start; }
+    .chat-head .chat-head-text { flex:1; min-width:0; }
+    .chat-head h2 { margin:0; font-size:16px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chat-head .chat-sub { display:block; overflow:hidden; color:var(--muted); font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
+    .chat-avatar { width:40px; height:40px; flex:none; font-size:13px; }
+    #request-timeline { display:flex; flex-direction:column; gap:3px; min-height:280px; max-height:60vh; padding:14px 12px; overflow-y:auto; background:#efeae2; }
+    #request-timeline > p { margin:auto !important; padding:6px 12px; border-radius:7px; background:rgba(255,255,255,.85); text-align:center; }
+    .chat-msg { display:flex; }
+    .chat-msg.mine { justify-content:flex-end; }
+    .bubble { max-width:78%; padding:6px 9px 4px; border-radius:9px; background:#fff; box-shadow:0 1px 1px rgba(11,20,26,.1); }
+    .chat-msg.mine .bubble { background:#d9fdd3; }
+    .bubble p { margin:0; color:#111b21; font-size:14px; line-height:1.35; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .bubble time { display:block; margin-top:2px; color:#667781; font-size:10px; text-align:right; }
+    .bubble-author { display:block; margin-bottom:1px; font-size:12px; }
+    .chat-msg.pending .bubble { opacity:.65; }
+    .chat-day,.chat-system { justify-content:center; margin:8px 0 4px; }
+    .chat-day span,.chat-system span { max-width:85%; padding:4px 10px; color:#54656f; border-radius:7px; background:#fff; box-shadow:0 1px 1px rgba(11,20,26,.08); font-size:11px; text-align:center; }
+    .chat-system span { background:#fff5c4; }
+    .chat-compose { display:flex; gap:8px; padding:10px; background:#f0f2f5; }
+    .chat-compose input { flex:1; min-width:0; padding:10px 14px; border:0; border-radius:20px; background:#fff; font:inherit; font-size:14px; }
+    .chat-compose .primary { border-radius:20px; }
   </style>
 </head>
 <body>
@@ -243,8 +265,6 @@
       <div class="page">
         <section class="view active" id="discover">
           <div class="page-title"><div><h1>Find help</h1></div><button class="primary" id="match-button">✦ Get matched</button></div>
-          <div class="how-steps" id="how-steps" aria-label="How it works"><div class="how-step"><b>1</b><strong>Search</strong></div><div class="how-step"><b>2</b><strong>Request</strong></div><div class="how-step"><b>3</b><strong>Reply</strong></div><div class="how-step"><b>4</b><strong>Decide</strong></div><button type="button" class="info" aria-expanded="false" aria-controls="info-how" aria-label="How it works">i</button></div>
-          <p class="info-text" id="info-how" hidden>Search what you need. Open a profile and tap <strong>Send request</strong> (free). Watch the bell for their reply, then chat in <strong>My requests</strong>. Stuck? Tap <strong>Help</strong>.</p>
           <div class="search-panel"><label class="search-field">⌕ <input id="search-input" placeholder="What do you need?"></label><div class="kind-toggle" id="kind-toggle" role="group" aria-label="Profile type filter"><button type="button" class="pill kind-pill selected" data-kind="expert">Experts</button><button type="button" class="pill kind-pill selected" data-kind="company">Companies</button><button type="button" class="pill kind-pill" id="kind-customer-pill" data-kind="customer" hidden>Customers</button></div><button class="primary" id="search-button">Search</button></div>
           <div class="dashboard-grid"><div><div class="filter-row"><h2 id="result-count">Loading profiles…</h2></div><div class="results" id="results"></div><div class="pagination" id="pagination" hidden><button class="secondary" id="page-prev" type="button">← Prev</button><span id="page-indicator">Page 1</span><button class="secondary" id="page-next" type="button">Next →</button></div></div><aside><div class="insight-card"><span class="section-tag">Top picks</span><div class="match-list" id="match-list"></div></div><div class="stat-grid"><div class="stat"><small>Reviews</small><strong id="stat-reviews">–</strong></div><div class="stat"><small>Avg. reply</small><strong id="stat-response">–</strong></div></div></aside></div>
         </section>
@@ -278,7 +298,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <div class="modal-scrim" id="modal-scrim" hidden></div>
   <div class="toast" id="toast" hidden></div>
-  <div class="api-spinner" id="api-spinner" role="status" aria-live="polite" hidden><img src="../assets/rightconnect-mark.svg" alt=""><span class="loading-dots" aria-hidden="true"><i></i><i></i><i></i></span>Loading…</div>
+  <div class="api-spinner" id="api-spinner" role="status" aria-live="polite" hidden><img src="../assets/rightconnect-mark.svg" alt=""><span class="loading-dots" aria-hidden="true"><i></i><i></i><i></i></span>Signing you in…</div>
+  <script>
+    // Signed-in visitors see the icon screen until their account is loaded; nothing else uses it.
+    if (Object.keys(localStorage).some((key) => key.startsWith('sb-') && key.endsWith('-auth-token'))) document.querySelector('#api-spinner').hidden = false;
+  </script>
   <div class="modal" id="expert-modal" hidden>
     <h2>Add your expert profile</h2>
     <form id="expert-form">
@@ -513,18 +537,11 @@
       return fallback;
     }
 
-    // Slow API calls show the centred RightConnect icon; network/server failures always tell the user something went wrong.
-    // Pass { background: true } in fetch options for silent polling.
-    const apiSpinner = document.querySelector('#api-spinner');
+    // Network/server failures always tell the user something went wrong. Pass { background: true } for silent polling.
     const nativeFetch = window.fetch.bind(window);
-    let apiInflight = 0;
-    let apiSpinnerTimer = null;
     window.fetch = async (input, init = {}) => {
       const target = new URL(typeof input === 'string' ? input : (input.url || String(input)), window.location.href);
       if (target.origin !== window.location.origin || !target.pathname.startsWith(apiBase) || init.background) return nativeFetch(input, init);
-      apiInflight += 1;
-      // Only slow calls show the icon so quick clicks don't flash it.
-      if (apiInflight === 1) apiSpinnerTimer = setTimeout(() => { apiSpinner.hidden = false; }, 400);
       try {
         const response = await nativeFetch(input, init);
         if (response.status >= 500) showToast('Something went wrong on our side. Please try again in a moment.', 'error');
@@ -532,9 +549,6 @@
       } catch (error) {
         showToast(navigator.onLine ? 'Something went wrong. Please check your connection and try again.' : 'You are offline. Check your internet connection.', 'error');
         throw error;
-      } finally {
-        apiInflight -= 1;
-        if (apiInflight === 0) { clearTimeout(apiSpinnerTimer); apiSpinner.hidden = true; }
       }
     };
 
@@ -934,7 +948,7 @@
       <div class="request-layout">
         <aside class="request-panel"><h2 id="requests-count">0 requests</h2><div id="requests-tabs" style="display:flex;gap:6px;margin-bottom:10px" hidden><button class="pill" type="button" id="requests-tab-sent">Sent<b class="tab-badge" id="requests-tab-sent-badge" hidden></b></button><button class="pill selected" type="button" id="requests-tab-received">Received<b class="tab-badge" id="requests-tab-received-badge" hidden></b></button></div><div id="requests-list"><p style="color:var(--muted);font-size:12px;margin:0">Sign in to see your requests.</p></div></aside>
         <section class="request-panel coordination">
-          <div class="coordination-head"><div><span class="section-tag" id="request-detail-tag">No request selected</span><h2 id="request-detail-title">Chat</h2></div><span class="pill selected" id="request-detail-status">–</span></div>
+          <div class="coordination-head chat-head"><span class="avatar chat-avatar" id="chat-avatar">?</span><div class="chat-head-text"><h2 id="request-detail-tag">Pick a chat</h2><span class="chat-sub" id="request-detail-title"></span></div><span class="pill selected" id="request-detail-status">–</span></div>
           <div class="stepper" id="request-stepper"></div>
           <div class="next-step" id="request-next-step" hidden></div>
           <div class="timeline" id="request-timeline"><p style="color:var(--muted);font-size:12px;margin:0">Pick a request.</p></div>
@@ -942,7 +956,7 @@
             <button class="primary" id="request-accept-button" hidden>Accept request</button>
             <button class="secondary" id="request-invite-company-button" hidden>+ Invite a company</button>
           </div>
-          <form id="request-message-form" style="display:flex;gap:8px;margin-top:10px"><input id="request-message-input" placeholder="Type a message…" style="flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:7px;font:inherit" disabled><button class="primary" type="submit" id="request-message-send" disabled>Send</button></form>
+          <form id="request-message-form" class="chat-compose"><input id="request-message-input" placeholder="Type a message" autocomplete="off" disabled><button class="primary" type="submit" id="request-message-send" disabled>Send</button></form>
         </section>
         <aside class="request-panel">
           <div id="request-expert-referral"></div>
@@ -1098,11 +1112,10 @@
         // Show what we already know straight away so the chat never looks stuck.
         const summary = requestsCache.find((request) => request.id === requestId);
         if (summary && switching) {
-          document.querySelector('#request-detail-tag').textContent = summary.counterpart_name;
-          document.querySelector('#request-detail-title').textContent = summary.title;
+          renderChatHeader(summary.counterpart_name, summary.title, false);
           document.querySelector('#request-detail-status').textContent = statusLabel(summary.status);
         }
-        if (switching || !timeline.querySelector('.event')) timeline.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">Loading messages…</p>';
+        if (switching || !timeline.querySelector('.chat-msg')) timeline.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0"><span class="spinner"></span>Loading messages…</p>';
         if (switching) {
           document.querySelector('#request-message-input').disabled = true;
           document.querySelector('#request-message-send').disabled = true;
@@ -1261,18 +1274,74 @@
       loadRequests({ silent: true });
     }
 
+    function initialsOf(name) {
+      return String(name || '?').split(' ').filter(Boolean).map((part) => part[0]).slice(0, 2).join('').toUpperCase();
+    }
+    function renderChatHeader(name, subtitle, isGroup) {
+      document.querySelector('#chat-avatar').textContent = isGroup ? '👥' : initialsOf(name);
+      document.querySelector('#request-detail-tag').textContent = name;
+      document.querySelector('#request-detail-title').textContent = subtitle;
+    }
+    // Everyone in the chat except me; more than one other person makes it a group chat.
+    function chatOthers(detail) {
+      let skipped = false;
+      return detail.participants.filter((participant) => {
+        if (!skipped && participant.participant_role === detail.my_role) { skipped = true; return false; }
+        return true;
+      });
+    }
+    const AUTHOR_COLORS = ['#1f7aec', '#d3396d', '#7a4ed6', '#c75c00', '#008069', '#a14d2a'];
+    function authorColor(name) {
+      let hash = 0;
+      for (const char of String(name)) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+      return AUTHOR_COLORS[hash % AUTHOR_COLORS.length];
+    }
+    function chatDayLabel(date) {
+      const today = new Date();
+      const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+      if (date.toDateString() === today.toDateString()) return 'Today';
+      if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+      return date.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+    function chatTime(date) { return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
+    function chatBubble(message, timeText, options = {}) {
+      const author = options.author ? `<b class="bubble-author" style="color:${authorColor(options.author)}">${escapeHtml(options.author)}</b>` : '';
+      return `<div class="chat-msg${options.mine ? ' mine' : ''}${options.pending ? ' pending' : ''}"><div class="bubble">${author}<p>${escapeHtml(message)}</p><time>${timeText}</time></div></div>`;
+    }
+    function renderChat(detail, isGroup) {
+      const timeline = document.querySelector('#request-timeline');
+      if (!detail.events.length) {
+        timeline.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:0">No messages yet. Say hello!</p>';
+        return;
+      }
+      let lastDay = '';
+      timeline.innerHTML = detail.events.map((event) => {
+        const when = new Date(event.created_at);
+        const day = chatDayLabel(when);
+        const separator = day !== lastDay ? `<div class="chat-msg chat-day"><span>${day}</span></div>` : '';
+        lastDay = day;
+        if (event.event_type !== 'message') return `${separator}<div class="chat-msg chat-system"><span>${escapeHtml(event.message)}</span></div>`;
+        const author = isGroup && !event.is_mine ? (event.author_name || 'Someone') : null;
+        return separator + chatBubble(event.message, chatTime(when), { mine: event.is_mine, author });
+      }).join('');
+      timeline.scrollTop = timeline.scrollHeight;
+    }
+
     let renderedDetailJson = null;
     function renderRequestDetail(detail) {
       requestDetailCache.set(detail.id, detail);
       renderedDetailJson = JSON.stringify(detail);
       markRequestSeen(detail.id, detail.updated_at);
-      document.querySelector('#request-detail-tag').textContent = detail.counterpart_name;
-      document.querySelector('#request-detail-title').textContent = detail.title;
+      const others = chatOthers(detail);
+      const isGroup = others.length > 1;
+      renderChatHeader(
+        isGroup ? others.map((participant) => participant.name).join(', ') : (others[0]?.name || detail.counterpart_name),
+        isGroup ? `Group · ${detail.title}` : detail.title,
+        isGroup,
+      );
       document.querySelector('#request-detail-status').textContent = statusLabel(detail.status);
       renderRequestProgress(detail);
-      document.querySelector('#request-timeline').innerHTML = detail.events.length
-        ? detail.events.map((event) => `<div class="event"><i class="event-dot"></i><time>${new Date(event.created_at).toLocaleString()}</time><strong>${escapeHtml(event.author_name || 'System')}</strong><p>${escapeHtml(event.message)}</p></div>`).join('')
-        : '<p style="color:var(--muted);font-size:12px;margin:0">No messages yet. Type below to say hello or ask a question.</p>';
+      renderChat(detail, isGroup);
 
       document.querySelector('#request-participants').innerHTML = detail.participants.length
         ? detail.participants.map((participant) => {
@@ -1383,12 +1452,12 @@
       const seq = ++messageSendSeq;
       // Show the message right away; the server reply replaces the whole timeline.
       const timeline = document.querySelector('#request-timeline');
-      if (!timeline.querySelector('.event')) timeline.innerHTML = '';
-      const pending = document.createElement('div');
-      pending.className = 'event';
-      pending.style.opacity = '.6';
-      pending.innerHTML = `<i class="event-dot"></i><time>Sending…</time><strong>${escapeHtml(currentUser?.full_name || 'You')}</strong><p>${escapeHtml(message)}</p>`;
+      if (!timeline.querySelector('.chat-msg')) timeline.innerHTML = '';
+      const holder = document.createElement('div');
+      holder.innerHTML = chatBubble(message, 'Sending…', { mine: true, pending: true });
+      const pending = holder.firstElementChild;
       timeline.appendChild(pending);
+      timeline.scrollTop = timeline.scrollHeight;
       input.value = '';
       const restore = () => {
         pending.remove();
@@ -1717,7 +1786,6 @@
       // Stay on the dashboard if it's open (it reloads for the new identity); otherwise go to discover.
       if (!options.keepView) showView(document.querySelector('#dashboard').classList.contains('active') ? 'dashboard' : 'discover');
       currentPage = 1;
-      document.querySelector('#how-steps').hidden = type !== 'customer';
       customerPill.hidden = type === 'customer';
       setKindSelection(type === 'customer' ? ['expert', 'company'] : ['customer']);
       refreshDiscoverResults();
@@ -1899,34 +1967,36 @@
       maybeShowNeedDone(user);
     }
 
-    (async function initSession() {
-      // Always check the real Supabase session (persists in localStorage across tabs/refreshes)
-      // instead of only trusting our own sessionStorage cache, which is per-tab and easy to lose.
+    // Always check the real Supabase session (persists in localStorage across tabs/refreshes)
+    // instead of only trusting our own sessionStorage cache, which is per-tab and easy to lose.
+    async function signIn() {
       try {
         const configResponse = await fetch(`${apiBase}/auth/provider-config`);
         const config = await configResponse.json();
-        if (!config.supabase_url || !config.supabase_publishable_key) return;
+        if (!config.supabase_url || !config.supabase_publishable_key) return false;
         authClient = window.supabase.createClient(config.supabase_url, config.supabase_publishable_key);
         const { data } = await authClient.auth.getSession();
-        if (!data.session) return;
+        if (!data.session) return false;
         accessToken = data.session.access_token;
-      } catch (_) {
-        return;
-      }
-
-      try {
         const meResponse = await fetch(`${apiBase}/auth/me`, { headers: authHeaders() });
         if (meResponse.status === 403) {
           showToast(await extractErrorMessage(meResponse, 'Your account has been suspended.'), 'error');
           await authClient.auth.signOut();
           accessToken = null;
-          return;
+          return false;
         }
-        if (!meResponse.ok) return;
+        if (!meResponse.ok) return false;
         applySignedInUser(await meResponse.json());
+        return true;
       } catch (_) {
-        return;
+        return false;
       }
+    }
+
+    (async function initSession() {
+      const signedIn = await signIn();
+      document.querySelector('#api-spinner').hidden = true;
+      if (!signedIn) return;
 
       await loadIdentities();
       await loadRequests();

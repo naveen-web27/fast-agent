@@ -107,6 +107,7 @@ class ReviewTargetOut(BaseModel):
 class RequestEventOut(BaseModel):
     id: UUID
     author_name: str | None
+    is_mine: bool = False
     event_type: str
     message: str
     created_at: datetime

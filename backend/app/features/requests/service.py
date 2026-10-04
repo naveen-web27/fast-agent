@@ -399,6 +399,7 @@ async def _build_detail(
             RequestEventOut(
                 id=event.id,
                 author_name=author.full_name if author is not None else None,
+                is_mine=event.author_id == user.id,
                 event_type=event.event_type,
                 message=event.message,
                 created_at=event.created_at,
