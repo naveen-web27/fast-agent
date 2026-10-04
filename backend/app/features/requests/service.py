@@ -1,13 +1,16 @@
 """Service layer for submitting, listing, and messaging within customer requests."""
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import lazyload
 
-from app.core.plans import company_plan_active, require_plan
-from app.features.booking.slots import bookable_profiles, request_appointments
+from app.core.plans import company_plan_active, expert_plan_active, require_plan
+from app.features.booking.slots import request_appointments
 from app.features.requests.schemas import (
+    BookableProfileOut,
     ContactInfo,
     CreateRequestPayload,
     CreateReviewPayload,
@@ -22,6 +25,7 @@ from app.features.requests.schemas import (
     ReviewTargetOut,
     SocialLinkOut,
 )
+from app.models.availability import AvailabilitySlot
 from app.models.organization_member import MemberRole, OrganizationMember
 from app.models.profile import Organization, Profile, ProfileKind, Service, VerificationStatus
 from app.models.request import Request, RequestEvent, RequestParticipant, RequestStatus
@@ -90,49 +94,132 @@ def _is_mine(participant: RequestParticipant, user: User, my_org_ids: set[UUID])
     )
 
 
-async def _social_links_for_profile(session: AsyncSession, profile_id: UUID) -> list[SocialLinkOut]:
-    links = await session.scalars(select(SocialLink).where(SocialLink.profile_id == profile_id))
-    return [SocialLinkOut(platform=link.platform, url=link.url) for link in links.all()]
+@dataclass
+class _Lookups:
+    """Users, companies, profiles and links a request view needs, fetched in a few batched queries."""
+
+    users: dict[UUID, User] = field(default_factory=dict)
+    organizations: dict[UUID, Organization] = field(default_factory=dict)
+    expert_profiles: dict[UUID, Profile] = field(default_factory=dict)  # by user_id
+    company_profiles: dict[UUID, Profile] = field(default_factory=dict)  # by organization_id
+    social_links: dict[UUID, list[SocialLinkOut]] = field(default_factory=dict)  # by profile_id
+    org_admins: dict[UUID, User] = field(default_factory=dict)  # earliest admin by organization_id
+    reviewed: dict[UUID, set[UUID]] = field(default_factory=dict)  # request_id -> profile ids the viewer rated
+
+    def participant_profile(self, participant: RequestParticipant) -> Profile | None:
+        if participant.user_id is not None:
+            return self.expert_profiles.get(participant.user_id)
+        return self.company_profiles.get(participant.organization_id)
+
+    def display_name(self, participant: RequestParticipant) -> str:
+        if participant.user_id is not None:
+            profile = self.expert_profiles.get(participant.user_id)
+            if profile is not None:
+                return profile.display_name
+            user = self.users.get(participant.user_id)
+            return user.full_name if user is not None else "Unknown"
+        if participant.organization_id is not None:
+            organization = self.organizations.get(participant.organization_id)
+            return organization.name if organization is not None else "Unknown company"
+        return "Unknown"
 
 
-async def _contact_info_for_user(session: AsyncSession, target_user: User) -> ContactInfo:
-    """Contact card for an individual (customer or expert), including their expert profile's social links."""
-    expert_profile = await session.scalar(
-        select(Profile).where(
-            Profile.user_id == target_user.id, Profile.kind == ProfileKind.EXPERT, Profile.deleted_at.is_(None)
+async def _load_lookups(
+    session: AsyncSession,
+    user: User,
+    requests: list[Request],
+    participants: list[RequestParticipant],
+    extra_user_ids: set[UUID] | None = None,
+    with_contacts: bool = False,
+) -> _Lookups:
+    lookups = _Lookups()
+    user_ids = {request.customer_id for request in requests} | (extra_user_ids or set())
+    for participant in participants:
+        user_ids.update(uid for uid in (participant.user_id, participant.assigned_user_id) if uid is not None)
+    org_ids = {participant.organization_id for participant in participants if participant.organization_id is not None}
+
+    if user_ids:
+        rows = await session.scalars(select(User).where(User.id.in_(user_ids)))
+        lookups.users = {row.id: row for row in rows.all()}
+    if org_ids:
+        rows = await session.scalars(select(Organization).where(Organization.id.in_(org_ids)))
+        lookups.organizations = {row.id: row for row in rows.all()}
+
+    profile_filters = []
+    if user_ids:
+        profile_filters.append(
+            and_(Profile.kind == ProfileKind.EXPERT, Profile.user_id.in_(user_ids), Profile.deleted_at.is_(None))
         )
-    )
-    social_links = await _social_links_for_profile(session, expert_profile.id) if expert_profile is not None else []
+    if org_ids:
+        profile_filters.append(and_(Profile.kind == ProfileKind.COMPANY, Profile.organization_id.in_(org_ids)))
+    if profile_filters:
+        # Live company profiles sort first so they win over deleted ones for the same organization.
+        rows = await session.scalars(
+            select(Profile)
+            .options(lazyload(Profile.services))
+            .where(or_(*profile_filters))
+            .order_by(Profile.deleted_at.desc().nulls_first())
+        )
+        for profile in rows.all():
+            if profile.kind is ProfileKind.EXPERT:
+                lookups.expert_profiles[profile.user_id] = profile
+            else:
+                lookups.company_profiles.setdefault(profile.organization_id, profile)
+
+    if with_contacts:
+        if org_ids:
+            admin_rows = await session.execute(
+                select(OrganizationMember.organization_id, User)
+                .join(User, User.id == OrganizationMember.user_id)
+                .where(
+                    OrganizationMember.organization_id.in_(org_ids),
+                    OrganizationMember.member_role == MemberRole.ADMIN.value,
+                )
+                .order_by(OrganizationMember.created_at)
+            )
+            for organization_id, admin in admin_rows.all():
+                lookups.org_admins.setdefault(organization_id, admin)
+        profile_ids = [profile.id for profile in (*lookups.expert_profiles.values(), *lookups.company_profiles.values())]
+        if profile_ids:
+            links = await session.scalars(select(SocialLink).where(SocialLink.profile_id.in_(profile_ids)))
+            for link in links.all():
+                lookups.social_links.setdefault(link.profile_id, []).append(SocialLinkOut(platform=link.platform, url=link.url))
+
+    completed_ids = [request.id for request in requests if request.status is RequestStatus.COMPLETED]
+    if completed_ids:
+        review_rows = await session.execute(
+            select(Review.request_id, Review.profile_id).where(
+                Review.reviewer_id == user.id, Review.request_id.in_(completed_ids)
+            )
+        )
+        for request_id, profile_id in review_rows.all():
+            lookups.reviewed.setdefault(request_id, set()).add(profile_id)
+    return lookups
+
+
+def _contact_for_user(target_user: User, lookups: _Lookups) -> ContactInfo:
+    """Contact card for an individual (customer or expert), including their expert profile's social links."""
+    expert_profile = lookups.expert_profiles.get(target_user.id)
     return ContactInfo(
         full_name=target_user.full_name,
         email=target_user.email,
         phone=target_user.phone,
-        social_links=social_links,
+        social_links=lookups.social_links.get(expert_profile.id, []) if expert_profile is not None else [],
     )
 
 
-async def _contact_info_for_organization(
-    session: AsyncSession, organization: Organization, assigned_user_id: UUID | None = None
-) -> ContactInfo:
+def _contact_for_organization(organization: Organization, assigned_user_id: UUID | None, lookups: _Lookups) -> ContactInfo:
     """Contact card for a company: the assigned team member (or primary admin) plus the company's social links."""
-    contact_user = await session.get(User, assigned_user_id) if assigned_user_id is not None else None
+    contact_user = lookups.users.get(assigned_user_id) if assigned_user_id is not None else None
     if contact_user is None or contact_user.deleted_at is not None:
-        admin_member = await session.scalar(
-            select(OrganizationMember)
-            .where(OrganizationMember.organization_id == organization.id, OrganizationMember.member_role == MemberRole.ADMIN.value)
-            .order_by(OrganizationMember.created_at)
-        )
-        contact_user = await session.get(User, admin_member.user_id) if admin_member is not None else None
-    company_profile = await session.scalar(
-        select(Profile).where(Profile.organization_id == organization.id, Profile.kind == ProfileKind.COMPANY)
-    )
-    social_links = await _social_links_for_profile(session, company_profile.id) if company_profile is not None else []
+        contact_user = lookups.org_admins.get(organization.id)
+    company_profile = lookups.company_profiles.get(organization.id)
     return ContactInfo(
         full_name=organization.name if assigned_user_id is None or contact_user is None else f"{contact_user.full_name} · {organization.name}",
         email=contact_user.email if contact_user is not None else None,
         phone=contact_user.phone if contact_user is not None else None,
         website_url=organization.website_url,
-        social_links=social_links,
+        social_links=lookups.social_links.get(company_profile.id, []) if company_profile is not None else [],
     )
 
 
@@ -155,19 +242,13 @@ async def _expert_client_stats(session: AsyncSession, expert_user_id: UUID) -> l
 
 
 async def _expert_referral_info(
-    session: AsyncSession, participants: list[RequestParticipant]
+    session: AsyncSession, participants: list[RequestParticipant], lookups: _Lookups
 ) -> ExpertReferralInfo | None:
     """Credibility snapshot of the expert on this request, so an invited company can vet them."""
     expert_participant = next((p for p in participants if p.participant_role == "expert" and p.user_id is not None), None)
     if expert_participant is None:
         return None
-    profile = await session.scalar(
-        select(Profile).where(
-            Profile.user_id == expert_participant.user_id,
-            Profile.kind == ProfileKind.EXPERT,
-            Profile.deleted_at.is_(None),
-        )
-    )
+    profile = lookups.expert_profiles.get(expert_participant.user_id)
     if profile is None:
         return None
     return ExpertReferralInfo(
@@ -181,47 +262,18 @@ async def _expert_referral_info(
     )
 
 
-async def _participant_display_name(session: AsyncSession, participant: RequestParticipant) -> str:
-    if participant.user_id is not None:
-        profile = await session.scalar(
-            select(Profile).where(
-                Profile.user_id == participant.user_id, Profile.kind == ProfileKind.EXPERT, Profile.deleted_at.is_(None)
-            )
-        )
-        if profile is not None:
-            return profile.display_name
-        user = await session.get(User, participant.user_id)
-        return user.full_name if user is not None else "Unknown"
-    if participant.organization_id is not None:
-        organization = await session.get(Organization, participant.organization_id)
-        return organization.name if organization is not None else "Unknown company"
-    return "Unknown"
-
-
 def _my_participants(
     participants: list[RequestParticipant], user: User, my_org_ids: set[UUID]
 ) -> list[RequestParticipant]:
     return [participant for participant in participants if _is_mine(participant, user, my_org_ids)]
 
 
-async def _participant_profile(session: AsyncSession, participant: RequestParticipant) -> Profile | None:
-    if participant.user_id is not None:
-        return await session.scalar(
-            select(Profile).where(
-                Profile.user_id == participant.user_id, Profile.kind == ProfileKind.EXPERT, Profile.deleted_at.is_(None)
-            )
-        )
-    return await session.scalar(
-        select(Profile).where(Profile.organization_id == participant.organization_id, Profile.kind == ProfileKind.COMPANY)
-    )
-
-
-async def _review_targets(
-    session: AsyncSession,
+def _targets(
     request: Request,
     user: User,
     my_org_ids: set[UUID],
     participants: list[RequestParticipant],
+    lookups: _Lookups,
 ) -> list[ReviewTargetOut]:
     """Who the viewer may rate: customer -> every accepted provider; accepted expert -> accepted company."""
     if request.status is not RequestStatus.COMPLETED:
@@ -239,19 +291,13 @@ async def _review_targets(
     if not candidates:
         return []
 
-    reviewed_profile_ids = set(
-        (
-            await session.scalars(
-                select(Review.profile_id).where(Review.request_id == request.id, Review.reviewer_id == user.id)
-            )
-        ).all()
-    )
+    reviewed_profile_ids = lookups.reviewed.get(request.id, set())
     opens_at = (request.completed_at or request.updated_at) + COMPLETION_REVIEW_GRACE
     now = datetime.now(timezone.utc)
 
     targets = []
     for participant in candidates:
-        profile = await _participant_profile(session, participant)
+        profile = lookups.participant_profile(participant)
         if profile is None or profile.user_id == user.id:
             continue
         if profile.id in reviewed_profile_ids:
@@ -276,12 +322,25 @@ async def _review_targets(
     return targets
 
 
-async def _pending_action(
+async def _review_targets(
     session: AsyncSession,
     request: Request,
     user: User,
     my_org_ids: set[UUID],
     participants: list[RequestParticipant],
+) -> list[ReviewTargetOut]:
+    """Who the viewer may rate: customer -> every accepted provider; accepted expert -> accepted company."""
+    if request.status is not RequestStatus.COMPLETED:
+        return []
+    return _targets(request, user, my_org_ids, participants, await _load_lookups(session, user, [request], participants))
+
+
+def _pending_action(
+    request: Request,
+    user: User,
+    my_org_ids: set[UUID],
+    participants: list[RequestParticipant],
+    lookups: _Lookups,
 ) -> str | None:
     """The one thing the viewer still needs to do on this request, used for the red notification count."""
     if request.status is RequestStatus.CANCELLED:
@@ -293,27 +352,27 @@ async def _pending_action(
         p.accepted_at is not None and p.completion_confirmed_at is None and p.completion_disputed_at is None for p in mine
     ):
         return "confirm_completion"
-    targets = await _review_targets(session, request, user, my_org_ids, participants)
+    targets = _targets(request, user, my_org_ids, participants, lookups)
     return "review" if any(target.state == "open" for target in targets) else None
 
 
-async def _build_summary(
-    session: AsyncSession, request: Request, user: User, my_org_ids: set[UUID], participants: list[RequestParticipant]
+def _build_summary(
+    request: Request, user: User, my_org_ids: set[UUID], participants: list[RequestParticipant], lookups: _Lookups
 ) -> RequestSummary:
     assigned_to_name = None
     customer_looking = True
     if request.customer_id == user.id:
         my_role = "customer"
-        names = [await _participant_display_name(session, participant) for participant in participants]
+        names = [lookups.display_name(participant) for participant in participants]
         counterpart_name = ", ".join(names) if names else "Awaiting a match"
     else:
         mine = next((participant for participant in participants if _is_mine(participant, user, my_org_ids)), None)
         my_role = mine.participant_role if mine is not None else "expert"
-        customer = await session.get(User, request.customer_id)
+        customer = lookups.users.get(request.customer_id)
         counterpart_name = customer.full_name if customer is not None else "Customer"
         customer_looking = customer is not None and customer.looking_for_help
         if mine is not None and mine.assigned_user_id is not None:
-            assignee = await session.get(User, mine.assigned_user_id)
+            assignee = lookups.users.get(mine.assigned_user_id)
             assigned_to_name = assignee.full_name if assignee is not None else None
 
     return RequestSummary(
@@ -324,13 +383,43 @@ async def _build_summary(
         status=request.status.value,
         my_role=my_role,
         counterpart_name=counterpart_name,
-        pending_action=await _pending_action(session, request, user, my_org_ids, participants),
+        pending_action=_pending_action(request, user, my_org_ids, participants, lookups),
         assigned_to_name=assigned_to_name,
         customer_looking=customer_looking,
         completed_at=request.completed_at,
         created_at=request.created_at,
         updated_at=request.updated_at,
     )
+
+
+async def _bookable_profiles(
+    session: AsyncSession, participants: list[RequestParticipant], lookups: _Lookups
+) -> list[BookableProfileOut]:
+    """Accepted providers on a paid plan who have published weekly availability."""
+    candidates = []
+    for participant in participants:
+        profile = lookups.participant_profile(participant)
+        if participant.accepted_at is None or profile is None or profile.deleted_at is not None or profile.blocked_at is not None:
+            continue
+        paid = (
+            expert_plan_active(profile)
+            if profile.kind is ProfileKind.EXPERT
+            else company_plan_active(lookups.organizations.get(profile.organization_id))
+        )
+        if paid:
+            candidates.append(profile)
+    if not candidates:
+        return []
+    with_slots = set(
+        (
+            await session.scalars(
+                select(AvailabilitySlot.profile_id)
+                .where(AvailabilitySlot.profile_id.in_([profile.id for profile in candidates]))
+                .distinct()
+            )
+        ).all()
+    )
+    return [BookableProfileOut(profile_id=profile.id, name=profile.display_name) for profile in candidates if profile.id in with_slots]
 
 
 async def _build_detail(
@@ -344,7 +433,7 @@ async def _build_detail(
         participants = (
             await session.scalars(select(RequestParticipant).where(RequestParticipant.request_id == request.id))
         ).all()
-    summary = await _build_summary(session, request, user, my_org_ids, list(participants))
+    participants = list(participants)
 
     # The customer never gets an explicit request_participants row, so synthesize their entry here.
     # They're treated as always-accepted since they're the one who opened the request.
@@ -352,35 +441,49 @@ async def _build_detail(
     viewer_participant = next((participant for participant in participants if _is_mine(participant, user, my_org_ids)), None)
     viewer_accepted = viewer_is_customer or (viewer_participant is not None and viewer_participant.accepted_at is not None)
 
-    customer_user = await session.get(User, request.customer_id)
+    events = (
+        await session.scalars(
+            select(RequestEvent).where(RequestEvent.request_id == request.id).order_by(RequestEvent.created_at)
+        )
+    ).all()
+    lookups = await _load_lookups(
+        session,
+        user,
+        [request],
+        participants,
+        extra_user_ids={event.author_id for event in events if event.author_id is not None},
+        with_contacts=viewer_accepted,
+    )
+    summary = _build_summary(request, user, my_org_ids, participants, lookups)
+
+    customer_user = lookups.users.get(request.customer_id)
     participant_payload = [
         RequestParticipantOut(
             participant_role="customer",
             name=customer_user.full_name if customer_user is not None else "Customer",
             accepted_at=request.created_at,
-            contact=await _contact_info_for_user(session, customer_user) if viewer_accepted and customer_user is not None else None,
+            contact=_contact_for_user(customer_user, lookups) if viewer_accepted and customer_user is not None else None,
         )
     ]
     for participant in participants:
-        entry_accepted = participant.accepted_at is not None
         contact = None
-        if entry_accepted and viewer_accepted:
+        if participant.accepted_at is not None and viewer_accepted:
             if participant.user_id is not None:
-                participant_user = await session.get(User, participant.user_id)
-                contact = await _contact_info_for_user(session, participant_user) if participant_user is not None else None
+                participant_user = lookups.users.get(participant.user_id)
+                contact = _contact_for_user(participant_user, lookups) if participant_user is not None else None
             elif participant.organization_id is not None:
-                organization = await session.get(Organization, participant.organization_id)
+                organization = lookups.organizations.get(participant.organization_id)
                 contact = (
-                    await _contact_info_for_organization(session, organization, participant.assigned_user_id)
+                    _contact_for_organization(organization, participant.assigned_user_id, lookups)
                     if organization is not None
                     else None
                 )
-        assignee = await session.get(User, participant.assigned_user_id) if participant.assigned_user_id else None
-        participant_profile = await _participant_profile(session, participant)
+        assignee = lookups.users.get(participant.assigned_user_id) if participant.assigned_user_id else None
+        participant_profile = lookups.participant_profile(participant)
         participant_payload.append(
             RequestParticipantOut(
                 participant_role=participant.participant_role,
-                name=participant_profile.display_name if participant_profile is not None else await _participant_display_name(session, participant),
+                name=participant_profile.display_name if participant_profile is not None else lookups.display_name(participant),
                 profile_id=participant_profile.id if participant_profile is not None else None,
                 accepted_at=participant.accepted_at,
                 completion_confirmed_at=participant.completion_confirmed_at,
@@ -390,14 +493,9 @@ async def _build_detail(
             )
         )
 
-    events = (
-        await session.scalars(
-            select(RequestEvent).where(RequestEvent.request_id == request.id).order_by(RequestEvent.created_at)
-        )
-    ).all()
     event_payload = []
     for event in events:
-        author = await session.get(User, event.author_id) if event.author_id is not None else None
+        author = lookups.users.get(event.author_id) if event.author_id is not None else None
         event_payload.append(
             RequestEventOut(
                 id=event.id,
@@ -409,7 +507,7 @@ async def _build_detail(
             )
         )
 
-    expert_referral = await _expert_referral_info(session, list(participants))
+    expert_referral = await _expert_referral_info(session, participants, lookups)
     can_mark_done = (
         viewer_is_customer
         and request.status not in (RequestStatus.COMPLETED, RequestStatus.CANCELLED)
@@ -421,7 +519,7 @@ async def _build_detail(
     admin_company = next(
         (p for p in participants if p.organization_id is not None and p.organization_id in my_org_ids), None
     )
-    if admin_company is not None and company_plan_active(await session.get(Organization, admin_company.organization_id)):
+    if admin_company is not None and company_plan_active(lookups.organizations.get(admin_company.organization_id)):
         member_rows = (
             await session.execute(
                 select(User.id, User.full_name, OrganizationMember.member_role)
@@ -441,12 +539,12 @@ async def _build_detail(
         events=event_payload,
         expert_referral=expert_referral,
         can_mark_done=can_mark_done,
-        review_targets=await _review_targets(session, request, user, my_org_ids, list(participants)),
+        review_targets=_targets(request, user, my_org_ids, participants, lookups),
         can_assign=bool(assignable_members),
         assignable_members=assignable_members,
         assigned_user_id=admin_company.assigned_user_id if admin_company is not None else None,
         appointments=await request_appointments(session, request.id),
-        bookable_profiles=await bookable_profiles(session, list(participants)) if viewer_is_customer and open_request else [],
+        bookable_profiles=await _bookable_profiles(session, participants, lookups) if viewer_is_customer and open_request else [],
     )
 
 
@@ -521,14 +619,17 @@ async def list_requests(session: AsyncSession, auth_user_id: UUID) -> list[Reque
         return []
 
     participants_by_request: dict[UUID, list[RequestParticipant]] = {request.id: [] for request in requests}
-    all_participants = await session.scalars(
-        select(RequestParticipant).where(RequestParticipant.request_id.in_(participants_by_request.keys()))
-    )
-    for participant in all_participants.all():
+    all_participants = (
+        await session.scalars(
+            select(RequestParticipant).where(RequestParticipant.request_id.in_(participants_by_request.keys()))
+        )
+    ).all()
+    for participant in all_participants:
         participants_by_request[participant.request_id].append(participant)
 
+    lookups = await _load_lookups(session, user, list(requests), list(all_participants))
     return [
-        await _build_summary(session, request, user, my_org_ids, participants_by_request[request.id])
+        _build_summary(request, user, my_org_ids, participants_by_request[request.id], lookups)
         for request in requests
     ]
 
