@@ -27,9 +27,8 @@ Users are in India, so Singapore is also the closest region to them (~50 ms vs ~
 1. **New project** → Region **Southeast Asia (Singapore) – ap-southeast-1**. Save the database password in a password manager.
    - Plan: Free works, but free projects **pause after 7 days without traffic** and have no daily backups. Use **Pro** for production.
 2. **Create the schema** (SQL Editor → New query):
-   1. Paste and run all of `db/schema.sql` (it already contains everything up to migration 015).
-   2. Run `db/migrations/016_enable_rls.sql` (blocks the public REST API from reading tables; the backend is unaffected).
-   3. Do **not** run `db/seed.sql` (demo profiles and fake reviews).
+   1. Paste and run all of `db/schema.sql`. It contains every migration up to 016 (including RLS), so no migration files are needed on a new database.
+   2. Do **not** run `db/seed.sql` (demo profiles and fake reviews).
 3. **Connection string** (Project Settings → Database → Connection string → **Session pooler**):
    - Use the **session pooler, port `5432`**: `postgresql://postgres.<ref>:<password>@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres`
    - Do not use the direct `db.<ref>.supabase.co` host (IPv6-only, Render cannot reach it).

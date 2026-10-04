@@ -310,3 +310,15 @@ CREATE UNIQUE INDEX request_participants_organization_unique_idx
 -- payments is created before profiles/organizations, so its identity links are added here.
 ALTER TABLE payments ADD COLUMN profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL;
 ALTER TABLE payments ADD COLUMN organization_id UUID REFERENCES organizations(id) ON DELETE SET NULL;
+
+CREATE INDEX saved_profiles_user_idx ON saved_profiles(user_id, created_at DESC);
+
+-- Block Supabase's public REST API (anon key) from reading tables; the backend connects as owner and bypasses RLS.
+DO $$
+DECLARE
+    t record;
+BEGIN
+    FOR t IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP
+        EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t.tablename);
+    END LOOP;
+END $$;
