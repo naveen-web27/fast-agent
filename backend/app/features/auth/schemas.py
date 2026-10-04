@@ -6,6 +6,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
+from app.core.links import normalize_url
+
 Role = Literal["customer", "expert", "company_admin", "platform_admin"]
 OnboardingRole = Literal["customer", "expert", "company_admin"]
 
@@ -69,6 +71,24 @@ class UserResponse(BaseModel):
     subscription_expires_at: str | None = None
     looking_for_help: bool = True
     need_fulfilled_at: datetime | None = None
+    bio: str | None = None
+    city: str | None = None
+    avatar_url: str | None = None
+    member_since: datetime | None = None
+
+
+class MyProfileUpdate(BaseModel):
+    """The light customer profile. Only the fields sent are changed."""
+
+    full_name: str | None = Field(default=None, min_length=2, max_length=120)
+    bio: str | None = Field(default=None, max_length=1000)
+    city: str | None = Field(default=None, max_length=100)
+    avatar_url: str | None = Field(default=None, max_length=500)
+
+    @field_validator("avatar_url")
+    @classmethod
+    def _avatar(cls, value: str | None) -> str | None:
+        return normalize_url(value) if value and value.strip() else None
 
 
 class ExpertProfileRequest(BaseModel):

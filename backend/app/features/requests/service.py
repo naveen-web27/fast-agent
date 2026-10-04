@@ -11,6 +11,7 @@ from app.features.requests.schemas import (
     ContactInfo,
     CreateRequestPayload,
     CreateReviewPayload,
+    CustomerProfileOut,
     DomainClientStat,
     ExpertReferralInfo,
     MemberOption,
@@ -375,10 +376,12 @@ async def _build_detail(
                     else None
                 )
         assignee = await session.get(User, participant.assigned_user_id) if participant.assigned_user_id else None
+        participant_profile = await _participant_profile(session, participant)
         participant_payload.append(
             RequestParticipantOut(
                 participant_role=participant.participant_role,
-                name=await _participant_display_name(session, participant),
+                name=participant_profile.display_name if participant_profile is not None else await _participant_display_name(session, participant),
+                profile_id=participant_profile.id if participant_profile is not None else None,
                 accepted_at=participant.accepted_at,
                 completion_confirmed_at=participant.completion_confirmed_at,
                 completion_disputed_at=participant.completion_disputed_at,
@@ -534,6 +537,35 @@ def _or(conditions):
     from sqlalchemy import or_
 
     return or_(*conditions)
+
+
+async def get_customer_profile(session: AsyncSession, auth_user_id: UUID, request_id: UUID) -> CustomerProfileOut:
+    """The customer's light profile, for anyone taking part in this request."""
+    user = await _get_user(session, auth_user_id)
+    request = await session.get(Request, request_id)
+    if request is None:
+        raise RequestNotFoundError("Request not found")
+    my_org_ids = await _my_organization_ids(session, user.id)
+    participants = (
+        await session.scalars(select(RequestParticipant).where(RequestParticipant.request_id == request.id))
+    ).all()
+    if not _is_participant(request, user, my_org_ids, list(participants)):
+        raise RequestAccessError("You do not have access to this request")
+    customer = await session.get(User, request.customer_id)
+    if customer is None:
+        raise RequestNotFoundError("Customer not found")
+    completed = await session.scalar(
+        select(func.count()).select_from(Request).where(Request.customer_id == customer.id, Request.status == RequestStatus.COMPLETED)
+    )
+    return CustomerProfileOut(
+        full_name=customer.full_name,
+        avatar_url=customer.avatar_url,
+        city=customer.city,
+        bio=customer.bio,
+        interests=customer.interests,
+        member_since=customer.created_at,
+        completed_requests=completed or 0,
+    )
 
 
 async def get_request_detail(session: AsyncSession, auth_user_id: UUID, request_id: UUID) -> RequestDetail:

@@ -5,6 +5,7 @@ from uuid import UUID
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.links import detect_platform
 from app.core.plans import (
     CREDENTIAL_LIMIT,
     OFFERING_LIMIT,
@@ -18,6 +19,10 @@ from app.features.profiles.schemas import (
     AvailabilityWindow,
     CredentialIn,
     CredentialOut,
+    EducationIn,
+    EducationOut,
+    ExperienceIn,
+    ExperienceOut,
     ManagedProfile,
     OfferingIn,
     OfferingOut,
@@ -29,9 +34,12 @@ from app.features.profiles.schemas import (
 from app.models.availability import AvailabilitySlot
 from app.models.organization_member import MemberRole, OrganizationMember
 from app.models.profile import Organization, Profile, ProfileKind, Service
-from app.models.profile_extras import Credential, ProfileOffering
+from app.models.profile_extras import Credential, ProfileEducation, ProfileExperience, ProfileOffering
 from app.models.social_link import SocialLink
 from app.models.user import active_user_by_auth_id
+
+EXPERIENCE_LIMIT = 30
+EDUCATION_LIMIT = 15
 
 
 class ProfileNotFoundError(Exception):
@@ -87,6 +95,47 @@ async def _services_by_name(session: AsyncSession, names: list[str]) -> list[Ser
     return services
 
 
+async def load_experiences(session: AsyncSession, profile_id: UUID) -> list[ExperienceOut]:
+    """Current roles first, then most recent."""
+    rows = await session.scalars(
+        select(ProfileExperience)
+        .where(ProfileExperience.profile_id == profile_id)
+        .order_by(ProfileExperience.end_date.desc().nulls_first(), ProfileExperience.start_date.desc())
+    )
+    return [
+        ExperienceOut(
+            id=row.id,
+            title=row.title,
+            organization=row.organization,
+            location=row.location,
+            start_date=row.start_date,
+            end_date=row.end_date,
+            description=row.description,
+        )
+        for row in rows.all()
+    ]
+
+
+async def load_educations(session: AsyncSession, profile_id: UUID) -> list[EducationOut]:
+    rows = await session.scalars(
+        select(ProfileEducation)
+        .where(ProfileEducation.profile_id == profile_id)
+        .order_by(ProfileEducation.end_year.desc().nulls_first(), ProfileEducation.start_year.desc().nulls_last())
+    )
+    return [
+        EducationOut(
+            id=row.id,
+            school=row.school,
+            degree=row.degree,
+            field_of_study=row.field_of_study,
+            start_year=row.start_year,
+            end_year=row.end_year,
+            description=row.description,
+        )
+        for row in rows.all()
+    ]
+
+
 async def _managed(session: AsyncSession, profile: Profile) -> ManagedProfile:
     paid = await profile_plan_active(session, profile)
     links = (await session.scalars(select(SocialLink).where(SocialLink.profile_id == profile.id))).all()
@@ -121,7 +170,11 @@ async def _managed(session: AsyncSession, profile: Profile) -> ManagedProfile:
         ],
         intro_video_url=profile.intro_video_url,
         portfolio_url=profile.portfolio_url,
+        founded_year=profile.founded_year,
+        team_size=profile.team_size,
         social_links=[SocialLinkOut(platform=link.platform, url=link.url) for link in links],
+        experiences=await load_experiences(session, profile.id),
+        educations=await load_educations(session, profile.id),
         credentials=[
             CredentialOut(
                 id=c.id,
@@ -159,7 +212,7 @@ async def update_profile(session: AsyncSession, auth_user_id: UUID, profile_id: 
     for field in ("display_name", "headline"):
         if changes.get(field):
             setattr(profile, field, changes[field])
-    for field in ("bio", "city", "years_experience", "avatar_url", "intro_video_url", "portfolio_url"):
+    for field in ("bio", "city", "years_experience", "avatar_url", "intro_video_url", "portfolio_url", "founded_year", "team_size"):
         if field in changes:
             setattr(profile, field, changes[field])
     if changes.get("languages") is not None:
@@ -181,13 +234,88 @@ async def replace_social_links(
     session: AsyncSession, auth_user_id: UUID, profile_id: UUID, payload: SocialLinksUpdate
 ) -> ManagedProfile:
     profile = await _require_manage(session, auth_user_id, profile_id)
-    links = list({link.platform.strip().lower(): link for link in payload.links}.values())
+    # Platform names must be unique per profile, so a second website becomes "Website 2".
+    links: list[tuple[str, str]] = []
+    taken: set[str] = set()
+    for link in payload.links:
+        if any(url == link.url for _, url in links):
+            continue
+        base = (link.platform or "").strip() or detect_platform(link.url)
+        name, number = base, 2
+        while name.lower() in taken:
+            name, number = f"{base} {number}", number + 1
+        taken.add(name.lower())
+        links.append((name, link.url))
     limit = SOCIAL_LINK_LIMIT[await profile_plan_active(session, profile)]
     if len(links) > limit:
         raise ProfileLimitError(f"Your plan allows {limit} links. Upgrade to add more.")
     await session.execute(delete(SocialLink).where(SocialLink.profile_id == profile.id))
-    for link in links:
-        session.add(SocialLink(profile_id=profile.id, platform=link.platform.strip(), url=link.url))
+    for platform, url in links:
+        session.add(SocialLink(profile_id=profile.id, platform=platform, url=url))
+    await session.commit()
+    return await _managed(session, profile)
+
+
+async def add_experience(session: AsyncSession, auth_user_id: UUID, profile_id: UUID, payload: ExperienceIn) -> ManagedProfile:
+    profile = await _require_manage(session, auth_user_id, profile_id)
+    count = await session.scalar(select(func.count()).select_from(ProfileExperience).where(ProfileExperience.profile_id == profile.id))
+    if (count or 0) >= EXPERIENCE_LIMIT:
+        raise ProfileLimitError(f"You can list up to {EXPERIENCE_LIMIT} roles")
+    session.add(ProfileExperience(profile_id=profile.id, **payload.model_dump()))
+    await session.commit()
+    return await _managed(session, profile)
+
+
+async def update_experience(
+    session: AsyncSession, auth_user_id: UUID, profile_id: UUID, experience_id: UUID, payload: ExperienceIn
+) -> ManagedProfile:
+    profile = await _require_manage(session, auth_user_id, profile_id)
+    row = await session.get(ProfileExperience, experience_id)
+    if row is None or row.profile_id != profile.id:
+        raise ProfileNotFoundError("Experience not found")
+    for key, value in payload.model_dump().items():
+        setattr(row, key, value)
+    await session.commit()
+    return await _managed(session, profile)
+
+
+async def delete_experience(session: AsyncSession, auth_user_id: UUID, profile_id: UUID, experience_id: UUID) -> ManagedProfile:
+    profile = await _require_manage(session, auth_user_id, profile_id)
+    await session.execute(
+        delete(ProfileExperience).where(ProfileExperience.id == experience_id, ProfileExperience.profile_id == profile.id)
+    )
+    await session.commit()
+    return await _managed(session, profile)
+
+
+async def add_education(session: AsyncSession, auth_user_id: UUID, profile_id: UUID, payload: EducationIn) -> ManagedProfile:
+    profile = await _require_manage(session, auth_user_id, profile_id)
+    count = await session.scalar(select(func.count()).select_from(ProfileEducation).where(ProfileEducation.profile_id == profile.id))
+    if (count or 0) >= EDUCATION_LIMIT:
+        raise ProfileLimitError(f"You can list up to {EDUCATION_LIMIT} schools")
+    session.add(ProfileEducation(profile_id=profile.id, **payload.model_dump()))
+    await session.commit()
+    return await _managed(session, profile)
+
+
+async def update_education(
+    session: AsyncSession, auth_user_id: UUID, profile_id: UUID, education_id: UUID, payload: EducationIn
+) -> ManagedProfile:
+    profile = await _require_manage(session, auth_user_id, profile_id)
+    row = await session.get(ProfileEducation, education_id)
+    if row is None or row.profile_id != profile.id:
+        raise ProfileNotFoundError("Education not found")
+    for key, value in payload.model_dump().items():
+        setattr(row, key, value)
+    await session.commit()
+    return await _managed(session, profile)
+
+
+async def delete_education(session: AsyncSession, auth_user_id: UUID, profile_id: UUID, education_id: UUID) -> ManagedProfile:
+    profile = await _require_manage(session, auth_user_id, profile_id)
+    await session.execute(
+        delete(ProfileEducation).where(ProfileEducation.id == education_id, ProfileEducation.profile_id == profile.id)
+    )
     await session.commit()
     return await _managed(session, profile)
 

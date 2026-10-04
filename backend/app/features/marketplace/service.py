@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.plans import CREDENTIAL_LIMIT, SOCIAL_LINK_LIMIT, profile_plan_active
 from app.features.marketplace.catalog import search_terms
+from app.features.profiles.service import load_educations, load_experiences
 from app.features.marketplace.schemas import (
     ProfileDetail,
     ProfileLink,
@@ -183,6 +184,11 @@ async def get_profile_detail(session: AsyncSession, profile_id: UUID) -> Profile
             for o in offerings
         ],
         bookable=paid and has_slots is not None,
+        experiences=await load_experiences(session, profile_id),
+        educations=await load_educations(session, profile_id),
+        founded_year=profile.founded_year,
+        team_size=profile.team_size,
+        member_since=profile.created_at,
     )
     await session.execute(update(Profile).where(Profile.id == profile_id).values(view_count=Profile.view_count + 1))
     await session.commit()

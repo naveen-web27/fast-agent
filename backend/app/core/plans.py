@@ -12,7 +12,7 @@ from app.models.user import SubscriptionTier
 PLAN_FOR_KIND = {ProfileKind.EXPERT: SubscriptionTier.PRO, ProfileKind.COMPANY: SubscriptionTier.ENTERPRISE}
 
 TEAM_SEAT_LIMIT = 10
-SOCIAL_LINK_LIMIT = {False: 2, True: 10}
+SOCIAL_LINK_LIMIT = {False: 5, True: 10}
 CREDENTIAL_LIMIT = {False: 1, True: 10}
 OFFERING_LIMIT = 20
 

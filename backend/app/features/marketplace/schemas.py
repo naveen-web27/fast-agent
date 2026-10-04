@@ -5,6 +5,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.features.profiles.schemas import EducationOut, ExperienceOut
+
 
 class ProfileSummary(BaseModel):
     """A single search result shown on the discover page."""
@@ -72,6 +74,11 @@ class ProfileDetail(ProfileSummary):
     social_links: list[ProfileLink] = []
     credentials: list[PublicCredential] = []
     offerings: list[PublicOffering] = []
+    experiences: list[ExperienceOut] = []
+    educations: list[EducationOut] = []
+    founded_year: int | None = None
+    team_size: str | None = None
+    member_since: datetime | None = None
     # Paid provider with published weekly slots: customers can pick a time once the request is accepted.
     bookable: bool = False
 

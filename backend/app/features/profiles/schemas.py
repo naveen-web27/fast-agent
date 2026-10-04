@@ -1,30 +1,22 @@
 """Validation models for owners editing their expert/company profile."""
-import re
-from datetime import time
+from datetime import date, time
 from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import AfterValidator, BaseModel, Field, field_validator, model_validator
 
+from app.core.links import normalize_url
+
+TeamSize = Literal["1-10", "11-50", "51-200", "201-500", "500+"]
+
 
 def _http_url(value: str | None) -> str | None:
     if value is None or not value.strip():
         return None
-    value = value.strip()
-    if not re.fullmatch(r"https?://\S+", value, flags=re.IGNORECASE):
-        raise ValueError("Enter a full link starting with https://")
-    return value
-
-
-def _required_http_url(value: str) -> str:
-    cleaned = _http_url(value)
-    if cleaned is None:
-        raise ValueError("Enter a link")
-    return cleaned
+    return normalize_url(value)
 
 
 OptionalLink = Annotated[str | None, Field(max_length=500), AfterValidator(_http_url)]
-Link = Annotated[str, Field(max_length=500), AfterValidator(_required_http_url)]
 
 
 class ProfileUpdate(BaseModel):
@@ -41,6 +33,8 @@ class ProfileUpdate(BaseModel):
     keywords: list[str] | None = Field(default=None, max_length=20)
     intro_video_url: OptionalLink = None
     portfolio_url: OptionalLink = None
+    founded_year: int | None = Field(default=None, ge=1800, le=2100)
+    team_size: TeamSize | None = None
 
     @field_validator("languages", "services")
     @classmethod
@@ -60,12 +54,53 @@ class ProfileUpdate(BaseModel):
 
 
 class SocialLinkIn(BaseModel):
-    platform: str = Field(min_length=1, max_length=40)
-    url: Link
+    """Any web link; the platform (Instagram, YouTube, ...) is detected when not given."""
+
+    platform: str | None = Field(default=None, max_length=40)
+    url: Annotated[str, Field(min_length=3, max_length=500), AfterValidator(normalize_url)]
 
 
 class SocialLinksUpdate(BaseModel):
     links: list[SocialLinkIn] = Field(max_length=10)
+
+
+class ExperienceIn(BaseModel):
+    title: str = Field(min_length=2, max_length=160)
+    organization: str = Field(min_length=1, max_length=160)
+    location: str | None = Field(default=None, max_length=100)
+    start_date: date
+    # None = current role.
+    end_date: date | None = None
+    description: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def _order(self) -> "ExperienceIn":
+        if self.end_date is not None and self.end_date < self.start_date:
+            raise ValueError("End date must be after the start date")
+        return self
+
+
+class ExperienceOut(ExperienceIn):
+    id: UUID
+
+
+class EducationIn(BaseModel):
+    school: str = Field(min_length=2, max_length=160)
+    degree: str | None = Field(default=None, max_length=160)
+    field_of_study: str | None = Field(default=None, max_length=160)
+    start_year: int | None = Field(default=None, ge=1900, le=2100)
+    end_year: int | None = Field(default=None, ge=1900, le=2100)
+    description: str | None = Field(default=None, max_length=1000)
+
+    @model_validator(mode="after")
+    def _order(self) -> "EducationIn":
+        if self.start_year and self.end_year and self.end_year < self.start_year:
+            raise ValueError("End year must be after the start year")
+        return self
+
+
+class EducationOut(EducationIn):
+    id: UUID
 
 
 class CredentialIn(BaseModel):
@@ -152,7 +187,11 @@ class ManagedProfile(BaseModel):
     suggested_keywords: list[str]
     intro_video_url: str | None
     portfolio_url: str | None
+    founded_year: int | None = None
+    team_size: str | None = None
     social_links: list[SocialLinkOut]
+    experiences: list[ExperienceOut] = []
+    educations: list[EducationOut] = []
     credentials: list[CredentialOut]
     offerings: list[OfferingOut]
     availability: list[AvailabilityWindow]

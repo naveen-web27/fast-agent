@@ -108,6 +108,8 @@ class Profile(Base):
     subscription_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     intro_video_url: Mapped[str | None] = mapped_column(String)
     portfolio_url: Mapped[str | None] = mapped_column(String)
+    founded_year: Mapped[int | None] = mapped_column(SmallInteger)
+    team_size: Mapped[str | None] = mapped_column(String)
     view_count: Mapped[int] = mapped_column(nullable=False, default=0)
     # Set by a platform admin; blocked profiles are hidden from discovery and can't receive new requests.
     blocked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -87,6 +87,8 @@ class ContactInfo(BaseModel):
 class RequestParticipantOut(BaseModel):
     participant_role: ParticipantRole
     name: str
+    # Public marketplace profile (experts/companies); None for the customer.
+    profile_id: UUID | None = None
     accepted_at: datetime | None
     completion_confirmed_at: datetime | None = None
     completion_disputed_at: datetime | None = None
@@ -167,3 +169,15 @@ class RequestDetail(RequestSummary):
 
 class RequestListResponse(BaseModel):
     results: list[RequestSummary]
+
+
+class CustomerProfileOut(BaseModel):
+    """The light customer profile, shown only to people on the same request."""
+
+    full_name: str
+    avatar_url: str | None
+    city: str | None
+    bio: str | None
+    interests: list[str]
+    member_since: datetime
+    completed_requests: int

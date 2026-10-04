@@ -10,6 +10,8 @@ from app.db.session import get_db
 from app.features.profiles.schemas import (
     AvailabilityUpdate,
     CredentialIn,
+    EducationIn,
+    ExperienceIn,
     ManagedProfile,
     OfferingIn,
     ProfileUpdate,
@@ -20,12 +22,18 @@ from app.features.profiles.service import (
     ProfileLimitError,
     ProfileNotFoundError,
     add_credential,
+    add_education,
+    add_experience,
     add_offering,
     delete_credential,
+    delete_education,
+    delete_experience,
     delete_offering,
     get_managed_profile,
     replace_social_links,
     set_availability,
+    update_education,
+    update_experience,
     update_profile,
 )
 from app.security.dependencies import get_current_auth_user_id
@@ -94,6 +102,68 @@ async def remove_credential(
     session: AsyncSession = Depends(get_db),
 ) -> ManagedProfile:
     return await _run(delete_credential(session, auth_user_id, profile_id, credential_id))
+
+
+@router.post("/profiles/{profile_id}/experiences", response_model=ManagedProfile, status_code=status.HTTP_201_CREATED)
+async def create_experience(
+    profile_id: UUID,
+    payload: ExperienceIn,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> ManagedProfile:
+    return await _run(add_experience(session, auth_user_id, profile_id, payload))
+
+
+@router.put("/profiles/{profile_id}/experiences/{experience_id}", response_model=ManagedProfile)
+async def edit_experience(
+    profile_id: UUID,
+    experience_id: UUID,
+    payload: ExperienceIn,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> ManagedProfile:
+    return await _run(update_experience(session, auth_user_id, profile_id, experience_id, payload))
+
+
+@router.delete("/profiles/{profile_id}/experiences/{experience_id}", response_model=ManagedProfile)
+async def remove_experience(
+    profile_id: UUID,
+    experience_id: UUID,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> ManagedProfile:
+    return await _run(delete_experience(session, auth_user_id, profile_id, experience_id))
+
+
+@router.post("/profiles/{profile_id}/educations", response_model=ManagedProfile, status_code=status.HTTP_201_CREATED)
+async def create_education(
+    profile_id: UUID,
+    payload: EducationIn,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> ManagedProfile:
+    return await _run(add_education(session, auth_user_id, profile_id, payload))
+
+
+@router.put("/profiles/{profile_id}/educations/{education_id}", response_model=ManagedProfile)
+async def edit_education(
+    profile_id: UUID,
+    education_id: UUID,
+    payload: EducationIn,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> ManagedProfile:
+    return await _run(update_education(session, auth_user_id, profile_id, education_id, payload))
+
+
+@router.delete("/profiles/{profile_id}/educations/{education_id}", response_model=ManagedProfile)
+async def remove_education(
+    profile_id: UUID,
+    education_id: UUID,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> ManagedProfile:
+    return await _run(delete_education(session, auth_user_id, profile_id, education_id))
 
 
 @router.post("/profiles/{profile_id}/offerings", response_model=ManagedProfile, status_code=status.HTTP_201_CREATED)

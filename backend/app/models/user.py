@@ -37,6 +37,10 @@ class User(Base):
     # Off once the customer's need is finished; experts/companies then stop seeing them as an active lead.
     looking_for_help: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=true())
     need_fulfilled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Light public profile, shown to experts/companies the customer sent a request to.
+    bio: Mapped[str | None] = mapped_column(Text)
+    city: Mapped[str | None] = mapped_column(String)
+    avatar_url: Mapped[str | None] = mapped_column(String)
     role: Mapped[UserRole] = mapped_column(
         Enum(
             UserRole,

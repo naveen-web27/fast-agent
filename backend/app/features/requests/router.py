@@ -11,6 +11,7 @@ from app.features.requests.schemas import (
     AssignPayload,
     CreateRequestPayload,
     CreateReviewPayload,
+    CustomerProfileOut,
     DisputeCompletionPayload,
     InviteCompanyPayload,
     RequestDetail,
@@ -29,6 +30,7 @@ from app.features.requests.service import (
     assign_request,
     create_request,
     create_review,
+    get_customer_profile,
     get_request_detail,
     invite_company,
     list_requests,
@@ -77,6 +79,23 @@ async def get_request(
     """Return full detail for one request, including participants and the message timeline."""
     try:
         return await get_request_detail(session, auth_user_id, request_id)
+    except IdentityNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except RequestNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except RequestAccessError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+
+
+@router.get("/{request_id}/customer", response_model=CustomerProfileOut)
+async def get_request_customer(
+    request_id: UUID,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> CustomerProfileOut:
+    """The customer's profile, visible only to people on this request."""
+    try:
+        return await get_customer_profile(session, auth_user_id, request_id)
     except IdentityNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except RequestNotFoundError as exc:

@@ -18,6 +18,7 @@ from app.features.auth.schemas import (
     ExpertProfileRequest,
     ExpertProfileSummary,
     IdentitiesResponse,
+    MyProfileUpdate,
     OnboardingRequest,
     UserResponse,
 )
@@ -79,7 +80,25 @@ async def get_user_profile(session: AsyncSession, auth_user_id: UUID) -> UserRes
         subscription_expires_at=user.subscription_expires_at.isoformat() if active else None,
         looking_for_help=user.looking_for_help,
         need_fulfilled_at=user.need_fulfilled_at,
+        bio=user.bio,
+        city=user.city,
+        avatar_url=user.avatar_url,
+        member_since=user.created_at,
     )
+
+
+async def update_my_profile(session: AsyncSession, auth_user_id: UUID, payload: MyProfileUpdate) -> UserResponse | None:
+    user = await session.scalar(active_user_by_auth_id(auth_user_id))
+    if user is None:
+        return None
+    changes = payload.model_dump(exclude_unset=True)
+    if changes.get("full_name"):
+        user.full_name = changes["full_name"].strip()
+    for field in ("bio", "city", "avatar_url"):
+        if field in changes:
+            setattr(user, field, (changes[field] or "").strip() or None)
+    await session.commit()
+    return await get_user_profile(session, auth_user_id)
 
 
 async def create_user_profile(
@@ -106,6 +125,7 @@ async def create_user_profile(
         phone=payload.phone,
         role=role,
         interests=interests,
+        city=payload.city,
     )
     session.add(user)
     await session.flush()

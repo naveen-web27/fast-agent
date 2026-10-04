@@ -241,6 +241,40 @@
     .chat-compose { display:flex; gap:8px; padding:10px; background:#f0f2f5; }
     .chat-compose input { flex:1; min-width:0; padding:10px 14px; border:0; border-radius:20px; background:#fff; font:inherit; font-size:14px; }
     .chat-compose .primary { border-radius:20px; }
+    .profile-hero { position:relative; overflow:hidden; }
+    .profile-hero::before { content:""; position:absolute; inset:0 0 auto; height:70px; background:linear-gradient(120deg,#0c8b82,#22314f); }
+    .profile-summary { position:relative; padding-top:52px; }
+    .profile-summary .portrait { display:grid; place-items:center; margin-top:-40px; border:4px solid #fff; background:#d9e6ef; color:#34517f; font-size:30px; font-weight:800; box-shadow:0 6px 18px rgba(22,35,58,.15); }
+    .profile-facts { margin:6px 0 0 !important; font-size:12px; }
+    .profile-owner-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .profile-owner-actions:empty,.profile-owner-actions:not(:has(button:not([hidden]))) { display:none; }
+    .card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .card-head h2 { margin:0 !important; }
+    .card-edit { min-height:30px !important; padding:0 10px !important; font-size:12px; }
+    .xp-item { display:flex; gap:12px; padding:14px 0; border-top:1px solid var(--line); }
+    .xp-item:first-of-type { border-top:0; }
+    .xp-logo { display:grid; flex:none; place-items:center; width:44px; height:44px; color:#34517f; border-radius:8px; background:#eef2f8; font-size:13px; font-weight:800; }
+    .xp-item strong { display:block; font-size:14px; }
+    .xp-item span { display:block; color:#556278; font-size:12px; }
+    .xp-item .muted { color:var(--muted); }
+    .xp-item p { margin:6px 0 0 !important; white-space:pre-wrap; }
+    .link-list { display:flex; flex-wrap:wrap; gap:8px; }
+    .link-chip { display:inline-flex; align-items:center; gap:8px; max-width:100%; padding:6px 12px 6px 6px; color:var(--ink); border:1px solid var(--line); border-radius:999px; background:#fff; font-size:13px; font-weight:700; text-decoration:none; }
+    .link-chip:hover { border-color:var(--teal); }
+    .link-chip small { overflow:hidden; color:var(--muted); font-weight:500; text-overflow:ellipsis; white-space:nowrap; max-width:180px; }
+    .link-icon { display:grid; flex:none; place-items:center; width:26px; height:26px; color:#fff; border-radius:50%; font-size:11px; font-weight:800; }
+    .add-prompt { width:100%; padding:14px; color:var(--teal); border:1px dashed #9fd9cd; border-radius:9px; background:#f6fcfb; font-weight:800; }
+    .link-button { padding:0; color:var(--teal); border:0; background:none; font:inherit; font-weight:800; text-align:left; cursor:pointer; }
+    .link-button:hover { text-decoration:underline; }
+    @media print {
+      body { background:#fff; }
+      .sidebar,.topbar,.mobile-nav,.booking,.support-fab,#profile .page-title,.profile-owner-actions,.card-edit,.add-prompt,.toast,.modal-scrim,.api-spinner { display:none !important; }
+      .app { display:block; }
+      .page { padding:0; }
+      .profile-layout { display:block; }
+      .profile-hero,.content-card { box-shadow:none; break-inside:avoid; }
+      a { color:inherit; }
+    }
   </style>
 </head>
 <body>
@@ -254,14 +288,14 @@
         <button class="nav-button" data-view="dashboard"><span class="nav-icon">▦</span><span>Dashboard</span></button>
         <button class="nav-button" data-view="requests"><span class="nav-icon">◫<b class="nav-badge" data-requests-badge hidden></b></span><span>My requests</span></button>
         <button class="nav-button" data-view="saved"><span class="nav-icon">♡</span><span>Saved</span></button>
-        <button class="nav-button" data-view="profile"><span class="nav-icon">◉</span><span>Profile preview</span></button>
+        <button class="nav-button" data-view="me" id="my-profile-nav"><span class="nav-icon">◉</span><span>My profile</span></button>
         <button class="nav-button" data-view="plans"><span class="nav-icon">◆</span><span>Plans</span></button>
         <button class="nav-button" id="payment-nav-button" type="button"><span class="nav-icon">↗</span><span>Payment</span></button>
       </nav>
       <div class="side-bottom" id="side-bottom" hidden><span class="section-tag">Signed in as</span><div class="profile-mini"><span class="avatar" id="sidebar-avatar">?</span><span id="sidebar-name"></span></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="top-actions"><button class="icon-button mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="crumb"><strong>RightConnect</strong> / Marketplace</div></div><div class="top-actions"><div class="bell-wrap" id="bell-wrap" hidden><button class="icon-button" id="notif-button" type="button" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="bell-count" id="notif-count" hidden>0</span></button><div class="notif-menu" id="notif-menu" hidden></div></div><a class="secondary" href="auth.html" id="sign-in-link">Sign in or join</a><button class="secondary" id="request-expert">Become an expert</button><div class="user-chip" id="user-chip" hidden><button class="user-chip-button" id="user-menu-button"><span class="avatar" id="chip-avatar">?</span><span id="chip-name"></span></button><div class="user-menu" id="user-menu" hidden><button id="manage-interests-button">Interests</button><button id="profile-settings-button">Settings</button><button id="menu-support-button">Help</button><button id="sign-out-button">Sign out</button></div></div></div></header>
+      <header class="topbar"><div class="top-actions"><button class="icon-button mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="crumb"><strong>RightConnect</strong> / Marketplace</div></div><div class="top-actions"><div class="bell-wrap" id="bell-wrap" hidden><button class="icon-button" id="notif-button" type="button" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="bell-count" id="notif-count" hidden>0</span></button><div class="notif-menu" id="notif-menu" hidden></div></div><a class="secondary" href="auth.html" id="sign-in-link">Sign in or join</a><button class="secondary" id="request-expert">Become an expert</button><div class="user-chip" id="user-chip" hidden><button class="user-chip-button" id="user-menu-button"><span class="avatar" id="chip-avatar">?</span><span id="chip-name"></span></button><div class="user-menu" id="user-menu" hidden><button id="my-profile-button">My profile</button><button id="manage-interests-button">Interests</button><button id="profile-settings-button">Settings</button><button id="menu-support-button">Help</button><button id="sign-out-button">Sign out</button></div></div></div></header>
       <div class="page">
         <section class="view active" id="discover">
           <div class="page-title"><div><h1>Find help</h1></div><button class="primary" id="match-button">✦ Get matched</button></div>
@@ -274,7 +308,7 @@
         </section>
         <section class="view" id="profile">
           <div class="page-title"><div></div><button class="secondary" data-view="discover">← Back</button></div>
-          <div class="profile-layout"><div><article class="profile-hero"><div class="profile-summary"><div class="portrait" id="profile-portrait"></div><div><span class="verified" id="profile-verified" hidden>● Verified</span><h1 id="profile-name">Select a profile</h1><p id="profile-subtitle"></p><div class="tags" id="profile-tags"></div><div class="resolved-badge" id="profile-resolved" hidden></div></div></div><div class="trust-bar"><div class="trust-item"><small>Rating</small><strong id="profile-rating">–</strong></div><div class="trust-item"><small>Reviews</small><strong id="profile-review-count">–</strong></div><div class="trust-item"><small>Replies in</small><strong id="profile-reply">–</strong></div></div></article><article class="content-card" id="profile-bio-card" hidden><h2 id="profile-bio-heading">About</h2><p id="profile-bio"></p></article><div id="profile-extras"></div><article class="content-card"><h2>Reviews</h2><div id="profile-reviews"><p style="color:var(--muted);font-size:12px;margin:0">No reviews yet.</p></div></article></div><aside class="booking"><div class="q-head"><h2 style="margin:0">Free request</h2><button type="button" class="info" aria-expanded="false" aria-controls="info-book" aria-label="What happens next">i</button></div><p class="info-text" id="info-book" hidden>Tell them what you need. When they accept, you can chat in My requests and see their contact.</p><button class="primary" id="book-button" style="margin-top:12px">Send request</button><button class="secondary" id="detail-save-button" type="button" style="width:100%;margin-top:10px">♡ Save</button><button class="secondary" id="share-profile-button" type="button" style="width:100%;margin-top:8px">Share link</button><div class="assurance">✓ No fee</div><div class="assurance" id="profile-bookable" hidden>✓ Book a time online</div><div class="assurance">✓ Your details stay private</div></aside></div>
+          <div class="profile-layout"><div><article class="profile-hero"><div class="profile-summary"><div class="portrait" id="profile-portrait"></div><div><span class="verified" id="profile-verified" hidden>● Verified</span><h1 id="profile-name">Select a profile</h1><p id="profile-subtitle"></p><p class="profile-facts" id="profile-facts"></p><div class="tags" id="profile-tags"></div><div class="resolved-badge" id="profile-resolved" hidden></div><div class="profile-owner-actions" id="profile-owner-actions"><button class="primary" type="button" id="profile-edit-button" hidden>✎ Edit profile</button><button class="secondary" type="button" id="profile-cv-button" hidden>⇩ Download CV</button></div></div></div><div class="trust-bar"><div class="trust-item"><small>Rating</small><strong id="profile-rating">–</strong></div><div class="trust-item"><small>Reviews</small><strong id="profile-review-count">–</strong></div><div class="trust-item"><small>Replies in</small><strong id="profile-reply">–</strong></div></div></article><article class="content-card" id="profile-bio-card" hidden><h2 id="profile-bio-heading">About</h2><p id="profile-bio"></p></article><div id="profile-extras"></div><article class="content-card"><h2>Reviews</h2><div id="profile-reviews"><p style="color:var(--muted);font-size:12px;margin:0">No reviews yet.</p></div></article></div><aside class="booking"><div class="q-head"><h2 style="margin:0">Free request</h2><button type="button" class="info" aria-expanded="false" aria-controls="info-book" aria-label="What happens next">i</button></div><p class="info-text" id="info-book" hidden>Tell them what you need. When they accept, you can chat in My requests and see their contact.</p><button class="primary" id="book-button" style="margin-top:12px">Send request</button><button class="secondary" id="detail-save-button" type="button" style="width:100%;margin-top:10px">♡ Save</button><button class="secondary" id="share-profile-button" type="button" style="width:100%;margin-top:8px">Share link</button><div class="assurance">✓ No fee</div><div class="assurance" id="profile-bookable" hidden>✓ Book a time online</div><div class="assurance">✓ Your details stay private</div></aside></div>
         </section>
         <section class="view" id="requests">
           <div class="page-title"><div><span class="section-tag">My requests</span><h1>One place for every moving part.</h1><p>Track the people, answers, and decisions around your request.</p></div><button class="primary" data-view="discover">+ New request</button></div>
@@ -284,6 +318,10 @@
           <div class="page-title"><div><h1>Saved</h1></div></div>
           <div class="results" id="saved-results"></div>
           <div class="empty" id="saved-empty" hidden><h2>Nothing saved yet.</h2><p>Tap ♡ on a profile to save it.</p><button class="primary" style="margin-top:18px" data-view="discover">Find experts</button></div>
+        </section>
+        <section class="view" id="me">
+          <div class="page-title"><div><h1>My profile</h1></div></div>
+          <div id="me-body"><p class="muted"><span class="spinner"></span>Loading…</p></div>
         </section>
       </div>
     </main>
@@ -415,6 +453,10 @@
       <div class="field"><label for="dispute-reason">What happened?</label><textarea id="dispute-reason" rows="4" minlength="5" maxlength="1000" required></textarea></div>
       <div class="modal-actions"><button type="button" class="secondary" id="dispute-cancel">Cancel</button><button type="submit" class="primary" id="dispute-submit">Send report</button></div>
     </form>
+  </div>
+  <div class="modal wide" id="customer-modal" role="dialog" aria-modal="true" aria-label="Customer profile" hidden>
+    <div id="customer-body"></div>
+    <div class="modal-actions"><button type="button" class="secondary" data-close-modal>Close</button></div>
   </div>
   <div class="modal wide" id="editor-modal" role="dialog" aria-modal="true" aria-labelledby="editor-title" hidden>
     <h2 id="editor-title">Edit profile</h2>
@@ -824,12 +866,40 @@
       else { prompt('Copy this link:', url.toString()); }
     });
 
+    function ownsProfile(profileId) {
+      return Boolean(identities && (identities.expert_profile?.id === profileId || identities.companies.some((company) => company.profile_id === profileId && company.member_role === 'admin')));
+    }
+    function printProfile(name) {
+      const title = document.title;
+      document.title = `${name} – CV`;
+      window.print();
+      document.title = title;
+    }
+
     function renderProfileDetail(profile) {
+      const own = ownsProfile(profile.id);
       currentProfileName = profile.display_name;
-      document.querySelector('#profile-portrait').innerHTML = profile.avatar_url ? `<img src="${safeHref(profile.avatar_url)}" alt="${escapeHtml(profile.display_name)}">` : '';
+      document.querySelector('#profile-portrait').innerHTML = profile.avatar_url ? `<img src="${safeHref(profile.avatar_url)}" alt="${escapeHtml(profile.display_name)}">` : escapeHtml(initialsOf(profile.display_name));
       document.querySelector('#profile-verified').hidden = !profile.verified;
       document.querySelector('#profile-name').textContent = profile.display_name;
       document.querySelector('#profile-subtitle').textContent = `${profile.headline}${profile.city ? ` · ${profile.city}` : ''}`;
+      const facts = [];
+      if (profile.kind === 'company') {
+        if (profile.founded_year) facts.push(`Founded ${profile.founded_year}`);
+        if (profile.team_size) facts.push(`${profile.team_size} people`);
+      } else if (profile.years_experience) {
+        facts.push(`${profile.years_experience} yrs experience`);
+      }
+      if (profile.languages?.length) facts.push(profile.languages.join(', '));
+      if (profile.member_since) facts.push(`On RightConnect since ${new Date(profile.member_since).toLocaleDateString([], { month: 'short', year: 'numeric' })}`);
+      document.querySelector('#profile-facts').textContent = facts.join(' · ');
+      const editButton = document.querySelector('#profile-edit-button');
+      editButton.hidden = !own;
+      editButton.onclick = () => openProfileEditor(profile.id);
+      const cvButton = document.querySelector('#profile-cv-button');
+      cvButton.hidden = profile.kind !== 'expert';
+      cvButton.onclick = () => printProfile(profile.display_name);
+      document.querySelector('#book-button').hidden = own;
       document.querySelector('#profile-tags').innerHTML = profile.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('');
       const detailResolvedBadge = document.querySelector('#profile-resolved');
       if (profile.resolved_clients_count != null) {
@@ -844,17 +914,20 @@
       const detailSaveButton = document.querySelector('#detail-save-button');
       detailSaveButton.textContent = savedProfileIds.has(profile.id) ? '♥ Saved' : '♡ Save';
       detailSaveButton.onclick = () => toggleSaved(profile.id, detailSaveButton, (saved) => { detailSaveButton.textContent = saved ? '♥ Saved' : '♡ Save'; });
+      detailSaveButton.hidden = own;
       const bioCard = document.querySelector('#profile-bio-card');
-      bioCard.hidden = !profile.bio;
-      if (profile.bio) {
-        document.querySelector('#profile-bio-heading').textContent = `About ${profile.display_name}`;
-        document.querySelector('#profile-bio').textContent = profile.bio;
-      }
+      bioCard.hidden = !profile.bio && !own;
+      document.querySelector('#profile-bio-heading').textContent = profile.kind === 'company' ? 'About us' : 'About';
+      document.querySelector('#profile-bio').innerHTML = profile.bio
+        ? escapeHtml(profile.bio)
+        : '<button type="button" class="add-prompt" data-edit-section="basics">+ Add a short about – who you are and how you help</button>';
+      document.querySelector('#profile-bio').style.whiteSpace = 'pre-wrap';
+      document.querySelector('#profile-bio [data-edit-section]')?.addEventListener('click', () => openProfileEditor(profile.id, 'basics'));
       const reviewsBox = document.querySelector('#profile-reviews');
       reviewsBox.innerHTML = profile.reviews.length
         ? profile.reviews.map((review) => `<div class="review"><strong>“${escapeHtml(review.body)}”</strong><span>${escapeHtml(review.reviewer_name)} · ★ ${review.rating.toFixed ? review.rating.toFixed(1) : review.rating}</span></div>`).join('')
         : '<p style="color:var(--muted);font-size:12px;margin:0">No reviews yet.</p>';
-      renderProfileExtras(profile);
+      renderProfileExtras(profile, own);
     }
 
     function renderInsights(profiles) {
@@ -1354,12 +1427,17 @@
                   ${(participant.contact.social_links || []).map((link) => `<div>${escapeHtml(link.platform)}: <a href="${safeHref(link.url)}" target="_blank" rel="noopener">${escapeHtml(link.url)}</a></div>`).join('')}
                 </div>`
               : `<div style="margin-top:4px;font-size:11px;color:var(--muted)">Contact hidden until both sides accept</div>`;
+            const opener = participant.profile_id
+              ? `data-open-profile="${escapeHtml(participant.profile_id)}"`
+              : (participant.participant_role === 'customer' ? 'data-open-customer' : '');
             return `<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)">
                 <span class="avatar" title="${escapeHtml(participant.name)}">${initials}</span>
-                <div><strong style="font-size:13px">${escapeHtml(participant.name)}</strong><span style="display:block;font-size:11px;color:var(--muted);text-transform:capitalize">${participant.participant_role}${participant.accepted_at ? '' : ' · pending'}${participant.completion_confirmed_at ? ' · confirmed done' : ''}${participant.completion_disputed_at ? ' · reported a problem' : ''}</span>${contact}</div>
+                <div><strong style="font-size:13px">${opener ? `<button type="button" class="link-button" ${opener} title="View profile">${escapeHtml(participant.name)}</button>` : escapeHtml(participant.name)}</strong><span style="display:block;font-size:11px;color:var(--muted);text-transform:capitalize">${participant.participant_role}${participant.accepted_at ? '' : ' · pending'}${participant.completion_confirmed_at ? ' · confirmed done' : ''}${participant.completion_disputed_at ? ' · reported a problem' : ''}</span>${contact}</div>
               </div>`;
           }).join('')
         : '<span style="color:var(--muted);font-size:12px">Awaiting a match</span>';
+      document.querySelectorAll('#request-participants [data-open-profile]').forEach((button) => button.addEventListener('click', () => openProfile(button.dataset.openProfile)));
+      document.querySelectorAll('#request-participants [data-open-customer]').forEach((button) => button.addEventListener('click', () => openCustomerProfile(detail.id)));
 
       const referral = detail.expert_referral;
       document.querySelector('#request-expert-referral').innerHTML = referral
@@ -1580,6 +1658,8 @@
 
     document.querySelector('#manage-interests-button').addEventListener('click', () => { userMenu.hidden = true; renderInterestsModal(); openModal('interests-modal'); });
     document.querySelector('#profile-settings-button').addEventListener('click', () => { userMenu.hidden = true; renderVisibilityModal(); openModal('visibility-modal'); });
+    document.querySelector('#my-profile-button').addEventListener('click', () => { userMenu.hidden = true; openMyProfile(); });
+    document.querySelector('#my-profile-nav').addEventListener('click', () => openMyProfile());
 
     function renderVisibilityModal() {
       renderLookingSection();
@@ -1794,7 +1874,7 @@
     // Customers never pay and don't need Plans/Payment/Profile preview in their menu.
     function applyNavForActing(type) {
       const provider = type !== 'customer';
-      document.querySelectorAll('.nav-button[data-view="plans"], #payment-nav-button, .navigation .nav-button[data-view="profile"]').forEach((button) => { button.hidden = !provider; });
+      document.querySelectorAll('.nav-button[data-view="plans"], #payment-nav-button').forEach((button) => { button.hidden = !provider; });
       document.querySelector('.mobile-nav').classList.toggle('four', !provider);
     }
 
@@ -1951,7 +2031,7 @@
       document.querySelector('#sidebar-avatar').textContent = initials;
       document.querySelector('#sidebar-name').textContent = user.full_name;
       document.querySelector('#side-bottom').hidden = false;
-      document.querySelector('#chip-avatar').textContent = initials;
+      document.querySelector('#chip-avatar').innerHTML = user.avatar_url ? `<img src="${safeHref(user.avatar_url)}" alt="">` : escapeHtml(initials);
       document.querySelector('#chip-name').innerHTML = `${escapeHtml(user.full_name)}<br><small>${escapeHtml(user.role.replace('_', ' '))}</small>`;
       document.querySelector('#user-chip').hidden = false;
       document.querySelector('#sign-in-link').hidden = true;

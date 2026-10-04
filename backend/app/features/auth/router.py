@@ -18,6 +18,7 @@ from app.features.auth.schemas import (
     InterestRequest,
     InterestsResponse,
     LookingRequest,
+    MyProfileUpdate,
     OnboardingRequest,
     UserResponse,
 )
@@ -40,6 +41,7 @@ from app.features.auth.service import (
     remove_interest,
     send_domain_otp,
     set_looking,
+    update_my_profile,
     verify_domain_otp,
 )
 from app.security.dependencies import get_current_auth_user_id
@@ -64,6 +66,19 @@ async def get_current_user(
 ) -> UserResponse:
     """Return the caller's onboarded profile, or 404 if onboarding hasn't happened yet."""
     profile = await get_user_profile(session, auth_user_id)
+    if profile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Onboarding not completed")
+    return profile
+
+
+@router.patch("/me", response_model=UserResponse)
+async def edit_my_profile(
+    payload: MyProfileUpdate,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> UserResponse:
+    """Update the caller's own name, photo, city and short about text."""
+    profile = await update_my_profile(session, auth_user_id, payload)
     if profile is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Onboarding not completed")
     return profile

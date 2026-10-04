@@ -222,6 +222,7 @@ function renderProviderDashboard(data) {
 
 /* ---------- Profile editor ---------- */
 
+const TEAM_SIZES = ['1-10', '11-50', '51-200', '201-500', '500+'];
 let editorProfile = null;
 let editorServices = [];
 let editorKeywords = [];
@@ -261,6 +262,8 @@ function renderEditor(profile) {
           ${field('ed-headline', 'Headline', profile.headline, 'required minlength="2" maxlength="160" placeholder="e.g. Health insurance advisor for families"')}
           ${field('ed-city', 'City', profile.city, 'maxlength="100"')}
           ${profile.kind === 'expert' ? field('ed-years', 'Years of experience', profile.years_experience, 'type="number" min="0" max="80"') : ''}
+          ${profile.kind === 'company' ? field('ed-founded', 'Founded (year)', profile.founded_year, 'type="number" min="1800" max="2100" placeholder="2015"') : ''}
+          ${profile.kind === 'company' ? `<div class="field"><label for="ed-team-size">Team size</label><select id="ed-team-size"><option value="">Not set</option>${TEAM_SIZES.map((size) => `<option value="${size}" ${profile.team_size === size ? 'selected' : ''}>${size} people</option>`).join('')}</select></div>` : ''}
           ${field('ed-languages', 'Languages (comma separated)', profile.languages.join(', '), 'placeholder="English, Tamil"')}
           ${field('ed-avatar', 'Photo or logo link', profile.avatar_url, 'type="url" placeholder="https://"')}
         </div>
@@ -274,13 +277,42 @@ function renderEditor(profile) {
         <div class="modal-actions"><button class="primary" type="submit" id="ed-basics-save">Save basics</button></div>
       </form>
     </section>
-    <section class="editor-section"><h3>Website &amp; social links <span class="muted">${profile.social_links.length}/${profile.limits.social_links}</span></h3>
-      ${profile.social_links.map((link, index) => `<div class="item-row"><span><strong>${escapeHtml(link.platform)}</strong> · <a href="${safeHref(link.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.url)}</a></span><button class="secondary" type="button" data-remove-link="${index}">Remove</button></div>`).join('')}
+    ${profile.kind === 'expert' ? `<section class="editor-section" id="editor-experience"><h3>Experience <span class="muted">Free</span></h3>
+      ${profile.experiences.map((xp) => `<div class="item-row"><span><strong>${escapeHtml(xp.title)}</strong> · ${escapeHtml(xp.organization)} <span class="muted">· ${monthYear(xp.start_date)} – ${xp.end_date ? monthYear(xp.end_date) : 'Present'}</span></span><span style="display:flex;gap:6px"><button class="secondary" type="button" data-edit-exp="${escapeHtml(xp.id)}">Edit</button><button class="secondary" type="button" data-remove-exp="${escapeHtml(xp.id)}">Remove</button></span></div>`).join('')}
+      <form id="editor-exp" style="margin-top:8px"><input type="hidden" id="ed-exp-id">
+        <div class="editor-grid">
+          ${field('ed-exp-title', 'Title', '', 'required minlength="2" maxlength="160" placeholder="e.g. Senior insurance advisor"')}
+          ${field('ed-exp-org', 'Company or organisation', '', 'required maxlength="160"')}
+          ${field('ed-exp-location', 'Location', '', 'maxlength="100" placeholder="Chennai or Remote"')}
+          <div class="field"><label for="ed-exp-start">Started</label><input id="ed-exp-start" type="month" required placeholder="YYYY-MM"></div>
+          <div class="field"><label for="ed-exp-end">Ended</label><input id="ed-exp-end" type="month" placeholder="YYYY-MM"></div>
+          <label class="field" style="display:flex;align-items:center;gap:8px;align-self:end"><input type="checkbox" id="ed-exp-current" style="width:auto"> I work here now</label>
+        </div>
+        <div class="field"><label for="ed-exp-desc">What you did</label><textarea id="ed-exp-desc" rows="3" maxlength="2000" placeholder="Responsibilities, results, clients helped"></textarea></div>
+        <div class="modal-actions"><button class="secondary" type="button" id="ed-exp-cancel" hidden>Cancel</button><button class="primary" type="submit" id="ed-exp-save">Add role</button></div>
+      </form>
+    </section>
+    <section class="editor-section" id="editor-education"><h3>Education <span class="muted">Free</span></h3>
+      ${profile.educations.map((edu) => `<div class="item-row"><span><strong>${escapeHtml(edu.school)}</strong>${edu.degree ? ` · ${escapeHtml(edu.degree)}` : ''} <span class="muted">${[edu.start_year, edu.end_year].filter(Boolean).join(' – ')}</span></span><span style="display:flex;gap:6px"><button class="secondary" type="button" data-edit-edu="${escapeHtml(edu.id)}">Edit</button><button class="secondary" type="button" data-remove-edu="${escapeHtml(edu.id)}">Remove</button></span></div>`).join('')}
+      <form id="editor-edu" style="margin-top:8px"><input type="hidden" id="ed-edu-id">
+        <div class="editor-grid">
+          ${field('ed-edu-school', 'School, college or university', '', 'required minlength="2" maxlength="160"')}
+          ${field('ed-edu-degree', 'Degree', '', 'maxlength="160" placeholder="e.g. MBA"')}
+          ${field('ed-edu-field', 'Field of study', '', 'maxlength="160" placeholder="e.g. Finance"')}
+          ${field('ed-edu-start', 'Start year', '', 'type="number" min="1900" max="2100"')}
+          ${field('ed-edu-end', 'End year', '', 'type="number" min="1900" max="2100"')}
+        </div>
+        <div class="field"><label for="ed-edu-desc">Notes</label><textarea id="ed-edu-desc" rows="2" maxlength="1000" placeholder="Honours, projects, activities"></textarea></div>
+        <div class="modal-actions"><button class="secondary" type="button" id="ed-edu-cancel" hidden>Cancel</button><button class="primary" type="submit" id="ed-edu-save">Add education</button></div>
+      </form>
+    </section>` : ''}
+    <section class="editor-section" id="editor-links"><h3>Links <span class="muted">${profile.social_links.length}/${profile.limits.social_links}</span></h3>
+      ${profile.social_links.map((link, index) => `<div class="item-row"><span style="display:flex;align-items:center;gap:8px;min-width:0">${linkIcon(link.url)}<strong>${escapeHtml(link.platform)}</strong> <a href="${safeHref(link.url)}" target="_blank" rel="noopener noreferrer" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(link.url)}</a></span><button class="secondary" type="button" data-remove-link="${index}">Remove</button></div>`).join('')}
       ${profile.social_links.length < profile.limits.social_links
-        ? '<form id="editor-link" class="editor-grid" style="margin-top:8px"><div class="field"><label for="ed-link-platform">Name</label><input id="ed-link-platform" placeholder="LinkedIn, Instagram, Website" required maxlength="40"></div><div class="field"><label for="ed-link-url">Link</label><input id="ed-link-url" type="url" placeholder="https://" required></div><div class="modal-actions" style="grid-column:1/-1"><button class="secondary" type="submit">Add link</button></div></form>'
+        ? '<form id="editor-link" style="margin-top:8px"><div class="editor-grid"><div class="field" style="grid-column:1/-1"><label for="ed-link-url">Paste any link</label><input id="ed-link-url" required maxlength="500" autocomplete="off" placeholder="instagram.com/yourname, youtube.com/@channel, linkedin.com/in/you, yoursite.com"><span class="muted" id="ed-link-detect" style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px"></span></div><div class="field"><label for="ed-link-platform">Name (optional)</label><input id="ed-link-platform" maxlength="40" placeholder="We fill this in for you"></div></div><div class="modal-actions"><button class="secondary" type="submit">Add link</button></div></form>'
         : (paid ? '' : upgrade.replace('Part of', 'More links are part of'))}
     </section>
-    <section class="editor-section"><h3>Credentials <span class="muted">${profile.credentials.length}/${profile.limits.credentials}</span></h3>
+    <section class="editor-section" id="editor-credentials"><h3>Licences &amp; certifications <span class="muted">${profile.credentials.length}/${profile.limits.credentials}</span></h3>
       ${profile.credentials.map((credential) => `<div class="item-row"><span><strong>${escapeHtml(credential.title)}</strong>${credential.issuing_body ? ` · ${escapeHtml(credential.issuing_body)}` : ''} <span class="muted">· ${credential.verification === 'verified' ? '✓ verified' : credential.verification}</span></span><button class="secondary" type="button" data-remove-credential="${escapeHtml(credential.id)}">Remove</button></div>`).join('')}
       ${profile.credentials.length < profile.limits.credentials
         ? '<form id="editor-credential" style="margin-top:8px"><div class="editor-grid"><div class="field"><label for="ed-cred-title">Licence or certificate</label><input id="ed-cred-title" required minlength="2" maxlength="160" placeholder="IRDAI licensed agent"></div><div class="field"><label for="ed-cred-body">Issued by</label><input id="ed-cred-body" maxlength="160"></div><div class="field"><label for="ed-cred-number">Number</label><input id="ed-cred-number" maxlength="160"></div><div class="field"><label for="ed-cred-doc">Document link</label><input id="ed-cred-doc" type="url" placeholder="https://"></div></div><div class="modal-actions"><button class="secondary" type="submit">Add credential</button></div></form>'
@@ -384,6 +416,7 @@ async function editorSave(button, path, method, payload, message) {
     renderEditor(await api(path, { method, body: payload === undefined ? undefined : JSON.stringify(payload) }));
     showToast(message, 'success');
     if (document.querySelector('#dashboard').classList.contains('active')) loadDashboard();
+    if (document.querySelector('#profile').classList.contains('active') && currentProfileId === editorProfile.id) openProfile(currentProfileId, { skipHistory: true });
   } catch (error) {
     setButtonLoading(button, false);
     showToast(error.message, 'error');
@@ -407,17 +440,28 @@ function wireEditor(profile) {
       keywords: editorKeywords,
     };
     if (profile.kind === 'expert') payload.years_experience = value('#ed-years') === '' ? null : Number(value('#ed-years'));
+    if (profile.kind === 'company') {
+      payload.founded_year = value('#ed-founded') === '' ? null : Number(value('#ed-founded'));
+      payload.team_size = value('#ed-team-size') || null;
+    }
     if (profile.plan_active) {
       payload.intro_video_url = value('#ed-video') || null;
       payload.portfolio_url = value('#ed-portfolio') || null;
     }
     editorSave(document.querySelector('#ed-basics-save'), base, 'PATCH', payload, 'Profile saved.');
   });
+  const linkInput = document.querySelector('#ed-link-url');
+  linkInput?.addEventListener('input', () => {
+    const info = linkInfo(linkInput.value.trim());
+    document.querySelector('#ed-link-detect').innerHTML = info.host ? `${linkIcon(linkInput.value.trim())} Shows as <strong>${escapeHtml(value('#ed-link-platform') || info.name)}</strong>` : '';
+  });
   document.querySelector('#editor-link')?.addEventListener('submit', (event) => {
     event.preventDefault();
-    const links = [...profile.social_links, { platform: value('#ed-link-platform'), url: value('#ed-link-url') }];
+    const links = [...profile.social_links, { platform: value('#ed-link-platform') || null, url: value('#ed-link-url') }];
     editorSave(event.submitter, `${base}/social-links`, 'PUT', { links }, 'Link added.');
   });
+  wireExperienceForm(profile, base, value);
+  wireEducationForm(profile, base, value);
   document.querySelectorAll('[data-remove-link]').forEach((button) => button.addEventListener('click', () => {
     const links = profile.social_links.filter((_, index) => index !== Number(button.dataset.removeLink));
     editorSave(button, `${base}/social-links`, 'PUT', { links }, 'Link removed.');
@@ -457,6 +501,105 @@ function wireEditor(profile) {
   });
   document.querySelector('#ed-window-save')?.addEventListener('click', (event) => {
     editorSave(event.currentTarget, `${base}/availability`, 'PUT', { windows: editorWindows }, 'Availability saved. Customers can now book you.');
+  });
+}
+
+// Month inputs give "YYYY-MM" (or free text where the browser has no month picker).
+function monthToDate(value) {
+  const match = /^(\d{4})-(\d{1,2})$/.exec(value);
+  return match ? `${match[1]}-${match[2].padStart(2, '0')}-01` : null;
+}
+
+function wireExperienceForm(profile, base, value) {
+  const form = document.querySelector('#editor-exp');
+  if (!form) return;
+  const current = document.querySelector('#ed-exp-current');
+  const endInput = document.querySelector('#ed-exp-end');
+  current.addEventListener('change', () => { endInput.disabled = current.checked; if (current.checked) endInput.value = ''; });
+  const reset = () => {
+    form.reset();
+    document.querySelector('#ed-exp-id').value = '';
+    endInput.disabled = false;
+    document.querySelector('#ed-exp-save').textContent = 'Add role';
+    document.querySelector('#ed-exp-cancel').hidden = true;
+  };
+  document.querySelector('#ed-exp-cancel').addEventListener('click', reset);
+  document.querySelectorAll('[data-edit-exp]').forEach((button) => button.addEventListener('click', () => {
+    const xp = profile.experiences.find((item) => item.id === button.dataset.editExp);
+    document.querySelector('#ed-exp-id').value = xp.id;
+    document.querySelector('#ed-exp-title').value = xp.title;
+    document.querySelector('#ed-exp-org').value = xp.organization;
+    document.querySelector('#ed-exp-location').value = xp.location ?? '';
+    document.querySelector('#ed-exp-start').value = xp.start_date.slice(0, 7);
+    endInput.value = xp.end_date ? xp.end_date.slice(0, 7) : '';
+    current.checked = !xp.end_date;
+    endInput.disabled = current.checked;
+    document.querySelector('#ed-exp-desc').value = xp.description ?? '';
+    document.querySelector('#ed-exp-save').textContent = 'Save role';
+    document.querySelector('#ed-exp-cancel').hidden = false;
+    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }));
+  document.querySelectorAll('[data-remove-exp]').forEach((button) => button.addEventListener('click', () => {
+    if (!confirm('Remove this role?')) return;
+    editorSave(button, `${base}/experiences/${encodeURIComponent(button.dataset.removeExp)}`, 'DELETE', undefined, 'Role removed.');
+  }));
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const start = monthToDate(value('#ed-exp-start'));
+    const end = current.checked ? null : monthToDate(value('#ed-exp-end'));
+    if (!start) { showToast('Pick the month you started.', 'error'); return; }
+    if (!current.checked && value('#ed-exp-end') && !end) { showToast('Pick the month you finished.', 'error'); return; }
+    const id = value('#ed-exp-id');
+    editorSave(document.querySelector('#ed-exp-save'), id ? `${base}/experiences/${encodeURIComponent(id)}` : `${base}/experiences`, id ? 'PUT' : 'POST', {
+      title: value('#ed-exp-title'),
+      organization: value('#ed-exp-org'),
+      location: value('#ed-exp-location') || null,
+      start_date: start,
+      end_date: end,
+      description: value('#ed-exp-desc') || null,
+    }, id ? 'Role updated.' : 'Role added.');
+  });
+}
+
+function wireEducationForm(profile, base, value) {
+  const form = document.querySelector('#editor-edu');
+  if (!form) return;
+  const year = (id) => (value(id) === '' ? null : Number(value(id)));
+  const reset = () => {
+    form.reset();
+    document.querySelector('#ed-edu-id').value = '';
+    document.querySelector('#ed-edu-save').textContent = 'Add education';
+    document.querySelector('#ed-edu-cancel').hidden = true;
+  };
+  document.querySelector('#ed-edu-cancel').addEventListener('click', reset);
+  document.querySelectorAll('[data-edit-edu]').forEach((button) => button.addEventListener('click', () => {
+    const edu = profile.educations.find((item) => item.id === button.dataset.editEdu);
+    document.querySelector('#ed-edu-id').value = edu.id;
+    document.querySelector('#ed-edu-school').value = edu.school;
+    document.querySelector('#ed-edu-degree').value = edu.degree ?? '';
+    document.querySelector('#ed-edu-field').value = edu.field_of_study ?? '';
+    document.querySelector('#ed-edu-start').value = edu.start_year ?? '';
+    document.querySelector('#ed-edu-end').value = edu.end_year ?? '';
+    document.querySelector('#ed-edu-desc').value = edu.description ?? '';
+    document.querySelector('#ed-edu-save').textContent = 'Save education';
+    document.querySelector('#ed-edu-cancel').hidden = false;
+    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }));
+  document.querySelectorAll('[data-remove-edu]').forEach((button) => button.addEventListener('click', () => {
+    if (!confirm('Remove this education?')) return;
+    editorSave(button, `${base}/educations/${encodeURIComponent(button.dataset.removeEdu)}`, 'DELETE', undefined, 'Education removed.');
+  }));
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const id = value('#ed-edu-id');
+    editorSave(document.querySelector('#ed-edu-save'), id ? `${base}/educations/${encodeURIComponent(id)}` : `${base}/educations`, id ? 'PUT' : 'POST', {
+      school: value('#ed-edu-school'),
+      degree: value('#ed-edu-degree') || null,
+      field_of_study: value('#ed-edu-field') || null,
+      start_year: year('#ed-edu-start'),
+      end_year: year('#ed-edu-end'),
+      description: value('#ed-edu-desc') || null,
+    }, id ? 'Education updated.' : 'Education added.');
   });
 }
 
@@ -595,22 +738,167 @@ function renderRequestExtras(detail) {
 
 /* ---------- Public profile extras ---------- */
 
-function renderProfileExtras(profile) {
+// Host suffix -> [label, icon text, brand colour]; mirrors backend app/core/links.py.
+const LINK_PLATFORMS = [
+  ['instagram.com', 'Instagram', 'IG', '#d6249f'], ['youtube.com', 'YouTube', '▶', '#ff0000'], ['youtu.be', 'YouTube', '▶', '#ff0000'],
+  ['linkedin.com', 'LinkedIn', 'in', '#0a66c2'], ['facebook.com', 'Facebook', 'f', '#1877f2'], ['fb.com', 'Facebook', 'f', '#1877f2'],
+  ['x.com', 'X', 'X', '#111111'], ['twitter.com', 'X', 'X', '#111111'], ['github.com', 'GitHub', 'GH', '#24292f'],
+  ['wa.me', 'WhatsApp', '✆', '#25d366'], ['whatsapp.com', 'WhatsApp', '✆', '#25d366'], ['t.me', 'Telegram', '✈', '#229ed9'],
+  ['behance.net', 'Behance', 'Bē', '#1769ff'], ['dribbble.com', 'Dribbble', '●', '#ea4c89'], ['medium.com', 'Medium', 'M', '#000000'],
+  ['threads.net', 'Threads', '@', '#000000'], ['pinterest.com', 'Pinterest', 'P', '#e60023'],
+];
+
+function linkInfo(url) {
+  let host = '';
+  try { host = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(url) ? url : `https://${url}`).hostname.toLowerCase(); } catch (_) { /* not a link yet */ }
+  const match = LINK_PLATFORMS.find(([suffix]) => host === suffix || host.endsWith(`.${suffix}`));
+  return { name: match ? match[1] : 'Website', glyph: match ? match[2] : '🌐', color: match ? match[3] : '#5b6b85', host: host.replace(/^www\./, '') };
+}
+
+function linkIcon(url) {
+  const info = linkInfo(url);
+  return `<span class="link-icon" style="background:${info.color}">${info.glyph}</span>`;
+}
+
+function linkChip(label, url) {
+  const info = linkInfo(url);
+  return `<a class="link-chip" href="${safeHref(url)}" target="_blank" rel="noopener noreferrer">${linkIcon(url)}${escapeHtml(label || info.name)}<small>${escapeHtml(info.host)}</small></a>`;
+}
+
+function monthYear(isoDate) {
+  const [year, month] = isoDate.split('-').map(Number);
+  return new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+}
+
+function spanText(start, end) {
+  const [startYear, startMonth] = start.split('-').map(Number);
+  const now = new Date();
+  const [endYear, endMonth] = end ? end.split('-').map(Number) : [now.getFullYear(), now.getMonth() + 1];
+  const total = Math.max(1, (endYear - startYear) * 12 + (endMonth - startMonth) + 1);
+  const years = Math.floor(total / 12);
+  const months = total % 12;
+  return [years ? `${years} yr${years > 1 ? 's' : ''}` : '', months ? `${months} mo${months > 1 ? 's' : ''}` : ''].filter(Boolean).join(' ');
+}
+
+function sectionCard(title, body, editKey, own) {
+  return `<article class="content-card"><div class="card-head"><h2>${title}</h2>${own ? `<button class="secondary card-edit" type="button" data-edit-section="${editKey}">✎ Edit</button>` : ''}</div><div style="margin-top:10px">${body}</div></article>`;
+}
+
+function renderProfileExtras(profile, own = false) {
   document.querySelector('#profile-bookable').hidden = !profile.bookable;
   const cards = [];
+  const prompt = (key, text) => `<button type="button" class="add-prompt" data-edit-section="${key}">${text}</button>`;
+  const experiences = profile.experiences || [];
+  const educations = profile.educations || [];
+  if (profile.kind === 'expert' && (experiences.length || own)) {
+    cards.push(sectionCard('Experience', experiences.length
+      ? experiences.map((xp) => `<div class="xp-item"><div class="xp-logo">${escapeHtml(initialsOf(xp.organization))}</div><div><strong>${escapeHtml(xp.title)}</strong><span>${escapeHtml(xp.organization)}${xp.location ? ` · ${escapeHtml(xp.location)}` : ''}</span><span class="muted">${monthYear(xp.start_date)} – ${xp.end_date ? monthYear(xp.end_date) : 'Present'} · ${spanText(xp.start_date, xp.end_date)}</span>${xp.description ? `<p>${escapeHtml(xp.description)}</p>` : ''}</div></div>`).join('')
+      : prompt('experience', '+ Add your work experience'), 'experience', own));
+  }
+  if (profile.kind === 'expert' && (educations.length || own)) {
+    cards.push(sectionCard('Education', educations.length
+      ? educations.map((edu) => `<div class="xp-item"><div class="xp-logo">🎓</div><div><strong>${escapeHtml(edu.school)}</strong>${edu.degree || edu.field_of_study ? `<span>${escapeHtml([edu.degree, edu.field_of_study].filter(Boolean).join(', '))}</span>` : ''}${edu.start_year || edu.end_year ? `<span class="muted">${[edu.start_year, edu.end_year].filter(Boolean).join(' – ')}</span>` : ''}${edu.description ? `<p>${escapeHtml(edu.description)}</p>` : ''}</div></div>`).join('')
+      : prompt('education', '+ Add your education'), 'education', own));
+  }
+  if (profile.credentials?.length || own) {
+    cards.push(sectionCard('Licences & certifications', profile.credentials?.length
+      ? profile.credentials.map((credential) => `<div class="offering"><div><strong>${escapeHtml(credential.title)}</strong>${credential.issuing_body ? `<span class="muted">${escapeHtml(credential.issuing_body)}</span>` : ''}</div><span class="${credential.verified ? 'verified' : 'muted'}">${credential.verified ? '● Verified' : 'Pending check'}</span></div>`).join('')
+      : prompt('credentials', '+ Add a licence or certificate'), 'credentials', own));
+  }
   const links = [
-    profile.intro_video_url ? { label: '▶ Watch intro video', url: profile.intro_video_url } : null,
+    profile.intro_video_url ? { label: 'Intro video', url: profile.intro_video_url } : null,
     profile.portfolio_url ? { label: 'Portfolio', url: profile.portfolio_url } : null,
     ...(profile.social_links || []).map((link) => ({ label: link.platform, url: link.url })),
   ].filter(Boolean);
-  if (links.length) {
-    cards.push(`<article class="content-card"><h2>Links</h2><div class="tags">${links.map((link) => `<a class="secondary" style="min-height:32px" href="${safeHref(link.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label)}</a>`).join('')}</div></article>`);
+  if (links.length || own) {
+    cards.push(sectionCard('Links', links.length
+      ? `<div class="link-list">${links.map((link) => linkChip(link.label, link.url)).join('')}</div>`
+      : prompt('links', '+ Add Instagram, YouTube, LinkedIn or your website'), 'links', own));
   }
   if (profile.offerings?.length) {
     cards.push(`<article class="content-card"><h2>Services &amp; prices</h2>${profile.offerings.map((offering) => `<div class="offering"><div><strong>${escapeHtml(offering.title)}</strong>${offering.description ? `<span class="muted">${escapeHtml(offering.description)}</span>` : ''}</div><span class="price-tag">${formatPrice(offering.price_min_inr, offering.price_max_inr)}</span></div>`).join('')}</article>`);
   }
-  if (profile.credentials?.length) {
-    cards.push(`<article class="content-card"><h2>Credentials</h2>${profile.credentials.map((credential) => `<div class="offering"><div><strong>${escapeHtml(credential.title)}</strong>${credential.issuing_body ? `<span class="muted">${escapeHtml(credential.issuing_body)}</span>` : ''}</div><span class="${credential.verified ? 'verified' : 'muted'}">${credential.verified ? '● Verified' : 'Pending check'}</span></div>`).join('')}</article>`);
+  const box = document.querySelector('#profile-extras');
+  box.innerHTML = cards.join('');
+  box.querySelectorAll('[data-edit-section]').forEach((button) => button.addEventListener('click', () => openProfileEditor(profile.id, button.dataset.editSection)));
+}
+
+/* ---------- My profile & customer profiles ---------- */
+
+function openMyProfile() {
+  if (!accessToken) { window.location.href = 'auth.html'; return; }
+  const acting = actingAs();
+  if (acting.type === 'expert' && identities?.expert_profile) { openProfile(identities.expert_profile.id); return; }
+  if (acting.type === 'company') {
+    const company = identities?.companies.find((item) => item.organization_id === acting.id);
+    if (company?.profile_id) { openProfile(company.profile_id); return; }
   }
-  document.querySelector('#profile-extras').innerHTML = cards.join('');
+  showView('me');
+  renderMe();
+}
+
+function customerCard(data, own) {
+  const since = new Date(data.member_since).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+  const portrait = data.avatar_url ? `<img src="${safeHref(data.avatar_url)}" alt="">` : escapeHtml(initialsOf(data.full_name));
+  return `<article class="profile-hero"><div class="profile-summary"><div class="portrait">${portrait}</div><div>
+      <span class="section-tag">Customer</span><h1>${escapeHtml(data.full_name)}</h1>
+      <p>${[data.city, `Member since ${since}`].filter(Boolean).map(escapeHtml).join(' · ')}</p>
+      <div class="tags">${(data.interests || []).map((interest) => `<span class="tag">${escapeHtml(interest)}</span>`).join('')}</div>
+      ${own ? '<div class="profile-owner-actions"><button class="primary" type="button" id="me-edit">✎ Edit profile</button></div>' : ''}
+    </div></div>
+    <div class="trust-bar" style="grid-template-columns:1fr"><div class="trust-item"><small>Requests completed</small><strong>${data.completed_requests}</strong></div></div></article>
+    <article class="content-card"><h2>About</h2>${data.bio
+      ? `<p style="white-space:pre-wrap">${escapeHtml(data.bio)}</p>`
+      : (own ? '<button type="button" class="add-prompt" id="me-add-bio">+ Add a short about – helps experts understand what you need</button>' : '<p class="muted" style="margin:0">Nothing here yet.</p>')}</article>`;
+}
+
+function renderMe() {
+  const body = document.querySelector('#me-body');
+  if (!currentUser) { body.innerHTML = '<p class="muted">Sign in to see your profile.</p>'; return; }
+  const completed = requestsCache.filter((request) => request.my_role === 'customer' && request.status === 'completed').length;
+  body.innerHTML = `<div style="max-width:760px">${customerCard({ ...currentUser, completed_requests: completed }, true)}</div>`;
+  document.querySelector('#me-edit').addEventListener('click', renderMeEditor);
+  document.querySelector('#me-add-bio')?.addEventListener('click', renderMeEditor);
+}
+
+function renderMeEditor() {
+  const user = currentUser;
+  document.querySelector('#me-body').innerHTML = `<form id="me-form" class="content-card" style="max-width:760px;margin-top:0">
+      <h2>Edit profile</h2>
+      <div class="editor-grid">
+        ${field('me-name', 'Name', user.full_name, 'required minlength="2" maxlength="120"')}
+        ${field('me-city', 'City', user.city, 'maxlength="100"')}
+        <div class="field" style="grid-column:1/-1"><label for="me-avatar">Photo link</label><input id="me-avatar" value="${escapeHtml(user.avatar_url ?? '')}" maxlength="500" placeholder="Paste an image link"></div>
+      </div>
+      <div class="field"><label for="me-bio">About you</label><textarea id="me-bio" rows="4" maxlength="1000" placeholder="e.g. Small business owner in Chennai, looking for help with taxes and insurance.">${escapeHtml(user.bio ?? '')}</textarea></div>
+      <p class="muted" style="margin:0 0 10px">Only experts and companies you send a request to can see this.</p>
+      <div class="modal-actions"><button class="secondary" type="button" id="me-cancel">Cancel</button><button class="primary" type="submit" id="me-save">Save</button></div>
+    </form>`;
+  document.querySelector('#me-cancel').addEventListener('click', renderMe);
+  document.querySelector('#me-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = document.querySelector('#me-save');
+    const value = (id) => document.querySelector(id).value.trim();
+    setButtonLoading(button, true, 'Saving…');
+    try {
+      const updated = await api('/auth/me', { method: 'PATCH', body: JSON.stringify({ full_name: value('#me-name'), city: value('#me-city') || null, avatar_url: value('#me-avatar') || null, bio: value('#me-bio') || null }) });
+      applySignedInUser(updated);
+      renderMe();
+      showToast('Profile saved.', 'success');
+    } catch (error) {
+      setButtonLoading(button, false);
+      showToast(error.message, 'error');
+    }
+  });
+}
+
+async function openCustomerProfile(requestId) {
+  const body = document.querySelector('#customer-body');
+  body.innerHTML = '<p class="muted"><span class="spinner"></span>Loading…</p>';
+  openModal('customer-modal');
+  try {
+    body.innerHTML = customerCard(await api(`/requests/${encodeURIComponent(requestId)}/customer`), false);
+  } catch (error) {
+    body.innerHTML = `<p class="muted">${escapeHtml(error.message)}</p>`;
+  }
 }
