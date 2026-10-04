@@ -86,6 +86,41 @@ async def _my_organization_ids(session: AsyncSession, user_id: UUID) -> set[UUID
     return set(rows.all())
 
 
+async def _get_user_and_orgs(session: AsyncSession, auth_user_id: UUID) -> tuple[User, set[UUID]]:
+    """The caller plus the live companies they admin, in a single query."""
+    rows = (
+        await session.execute(
+            select(User, Organization.id)
+            .outerjoin(
+                OrganizationMember,
+                and_(OrganizationMember.user_id == User.id, OrganizationMember.member_role == MemberRole.ADMIN.value),
+            )
+            .outerjoin(
+                Organization,
+                and_(Organization.id == OrganizationMember.organization_id, Organization.deleted_at.is_(None)),
+            )
+            .where(User.auth_user_id == auth_user_id, User.deleted_at.is_(None))
+        )
+    ).all()
+    if not rows:
+        raise IdentityNotFoundError("Complete onboarding before using requests")
+    return rows[0][0], {organization_id for _, organization_id in rows if organization_id is not None}
+
+
+async def _load_request(session: AsyncSession, request_id: UUID) -> tuple[Request, list[RequestParticipant]]:
+    """The request and all its participant rows, in a single query."""
+    rows = (
+        await session.execute(
+            select(Request, RequestParticipant)
+            .outerjoin(RequestParticipant, RequestParticipant.request_id == Request.id)
+            .where(Request.id == request_id)
+        )
+    ).all()
+    if not rows:
+        raise RequestNotFoundError("Request not found")
+    return rows[0][0], [participant for _, participant in rows if participant is not None]
+
+
 def _is_mine(participant: RequestParticipant, user: User, my_org_ids: set[UUID]) -> bool:
     return (
         participant.user_id == user.id
@@ -596,8 +631,7 @@ async def create_request(session: AsyncSession, auth_user_id: UUID, payload: Cre
 
 async def list_requests(session: AsyncSession, auth_user_id: UUID) -> list[RequestSummary]:
     """Return every request the caller is part of, as a customer, expert, or company admin."""
-    user = await _get_user(session, auth_user_id)
-    my_org_ids = await _my_organization_ids(session, user.id)
+    user, my_org_ids = await _get_user_and_orgs(session, auth_user_id)
 
     conditions = [
         Request.customer_id == user.id,
@@ -671,41 +705,26 @@ async def get_customer_profile(session: AsyncSession, auth_user_id: UUID, reques
 
 async def get_request_detail(session: AsyncSession, auth_user_id: UUID, request_id: UUID) -> RequestDetail:
     """Return full detail for one request, if the caller is a participant."""
-    user = await _get_user(session, auth_user_id)
-    request = await session.get(Request, request_id)
-    if request is None:
-        raise RequestNotFoundError("Request not found")
-
-    my_org_ids = await _my_organization_ids(session, user.id)
-    participants = (
-        await session.scalars(select(RequestParticipant).where(RequestParticipant.request_id == request.id))
-    ).all()
-    if not _is_participant(request, user, my_org_ids, list(participants)):
+    user, my_org_ids = await _get_user_and_orgs(session, auth_user_id)
+    request, participants = await _load_request(session, request_id)
+    if not _is_participant(request, user, my_org_ids, participants):
         raise RequestAccessError("You do not have access to this request")
 
-    return await _build_detail(session, request, user, my_org_ids, list(participants))
+    return await _build_detail(session, request, user, my_org_ids, participants)
 
 
 async def add_event(session: AsyncSession, auth_user_id: UUID, request_id: UUID, message: str) -> RequestDetail:
     """Post a message to the request's shared timeline."""
-    user = await _get_user(session, auth_user_id)
-    request = await session.get(Request, request_id)
-    if request is None:
-        raise RequestNotFoundError("Request not found")
-
-    my_org_ids = await _my_organization_ids(session, user.id)
-    participants = (
-        await session.scalars(select(RequestParticipant).where(RequestParticipant.request_id == request.id))
-    ).all()
-    if not _is_participant(request, user, my_org_ids, list(participants)):
+    user, my_org_ids = await _get_user_and_orgs(session, auth_user_id)
+    request, participants = await _load_request(session, request_id)
+    if not _is_participant(request, user, my_org_ids, participants):
         raise RequestAccessError("You do not have access to this request")
 
     session.add(RequestEvent(request_id=request.id, author_id=user.id, event_type="message", message=message))
     request.updated_at = datetime.now(timezone.utc)
     await session.commit()
-    await session.refresh(request)
 
-    return await _build_detail(session, request, user, my_org_ids, list(participants))
+    return await _build_detail(session, request, user, my_org_ids, participants)
 
 
 async def accept_request(session: AsyncSession, auth_user_id: UUID, request_id: UUID) -> RequestDetail:
@@ -786,14 +805,8 @@ async def invite_company(session: AsyncSession, auth_user_id: UUID, request_id: 
 async def _load_request_for_participant(
     session: AsyncSession, auth_user_id: UUID, request_id: UUID
 ) -> tuple[User, Request, set[UUID], list[RequestParticipant]]:
-    user = await _get_user(session, auth_user_id)
-    request = await session.get(Request, request_id)
-    if request is None:
-        raise RequestNotFoundError("Request not found")
-    my_org_ids = await _my_organization_ids(session, user.id)
-    participants = list(
-        (await session.scalars(select(RequestParticipant).where(RequestParticipant.request_id == request.id))).all()
-    )
+    user, my_org_ids = await _get_user_and_orgs(session, auth_user_id)
+    request, participants = await _load_request(session, request_id)
     if not _is_participant(request, user, my_org_ids, participants):
         raise RequestAccessError("You do not have access to this request")
     return user, request, my_org_ids, participants

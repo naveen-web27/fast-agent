@@ -58,16 +58,16 @@ async def get_current_auth_user_id(
     now = time.monotonic()
     cached = _token_cache.get(cache_key)
     if cached is not None and cached[1] > now:
-        auth_user_id = cached[0]
-    else:
-        auth_user_id = await _verify_with_supabase(settings, credentials.credentials)
-        if len(_token_cache) >= TOKEN_CACHE_MAX:
-            _token_cache.clear()
-        _token_cache[cache_key] = (auth_user_id, now + TOKEN_CACHE_SECONDS)
+        # Already passed the blocked check below; a new block takes effect within TOKEN_CACHE_SECONDS.
+        return cached[0]
 
+    auth_user_id = await _verify_with_supabase(settings, credentials.credentials)
     blocked_at = await session.scalar(
         select(User.blocked_at).where(User.auth_user_id == auth_user_id, User.deleted_at.is_(None))
     )
     if blocked_at is not None:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=SUSPENDED_DETAIL)
+    if len(_token_cache) >= TOKEN_CACHE_MAX:
+        _token_cache.clear()
+    _token_cache[cache_key] = (auth_user_id, now + TOKEN_CACHE_SECONDS)
     return auth_user_id
