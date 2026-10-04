@@ -166,6 +166,9 @@
     .mini-card strong { font-size:13px; }
     .mini-card span { color:var(--muted); font-size:11px; }
     .modal.wide { width:min(94vw,720px); }
+    /* Sticky so it stays reachable while scrolling long modals like the profile editor. */
+    .modal-x { position:sticky; top:0; z-index:3; float:right; display:grid; place-items:center; width:34px; height:34px; margin:-10px -10px 0 8px; padding:0; color:#53617a; border:1px solid var(--line); border-radius:50%; background:#fff; box-shadow:0 2px 8px rgba(22,35,58,.12); font-size:22px; line-height:1; cursor:pointer; }
+    .modal-x:hover { color:var(--ink); background:#f0f3f8; }
     .editor-section { padding:14px 0; border-top:1px solid var(--line); }
     .editor-section:first-of-type { border-top:0; padding-top:0; }
     .editor-section h3 { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 0 10px; font-size:14px; }
@@ -1622,6 +1625,16 @@
     function openModal(id) { modalScrim.hidden = false; document.querySelector(`#${id}`).hidden = false; }
     function closeModals() { modalScrim.hidden = true; document.querySelectorAll('.modal').forEach((modal) => { modal.hidden = true; }); }
     modalScrim.addEventListener('click', closeModals);
+    document.querySelectorAll('.modal').forEach((modal) => {
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'modal-x';
+      close.setAttribute('aria-label', 'Close');
+      close.textContent = '×';
+      close.addEventListener('click', closeModals);
+      modal.prepend(close);
+    });
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !modalScrim.hidden) closeModals(); });
     document.querySelector('#expert-cancel').addEventListener('click', closeModals);
     document.querySelector('#company-cancel').addEventListener('click', closeModals);
     document.querySelector('#otp-cancel').addEventListener('click', closeModals);
