@@ -750,9 +750,14 @@ const LINK_PLATFORMS = [
 
 function linkInfo(url) {
   let host = '';
-  try { host = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(url) ? url : `https://${url}`).hostname.toLowerCase(); } catch (_) { /* not a link yet */ }
+  let path = '';
+  try {
+    const parsed = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(url) ? url : `https://${url}`);
+    host = parsed.hostname.toLowerCase();
+    path = parsed.pathname.replace(/\/$/, '');
+  } catch (_) { /* not a link yet */ }
   const match = LINK_PLATFORMS.find(([suffix]) => host === suffix || host.endsWith(`.${suffix}`));
-  return { name: match ? match[1] : 'Website', glyph: match ? match[2] : '🌐', color: match ? match[3] : '#5b6b85', host: host.replace(/^www\./, '') };
+  return { name: match ? match[1] : 'Website', glyph: match ? match[2] : '🌐', color: match ? match[3] : '#5b6b85', host: host.replace(/^www\./, ''), display: host.replace(/^www\./, '') + path };
 }
 
 function linkIcon(url) {
@@ -762,7 +767,7 @@ function linkIcon(url) {
 
 function linkChip(label, url) {
   const info = linkInfo(url);
-  return `<a class="link-chip" href="${safeHref(url)}" target="_blank" rel="noopener noreferrer">${linkIcon(url)}${escapeHtml(label || info.name)}<small>${escapeHtml(info.host)}</small></a>`;
+  return `<a class="link-chip" href="${safeHref(url)}" target="_blank" rel="noopener noreferrer">${linkIcon(url)}${escapeHtml(label || info.name)}<small>${escapeHtml(info.display)}</small></a>`;
 }
 
 function monthYear(isoDate) {
