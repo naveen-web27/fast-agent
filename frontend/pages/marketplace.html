@@ -1372,25 +1372,45 @@
       }, 300);
     });
 
+    let messageSendSeq = 0;
     document.querySelector('#request-message-form').addEventListener('submit', async (event) => {
       event.preventDefault();
       if (!selectedRequestId) return;
       const requestId = selectedRequestId;
       const input = document.querySelector('#request-message-input');
-      const sendButton = document.querySelector('#request-message-send');
       const message = input.value.trim();
-      if (!message || sendButton.disabled) return;
-      setButtonLoading(sendButton, true, 'Sending…');
+      if (!message || input.disabled) return;
+      const seq = ++messageSendSeq;
+      // Show the message right away; the server reply replaces the whole timeline.
+      const timeline = document.querySelector('#request-timeline');
+      if (!timeline.querySelector('.event')) timeline.innerHTML = '';
+      const pending = document.createElement('div');
+      pending.className = 'event';
+      pending.style.opacity = '.6';
+      pending.innerHTML = `<i class="event-dot"></i><time>Sending…</time><strong>${escapeHtml(currentUser?.full_name || 'You')}</strong><p>${escapeHtml(message)}</p>`;
+      timeline.appendChild(pending);
+      input.value = '';
+      const restore = () => {
+        pending.remove();
+        if (selectedRequestId === requestId && !input.value) input.value = message;
+        // An earlier message may have succeeded but been skipped below; reload the chat to be sure.
+        if (selectedRequestId === requestId) selectRequest(requestId, { silent: true });
+      };
       try {
-        const response = await fetch(`${apiBase}/requests/${requestId}/events`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ message }) });
-        if (!response.ok) { showToast(await extractErrorMessage(response, 'Could not send your message.'), 'error'); return; }
+        const response = await fetch(`${apiBase}/requests/${requestId}/events`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ message }), background: true });
+        if (!response.ok) {
+          restore();
+          showToast(await extractErrorMessage(response, 'Could not send your message.'), 'error');
+          return;
+        }
         const detail = await response.json();
-        if (selectedRequestId === requestId) { input.value = ''; renderRequestDetail(detail); }
+        requestDetailCache.set(detail.id, detail);
+        // If more messages were sent meanwhile, wait for the last reply so the timeline doesn't jump back.
+        if (seq === messageSendSeq && selectedRequestId === requestId) renderRequestDetail(detail);
         loadRequests({ silent: true });
       } catch (_) {
-        // The fetch wrapper already told the user.
-      } finally {
-        setButtonLoading(sendButton, false);
+        restore();
+        showToast('Message not sent. Check your connection and try again.', 'error');
       }
     });
 
