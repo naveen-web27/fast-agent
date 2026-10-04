@@ -2058,6 +2058,8 @@
         const { data } = await authClient.auth.getSession();
         if (!data.session) return false;
         accessToken = data.session.access_token;
+        // Supabase refreshes the hour-long access token in the background; keep using the newest one.
+        authClient.auth.onAuthStateChange((_event, session) => { if (session?.access_token) accessToken = session.access_token; });
         const meResponse = await fetch(`${apiBase}/auth/me`, { headers: authHeaders() });
         if (meResponse.status === 403) {
           showToast(await extractErrorMessage(meResponse, 'Your account has been suspended.'), 'error');
