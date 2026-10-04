@@ -1712,10 +1712,10 @@
       applyActingAsDefaultView(type);
     }
 
-    function applyActingAsDefaultView(type) {
+    function applyActingAsDefaultView(type, options = {}) {
       applyNavForActing(type);
       // Stay on the dashboard if it's open (it reloads for the new identity); otherwise go to discover.
-      showView(document.querySelector('#dashboard').classList.contains('active') ? 'dashboard' : 'discover');
+      if (!options.keepView) showView(document.querySelector('#dashboard').classList.contains('active') ? 'dashboard' : 'discover');
       currentPage = 1;
       document.querySelector('#how-steps').hidden = type !== 'customer';
       customerPill.hidden = type === 'customer';
@@ -1932,7 +1932,8 @@
       await loadRequests();
       await loadSavedProfileIds();
       const acting = JSON.parse(sessionStorage.getItem('rightconnect-acting-as') || '{"type":"customer","label":"Customer"}');
-      applyActingAsDefaultView(acting.type);
+      // Startup is slow on the server; keep whatever the user opened meanwhile.
+      applyActingAsDefaultView(acting.type, { keepView: true });
       if (launchView) openLaunchView();
       // Check for replies every 20s while a chat is open, otherwise every minute.
       let lastPoll = Date.now();
