@@ -23,6 +23,12 @@
     .phone-row { display:grid; grid-template-columns:78px 1fr; gap:8px; }
     .field-hint { color:var(--muted); font-size:11px; }
     .field-hint.error { color:#b4233f; font-weight:700; }
+    .review-sign-in { display:grid; gap:12px; margin-top:18px; }
+    .review-sign-in[hidden] { display:none; }
+    #google-button[hidden] { display:none; }
+    .review-sign-in label { display:grid; gap:6px; color:#33425e; font-size:12px; font-weight:800; }
+    .review-sign-in input { width:100%; min-height:46px; padding:0 12px; color:var(--ink); border:1px solid var(--line); border-radius:8px; background:#fff; }
+    .review-sign-in input:focus { border-color:var(--teal); outline:3px solid rgba(8,138,130,.12); }
     .interest-chips { display:flex; flex-wrap:wrap; gap:7px; }
     .interest-chip { min-height:34px; padding:0 12px; color:#33425e; border:1px solid var(--line); border-radius:999px; background:#fff; font-size:12px; font-weight:700; }
     .interest-chip:hover { border-color:#92d8cb; }
@@ -91,7 +97,7 @@
         <div class="role-line"><button class="role company" data-role="company"><span class="role-icon">▣</span><span><strong>I'm a company</strong></span><span class="arrow">›</span></button><button type="button" class="info" aria-expanded="false" aria-controls="info-company" aria-label="About company accounts">i</button></div>
         <p class="info-text" id="info-company" hidden>For businesses. Get customer requests and manage your team. We verify you before you appear in search.</p>
       </div></section>
-      <section class="step" id="auth-step"><span class="eyebrow" style="color:#088a82" id="role-label">Customer account</span><h2>Sign in</h2><p>One tap with Google.</p><div class="sign-in"><button class="oauth" id="google-button"><i class="google-g"></i> Continue with Google</button></div><p class="terms" style="margin:16px 0 0">By continuing you accept our <a href="#terms">Terms</a> &amp; <a href="privacy.html">Privacy Policy</a>.</p></section>
+      <section class="step" id="auth-step"><span class="eyebrow" style="color:#088a82" id="role-label">Customer account</span><h2>Sign in</h2><p id="sign-in-copy">One tap with Google.</p><div class="sign-in"><button class="oauth" id="google-button"><i class="google-g"></i> Continue with Google</button></div><form class="review-sign-in" id="review-sign-in" hidden><label for="review-email">Review account email<input id="review-email" name="email" type="email" autocomplete="username" required></label><label for="review-password">Password<input id="review-password" name="password" type="password" autocomplete="current-password" required></label><button class="continue" id="review-submit" type="submit">Sign in for app review</button></form><p class="terms" style="margin:16px 0 0">By continuing you accept our <a href="#terms">Terms</a> &amp; <a href="privacy.html">Privacy Policy</a>.</p></section>
       <section class="step" id="details-step"><div class="progress" id="wizard-progress" aria-hidden="true"></div><span class="eyebrow" style="color:#088a82" id="details-label">Step 1</span>
         <form class="form" id="details-form" novalidate>
           <div class="q" data-for="customer expert company"><div class="q-head"><label for="name">Your name</label></div><input id="name" placeholder="Full name" autocomplete="name" maxlength="120" required></div>
@@ -154,6 +160,7 @@
     }
     let show = (id) => { steps.forEach((step) => step.classList.toggle('active', step.id === id)); current = id; back.hidden = ['role-step', 'success-step'].includes(id); };
     const OAUTH_PENDING_KEY = 'rightconnect-oauth-pending';
+    const reviewerMode = new URLSearchParams(location.search).get('review') === '1';
     function setLoading(text) {
       document.querySelector('#loading-screen').hidden = !text;
       if (text) document.querySelector('#loading-text').textContent = text;
@@ -167,6 +174,42 @@
       setLoading('Opening Google…');
       const { error } = await authClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/pages/auth.html` } });
       if (error) { sessionStorage.removeItem(OAUTH_PENDING_KEY); setLoading(null); showToast(error.message, 'error'); }
+    });
+    document.querySelector('#review-sign-in').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!authClient) { showToast('Sign-in is not configured. Please try again later.', 'error'); return; }
+      const button = document.querySelector('#review-submit');
+      setButtonLoading(button, true, 'Signing in…');
+      try {
+        const { data, error } = await authClient.auth.signInWithPassword({
+          email: document.querySelector('#review-email').value.trim(),
+          password: document.querySelector('#review-password').value,
+        });
+        if (error) throw error;
+        authSession = data.session;
+        if (!authSession) throw new Error('Sign-in did not create a session.');
+        const response = await fetch(`${apiBase}/auth/me`, { headers: { Authorization: `Bearer ${authSession.access_token}` } });
+        if (response.status === 403) {
+          const body = await response.json().catch(() => ({}));
+          await authClient.auth.signOut();
+          authSession = null;
+          throw new Error(body.detail || 'This account cannot access RightConnect.');
+        }
+        if (response.status === 404) {
+          setButtonLoading(button, false);
+          show('details-step');
+          showToast('Complete this review profile before sharing its sign-in with Play reviewers.', 'error');
+          return;
+        }
+        if (!response.ok) throw new Error('Could not open the review account. Please try again.');
+        sessionStorage.setItem('rightconnect-user', JSON.stringify(await response.json()));
+        sessionStorage.removeItem('rightconnect-auth-return');
+        setLoading('Opening RightConnect…');
+        window.location.href = 'marketplace.html';
+      } catch (error) {
+        showToast(error.message || 'Could not sign in. Check the review account details.', 'error');
+        setButtonLoading(button, false);
+      }
     });
     const PHONE_HINT = '';
     function phoneError(code, digits) {
@@ -357,6 +400,14 @@
     (async () => {
       const savedRole = sessionStorage.getItem('rightconnect-role');
       if (savedRole && roleNames[savedRole]) role = savedRole;
+      if (reviewerMode) {
+        role = 'customer';
+        document.querySelector('#role-label').textContent = 'App reviewer';
+        document.querySelector('#sign-in-copy').textContent = 'Sign in with the review account provided in Play Console.';
+        document.querySelector('#google-button').hidden = true;
+        document.querySelector('#review-sign-in').hidden = false;
+        show('auth-step');
+      }
       if (!['http:', 'https:'].includes(window.location.protocol)) return;
       const returningFromGoogle = sessionStorage.getItem(OAUTH_PENDING_KEY) === '1' || /access_token|[?&]code=|error=/.test(location.hash + location.search);
       const oauthError = new URLSearchParams(location.hash.slice(1) || location.search).get('error_description');

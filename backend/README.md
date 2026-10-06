@@ -23,7 +23,7 @@ For setting up a new dev or production environment on Render + Supabase (regions
 
 The `/api/v1/auth/onboarding` endpoint requires a Supabase access token and derives `auth_user_id` from Supabase's authenticated `/auth/v1/user` response. It never accepts an auth identity from the request body.
 
-Authentication is Google OAuth through Supabase Auth. WhatsApp OTP is disabled.
+Public account creation is Google OAuth through Supabase Auth. WhatsApp OTP is disabled. A dedicated `/pages/auth.html?review=1` route supports email/password sign-in for review accounts provisioned by an operator in Supabase; it does not create accounts or bypass API authentication. Enable the Supabase Email provider, create and confirm the reviewer user, then sign in on the deployed review URL and finish onboarding before sharing the credentials in Play Console. Do not hard-code reviewer passwords in the repository. Keep the review account free of MFA challenges reviewers cannot complete, and never give reviewers a personal Google account or its credentials.
 
 ### Session persistence
 
