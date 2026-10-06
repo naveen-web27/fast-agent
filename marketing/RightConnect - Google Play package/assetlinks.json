@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.rightconnect.twa",
+        "sha256_cert_fingerprints": ["F6:2C:40:8D:D4:A9:F5:DA:7A:B6:31:A0:F0:7D:35:D9:7D:C1:EF:B2:49:F9:A3:15:71:93:09:6D:7E:E7:1E:3A"]
+      }
+    }]
