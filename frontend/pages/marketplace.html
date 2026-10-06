@@ -690,11 +690,9 @@
         if (pill.dataset.kind === 'customer') {
           setKindSelection(['customer']);
         } else {
-          const withoutCustomer = selectedKinds().filter((kind) => kind !== 'customer');
-          const isSelected = pill.classList.contains('selected');
-          let next = isSelected ? withoutCustomer.filter((kind) => kind !== pill.dataset.kind) : [...withoutCustomer, pill.dataset.kind];
-          if (next.length === 0) next = [pill.dataset.kind];
-          setKindSelection(next);
+          const selectedProfileKinds = selectedKinds().filter((kind) => kind !== 'customer');
+          const isOnlySelectedKind = selectedProfileKinds.length === 1 && selectedProfileKinds[0] === pill.dataset.kind;
+          setKindSelection(isOnlySelectedKind ? ['expert', 'company'] : [pill.dataset.kind]);
         }
         currentPage = 1;
         refreshDiscoverResults();
