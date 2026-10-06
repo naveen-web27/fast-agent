@@ -41,9 +41,26 @@ Fix: in Supabase, go to **Settings -> Database -> Connection pooling** and copy 
 
 ## Subscriptions
 
-`users.subscription_tier` defaults to `free`. The standalone plans page offers one-time Pro and Enterprise passes for 30 days, not recurring subscriptions. Razorpay hosts checkout through a Payment Link. A redirect is never considered proof of payment: only a signed `payment_link.paid` webhook with a matching link, captured payment, currency, and amount activates access. Access expires automatically after 30 days; purchasing again extends it.
+The standalone plans page offers one-time Pro and Enterprise passes for 30 days, not recurring subscriptions. Pro applies to the buyer's expert profile; Enterprise applies to the company they administer. Razorpay Standard Checkout opens a payment modal. Prices come exclusively from server configuration, never from a browser-provided amount.
 
-Before deploying, run `db/migrations/008_razorpay_payments.sql` on the existing database. In Render set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `RAZORPAY_PRO_AMOUNT_PAISE`, `RAZORPAY_ENTERPRISE_AMOUNT_PAISE`, and `APP_BASE_URL` (the public HTTPS origin). Amounts are in paise, for example `49900` is INR 499; zero disables checkout for a plan. Configure a Razorpay webhook for `payment_link.paid` at `https://YOUR_HOST/api/v1/payments/webhook` with the same webhook secret. Use Razorpay **Test** mode first, with matching test API keys and a test webhook; verify the full redirect and webhook before enabling live keys. Keep secrets in Render, not frontend code. Refunds and recurring billing are not automated yet and must be managed manually in Razorpay.
+- `POST /api/v1/payments/create-order?plan=pro|enterprise`: requires a Supabase Bearer token, persists an order for that identity, and returns `order_id`, `amount`, `currency`, the public `key_id`, description, and prefill details.
+- `POST /api/v1/payments/verify-payment`: requires the same buyer's Bearer token and JSON containing `razorpay_order_id`, `razorpay_payment_id`, and `razorpay_signature`. Verifies HMAC-SHA256 using the stored order ID and the server secret, then fetches the payment to check its order, amount, currency, and captured status. Only captured payments activate access. An authorized payment returns `status: pending` without granting access.
+- `POST /api/v1/payments/webhook`: verifies the raw-body webhook signature and reconciles `order.paid` if the browser closes before confirmation. Legacy `/checkout` Payment Links and their `payment_link.paid` events remain supported.
+
+Both confirmation paths lock the payment and target identity; duplicate delivery never extends access twice. A new paid order extends the identity's existing expiry by 30 days.
+
+### Payment Setup And Testing
+
+1. Apply only missing migrations to an existing database, including `008`, `012`, and the new `db/migrations/017_razorpay_standard_checkout.sql`. For a fresh database use the current `db/schema.sql` instead. Apply dev first, then prod before deploying the new ORM model.
+2. Set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_PRO_AMOUNT_PAISE`, and `RAZORPAY_ENTERPRISE_AMOUNT_PAISE` in `backend/.env` locally or Render Environment settings. Local settings load from either the repo root or backend working directory. Amounts are in paise: `100` is INR 1; zero disables a plan. The API calls Razorpay directly with the existing async `httpx` dependency; no Razorpay SDK is required.
+3. In the Razorpay dashboard, enable automatic capture. Create a webhook for `order.paid` at `https://YOUR_HOST/api/v1/payments/webhook`; retain `payment_link.paid` for existing links. Put its secret in `RAZORPAY_WEBHOOK_SECRET`. Webhooks are recommended for reliable recovery even though browser verification can activate captured payments without a configured webhook.
+4. Set `APP_BASE_URL` to each environment's unique public HTTPS origin. If dev and prod share the same live account/key pair, create two live webhooks with different webhook secrets. Orders and new links carry the origin in notes; each webhook ignores the other environment's events. Keep this origin stable while payments are pending. Both environments charge real money with live keys.
+5. Start the backend from the repo root: `python3 -m uvicorn app.main:app --app-dir backend --reload`. Open `http://127.0.0.1:8000/pages/plans.html`, sign in with Google, and use an expert profile for Pro or a company administrator for Enterprise. Supabase must allow your local auth redirect, and local DB/auth variables must also be configured.
+6. Use Test Mode keys for simulated payments. Choose a test netbanking method and use its mock success/failure screen, or use Razorpay's documented test card/UPI options. Check cancellation, failure, successful activation, company activation, duplicate verification/webhook delivery, and a second purchase extending expiry.
+
+Run isolated payment regressions from the repo root with `PYTHONPATH=backend python3 -B -m unittest discover -s backend/tests -p 'test_payments.py' -v`. These execute payment function bodies with stubbed HTTP/database boundaries; they do not replace a FastAPI/PostgreSQL/Razorpay end-to-end test.
+
+Keep secrets in Render or ignored `.env` files, never frontend code. Rotate any secret shared in chat. Refunds and recurring billing are not automated yet and must be managed manually in Razorpay and the corresponding identity's access.
 
 ## Multi-role identities (customer + expert + company, same login)
 

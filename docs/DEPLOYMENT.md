@@ -27,7 +27,7 @@ Users are in India, so Singapore is also the closest region to them (~50 ms vs ~
 1. **New project** → Region **Southeast Asia (Singapore) – ap-southeast-1**. Save the database password in a password manager.
    - Plan: Free works, but free projects **pause after 7 days without traffic** and have no daily backups. Use **Pro** for production.
 2. **Create the schema** (SQL Editor → New query):
-   1. Paste and run all of `db/schema.sql`. It contains every migration up to 016 (including RLS), so no migration files are needed on a new database.
+   1. Paste and run all of `db/schema.sql`. It contains every migration up to 017 (including RLS and Razorpay order IDs), so no migration files are needed on a new database.
    2. Do **not** run `db/seed.sql` (demo profiles and fake reviews).
 3. **Connection string** (Project Settings → Database → Connection string → **Session pooler**):
    - Use the **session pooler, port `5432`**: `postgresql://postgres.<ref>:<password>@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres`
@@ -64,7 +64,7 @@ Users are in India, so Singapore is also the closest region to them (~50 ms vs ~
 | `RESEND_API_KEY` | Resend API key (company email verification codes) |
 | `RESEND_FROM_EMAIL` | `RightConnect <no-reply@rightconnect.app>` (domain verified in Resend) |
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | **Live** keys |
-| `RAZORPAY_WEBHOOK_SECRET` | secret of the live webhook (section 3) |
+| `RAZORPAY_WEBHOOK_SECRET` | secret of the live webhook (section 3), different from dev |
 | `RAZORPAY_PRO_AMOUNT_PAISE` / `RAZORPAY_ENTERPRISE_AMOUNT_PAISE` | prices in paise, e.g. `49900` = ₹499 |
 | `ADMIN_PATH` | long random path, e.g. `/ops-8f2k9q` |
 | `ADMIN_BASIC_USER` / `ADMIN_BASIC_PASSWORD` | strong, unique credentials |
@@ -76,7 +76,8 @@ Users are in India, so Singapore is also the closest region to them (~50 ms vs ~
 
 ## 3. Third-party settings
 
-- **Razorpay** (Live mode): Settings → Webhooks → add `https://rightconnect.app/api/v1/payments/webhook`, event `payment_link.paid`, same secret as `RAZORPAY_WEBHOOK_SECRET`. Complete KYC before switching on live keys.
+- **Razorpay** (Live mode): Settings → Webhooks → add `https://rightconnect.app/api/v1/payments/webhook`, event `order.paid`, same secret as `RAZORPAY_WEBHOOK_SECRET`. Keep `payment_link.paid` subscribed for legacy links. Enable automatic payment capture and complete KYC before switching on live keys. Apply migration 017 to existing databases before deploying Standard Checkout. See [backend payment setup](../backend/README.md#payment-setup-and-testing).
+- **Shared live Razorpay account (optional)**: dev can also use live keys, but dev payments charge real money. Create a second live webhook pointing to the dev service, with a different webhook secret. `APP_BASE_URL` must be unique and correct in each service: provider notes use it to route events to the owning environment. Refunds do not automatically revoke plan access.
 - **Resend**: verify the `rightconnect.app` sending domain (SPF/DKIM DNS records).
 - **Admin account**: after you sign up once on production, make yourself admin in the SQL Editor:
   `UPDATE users SET role = 'platform_admin' WHERE email = 'you@example.com';` and include that email in `ADMIN_EMAILS`. The console is at `https://rightconnect.app<ADMIN_PATH>`.
@@ -104,7 +105,7 @@ Afterwards everyone signs in once more (the new project issues new tokens). Remo
 - `https://rightconnect.app/api/v1/health/db` responds in well under 300 ms (dev takes ~1.2 s).
 - Google sign-in works and lands on the marketplace.
 - Create a test request, chat, accept, mark done, rate.
-- A ₹1 test payment (or Razorpay test mode on dev) activates Pro via the webhook.
+- A Razorpay Test Mode payment on dev activates Pro through verified Standard Checkout or `order.paid`. Confirm captured status, webhook HTTP 200, cancellation/failure handling, and duplicate delivery without double extension. Use a controlled real payment for production checks; do not lower public prices just to test.
 - Admin console opens at `ADMIN_PATH` and asks for the Basic-auth password.
 - In the browser console, `fetch('<SUPABASE_URL>/rest/v1/users?select=id', {headers:{apikey:'<publishable key>'}})` returns `[]` (RLS on).
 

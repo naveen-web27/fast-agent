@@ -39,6 +39,7 @@ CREATE TABLE payments (
     plan TEXT NOT NULL CHECK (plan IN ('pro', 'enterprise')),
     amount_paise INTEGER NOT NULL CHECK (amount_paise >= 100),
     razorpay_link_id TEXT UNIQUE,
+    razorpay_order_id TEXT UNIQUE,
     razorpay_payment_id TEXT UNIQUE,
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'refunded')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

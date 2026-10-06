@@ -1,4 +1,4 @@
-"""Payment-link records used to reconcile Razorpay events."""
+"""Payment records used to reconcile Razorpay orders and legacy links."""
 import uuid
 from datetime import datetime
 
@@ -21,9 +21,9 @@ class Payment(Base):
     plan: Mapped[str] = mapped_column(String, nullable=False)
     amount_paise: Mapped[int] = mapped_column(Integer, nullable=False)
     razorpay_link_id: Mapped[str | None] = mapped_column(String, unique=True)
+    razorpay_order_id: Mapped[str | None] = mapped_column(String, unique=True)
     razorpay_payment_id: Mapped[str | None] = mapped_column(String, unique=True)
     status: Mapped[str] = mapped_column(String, nullable=False, default="pending")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    access_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     access_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

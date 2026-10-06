@@ -56,6 +56,7 @@
   </dialog>
   <div class="loading-screen" id="loading-screen" role="status" aria-live="polite" hidden><img src="../assets/rightconnect-mark.svg" alt=""><span class="loading-dots" aria-hidden="true"><i></i><i></i><i></i></span><p id="loading-text">Loading…</p></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script>
     const statusBox = document.querySelector('#status');
     const buttons = { pro: document.querySelector('#pro-button'), enterprise: document.querySelector('#enterprise-button') };
@@ -127,25 +128,92 @@
         setLoading(null);
       }
     }
+    let checkoutBusy = false;
     async function checkout(plan) {
+      if (checkoutBusy) return;
       const token = authClient ? await sessionToken() : null;
+      if (checkoutBusy) return;
       if (!token) {
         document.querySelector('#login-copy').textContent = `Sign in or create an account to buy ${plan === 'pro' ? 'Pro' : 'Enterprise'}. You can review the payment before paying.`;
         loginDialog.showModal();
         return;
       }
       const button = buttons[plan];
-      button.disabled = true;
+      const previous = Object.entries(buttons).map(([id, item]) => ({ id, disabled: item.disabled, text: item.textContent }));
+      checkoutBusy = true;
+      Object.values(buttons).forEach((item) => { item.disabled = true; });
       button.textContent = 'Opening Razorpay…';
-      setLoading('Opening payment…');
+      let submitted = false;
+      let failed = false;
+      const restore = () => {
+        checkoutBusy = false;
+        previous.forEach(({ id, disabled, text }) => { buttons[id].disabled = disabled; buttons[id].textContent = text; });
+      };
       try {
-        const response = await fetch(`/api/v1/payments/checkout?plan=${plan}`, { method:'POST', headers: { Authorization: `Bearer ${token}` } });
+        if (typeof window.Razorpay !== 'function') throw new Error('Razorpay could not load. Refresh the page and try again.');
+        const response = await fetch(`/api/v1/payments/create-order?plan=${plan}`, { method:'POST', headers: { Authorization: `Bearer ${token}` } });
         if (!response.ok) {
           const body = await response.json().catch(() => ({}));
           throw new Error(typeof body.detail === 'string' ? body.detail : 'Checkout is unavailable right now.');
         }
-        location.assign((await response.json()).checkout_url);
-      } catch (error) { setLoading(null); message(error.message, true); button.disabled = false; button.textContent = 'Buy plan'; }
+        const order = await response.json();
+        const checkoutModal = new window.Razorpay({
+          key: order.key_id,
+          order_id: order.order_id,
+          amount: order.amount,
+          currency: order.currency,
+          name: 'RightConnect',
+          description: order.description,
+          image: `${location.origin}/assets/rightconnect-mark.svg`,
+          prefill: order.prefill,
+          theme: { color: '#086f61' },
+          handler: async (payment) => {
+            if (submitted) return;
+            submitted = true;
+            button.textContent = 'Confirming payment…';
+            message('Confirming your payment…');
+            try {
+              const freshToken = await sessionToken();
+              if (!freshToken) throw new Error('Your session expired. Sign in again to check your plan.');
+              const verification = await fetch('/api/v1/payments/verify-payment', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${freshToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  razorpay_payment_id: payment.razorpay_payment_id,
+                  razorpay_order_id: payment.razorpay_order_id,
+                  razorpay_signature: payment.razorpay_signature,
+                }),
+              });
+              const result = await verification.json().catch(() => ({}));
+              if (!verification.ok) throw new Error(typeof result.detail === 'string' ? result.detail : 'Payment confirmation is unavailable.');
+              restore();
+              if (result.status !== 'paid') {
+                button.disabled = true;
+                button.textContent = 'Awaiting confirmation';
+                message('Payment is awaiting capture. Do not pay again. Refresh later to check your plan.');
+                return;
+              }
+              message(`${plan === 'pro' ? 'Pro' : 'Enterprise'} payment confirmed. Access is active until ${new Date(result.access_expires_at).toLocaleDateString('en-IN')}.`);
+              await load();
+            } catch (error) {
+              restore();
+              button.disabled = true;
+              button.textContent = 'Confirmation pending';
+              message(`${error.message} Do not pay again. Refresh to check your plan or contact support.`, true);
+            }
+          },
+          modal: { ondismiss: () => {
+            if (submitted) return;
+            restore();
+            if (!failed) message('Checkout closed. No plan has been activated.');
+          } },
+        });
+        checkoutModal.on('payment.failed', (result) => {
+          failed = true;
+          message(result.error?.description || 'Payment failed. You can retry in Razorpay or close checkout.', true);
+        });
+        checkoutModal.open();
+      } catch (error) { restore(); message(error.message, true); }
     }
     Object.entries(buttons).forEach(([plan, button]) => button.addEventListener('click', () => checkout(plan)));
     load();

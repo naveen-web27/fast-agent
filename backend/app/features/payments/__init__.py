@@ -1,1 +1,1 @@
-"""Razorpay payment links and webhook reconciliation."""
+"""Razorpay Standard Checkout, legacy payment links, and webhook reconciliation."""
