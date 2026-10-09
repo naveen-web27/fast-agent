@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
+  <rect width="1024" height="500" fill="#f2f7f3"/>
+  <path d="M0 420C170 355 245 560 460 445V500H0Z" fill="#e2f1e9"/>
+  <circle cx="32" cy="35" r="112" fill="#e4f3eb"/>
+  <circle cx="471" cy="472" r="132" fill="#d7eee4"/>
+  <path d="M516 0h508v500H551c39-94 40-168 6-250C528 174 514 88 516 0Z" fill="#dff2e9"/>
+  <path d="M710 0h314v500H762c36-108 29-173-3-251C727 170 711 91 710 0Z" fill="#d1ebe0"/>
+
+  <g transform="translate(64 52)">
+    <rect width="42" height="42" rx="12" fill="#087f73"/>
+    <path d="M11 31V11h10c7 0 11 4 11 10 0 6-4 10-11 10h-2V21h2c2 0 3-1 3-3s-1-3-3-3h-3v16Z" fill="#fff"/>
+    <circle cx="32" cy="12" r="7" fill="#8ce3ce"/>
+    <path d="M32 8v8M28 12h8" stroke="#087f73" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="55" y="29" fill="#142928" font-family="Arial, sans-serif" font-size="25" font-weight="700">RightConnect</text>
+  </g>
+
+  <text x="64" y="177" fill="#086f61" font-family="Arial, sans-serif" font-size="14" font-weight="700" letter-spacing="2">FIND TRUSTED HELP</text>
+  <text x="64" y="237" fill="#142928" font-family="Arial, sans-serif" font-size="48" font-weight="700">Find the right person</text>
+  <text x="64" y="292" fill="#142928" font-family="Arial, sans-serif" font-size="48" font-weight="700">for the decision.</text>
+  <text x="66" y="337" fill="#536665" font-family="Arial, sans-serif" font-size="19">Explore experts and companies.</text>
+  <text x="66" y="366" fill="#536665" font-family="Arial, sans-serif" font-size="19">Compare profiles. Send a request.</text>
+
+  <g transform="translate(65 406)">
+    <rect width="119" height="36" rx="18" fill="#086f61"/>
+    <text x="59.5" y="24" fill="#fff" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700">Search</text>
+    <rect x="130" width="135" height="36" rx="18" fill="#fff" stroke="#c8dfd5" stroke-width="1.5"/>
+    <text x="197.5" y="24" fill="#31544d" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700">Compare</text>
+    <rect x="276" width="133" height="36" rx="18" fill="#fff" stroke="#c8dfd5" stroke-width="1.5"/>
+    <text x="342.5" y="24" fill="#31544d" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700">Connect</text>
+  </g>
+
+  <g transform="translate(579 46) rotate(-4 190 210)" opacity=".7">
+    <rect x="12" y="8" width="348" height="405" rx="23" fill="#b6d8c9"/>
+  </g>
+  <g transform="translate(574 42)">
+    <rect width="350" height="414" rx="24" fill="#fff" stroke="#c7ded3" stroke-width="2"/>
+    <rect x="18" y="18" width="314" height="378" rx="15" fill="#f7faf8"/>
+    <rect x="38" y="40" width="34" height="34" rx="10" fill="#dff2e9"/>
+    <path d="M48 65V48h8c5 0 8 3 8 8s-3 9-8 9h-2v-8h2c1 0 2 0 2-1s-1-1-2-1h-2v10Z" fill="#087f73"/>
+    <text x="82" y="55" fill="#142928" font-family="Arial, sans-serif" font-size="17" font-weight="700">Find trusted help</text>
+    <text x="82" y="74" fill="#778783" font-family="Arial, sans-serif" font-size="11">Search services and profiles</text>
+
+    <rect x="38" y="96" width="274" height="50" rx="10" fill="#fff" stroke="#d9e5df"/>
+    <circle cx="58" cy="121" r="8" fill="none" stroke="#71837c" stroke-width="2"/>
+    <path d="m64 127 6 6" stroke="#71837c" stroke-width="2" stroke-linecap="round"/>
+    <text x="82" y="126" fill="#71807c" font-family="Arial, sans-serif" font-size="13">What service do you need?</text>
+
+    <rect x="38" y="160" width="126" height="34" rx="17" fill="#e3f4ec"/>
+    <text x="101" y="182" fill="#086f61" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="700">Experts</text>
+    <rect x="174" y="160" width="138" height="34" rx="17" fill="#fff" stroke="#d9e5df"/>
+    <text x="243" y="182" fill="#506660" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="700">Companies</text>
+
+    <rect x="38" y="210" width="274" height="72" rx="12" fill="#fff" stroke="#e0e9e4"/>
+    <circle cx="66" cy="246" r="16" fill="#dceee6"/>
+    <path d="M59 251c1-6 4-9 7-9s6 3 7 9M66 239a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" fill="none" stroke="#087f73" stroke-width="2" stroke-linecap="round"/>
+    <rect x="94" y="230" width="123" height="8" rx="4" fill="#273b37"/>
+    <rect x="94" y="247" width="176" height="6" rx="3" fill="#cad7d1"/>
+    <rect x="94" y="261" width="112" height="6" rx="3" fill="#cad7d1"/>
+
+    <rect x="38" y="294" width="274" height="72" rx="12" fill="#fff" stroke="#e0e9e4"/>
+    <circle cx="66" cy="330" r="16" fill="#fff0d6"/>
+    <path d="M59 335c1-6 4-9 7-9s6 3 7 9M66 323a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" fill="none" stroke="#ba7912" stroke-width="2" stroke-linecap="round"/>
+    <rect x="94" y="314" width="142" height="8" rx="4" fill="#273b37"/>
+    <rect x="94" y="331" width="167" height="6" rx="3" fill="#cad7d1"/>
+    <rect x="94" y="345" width="108" height="6" rx="3" fill="#cad7d1"/>
+
+    <rect x="38" y="376" width="274" height="2" rx="1" fill="#dfe9e3"/>
+  </g>
+
+  <circle cx="954" cy="97" r="31" fill="#f0bf60"/>
+  <path d="M941 97h26M954 84v26" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="973" cy="385" r="22" fill="#ef8061"/>
+  <path d="m964 385 6 6 12-14" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
