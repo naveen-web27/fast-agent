@@ -26,7 +26,7 @@ from app.features.marketplace.service import count_resolved_clients
 from app.models.email_verification import EmailVerification
 from app.models.organization_invite import OrganizationInvite
 from app.models.organization_member import MemberRole, OrganizationMember
-from app.models.profile import Organization, Profile, ProfileKind, VerificationStatus
+from app.models.profile import Organization, Profile, ProfileKind, Service, VerificationStatus
 from app.models.user import SubscriptionTier, User, UserRole, active_user_by_auth_id
 
 OTP_TTL_MINUTES = 10
@@ -97,6 +97,8 @@ async def update_my_profile(session: AsyncSession, auth_user_id: UUID, payload: 
     for field in ("bio", "city", "avatar_url"):
         if field in changes:
             setattr(user, field, (changes[field] or "").strip() or None)
+    if changes.get("interests") is not None:
+        user.interests = changes["interests"]
     await session.commit()
     return await get_user_profile(session, auth_user_id)
 
@@ -348,10 +350,17 @@ async def add_company(session: AsyncSession, auth_user_id: UUID, payload: Compan
         organization_id=organization.id,
         kind=ProfileKind.COMPANY,
         display_name=payload.company_name,
-        headline="Company",
+        headline=payload.primary_service or "Company",
         city=payload.city,
         verification=VerificationStatus.PENDING,
     )
+    if payload.primary_service:
+        service_slug = re.sub(r"[^a-z0-9]+", "-", payload.primary_service.lower()).strip("-")[:80] or "service"
+        service = await session.scalar(select(Service).where(Service.slug == service_slug))
+        if service is None:
+            service = Service(name=payload.primary_service.strip(), slug=service_slug)
+            session.add(service)
+        company_profile.services = [service]
     session.add(company_profile)
     await session.commit()
     await session.refresh(organization)

@@ -77,6 +77,8 @@ attachSuggest(needInput, (value) => { needInput.value = value; });
 // Typing "ads" offers "Digital marketing"; picking one searches straight away.
 const discoverSearchInput = document.querySelector('#search-input');
 attachSuggest(discoverSearchInput, (value) => { discoverSearchInput.value = value; document.querySelector('#search-button').click(); });
+const companyServiceInput = document.querySelector('#company-service');
+attachSuggest(companyServiceInput, (value) => { companyServiceInput.value = value; });
 document.querySelector('#interests-cancel').addEventListener('click', () => {
   if (document.querySelector('#dashboard').classList.contains('active')) loadDashboard();
 });
@@ -224,6 +226,7 @@ function renderProviderDashboard(data) {
 
 const TEAM_SIZES = ['1-10', '11-50', '51-200', '201-500', '500+'];
 let editorProfile = null;
+let editorAvatarFile = null;
 let editorServices = [];
 let editorKeywords = [];
 let editorWindows = [];
@@ -246,6 +249,7 @@ function field(id, label, value, attrs = '') {
 
 function renderEditor(profile) {
   editorProfile = profile;
+  editorAvatarFile = null;
   editorServices = [...profile.services];
   editorKeywords = [...profile.keywords];
   editorWindows = profile.availability.map((window) => ({ weekday: window.weekday, start_time: window.start_time.slice(0, 5), end_time: window.end_time.slice(0, 5) }));
@@ -265,7 +269,7 @@ function renderEditor(profile) {
           ${profile.kind === 'company' ? field('ed-founded', 'Founded (year)', profile.founded_year, 'type="number" min="1800" max="2100" placeholder="2015"') : ''}
           ${profile.kind === 'company' ? `<div class="field"><label for="ed-team-size">Team size</label><select id="ed-team-size"><option value="">Not set</option>${TEAM_SIZES.map((size) => `<option value="${size}" ${profile.team_size === size ? 'selected' : ''}>${size} people</option>`).join('')}</select></div>` : ''}
           ${field('ed-languages', 'Languages (comma separated)', profile.languages.join(', '), 'placeholder="English, Tamil"')}
-          ${field('ed-avatar', 'Photo or logo link', profile.avatar_url, 'type="url" placeholder="https://"')}
+          <div class="field image-upload-field"><label for="ed-avatar-file">Photo or logo</label><div class="image-upload-control"><div class="image-preview" id="ed-avatar-preview">${profile.avatar_url ? `<img src="${safeHref(profile.avatar_url)}" alt="Current profile photo">` : '<span>No photo</span>'}</div><input id="ed-avatar-file" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="ed-avatar-help"><small id="ed-avatar-help">JPEG, PNG or WebP; up to 8 MB. Stored as an optimized image.</small></div></div>
         </div>
         <div class="field"><label for="ed-bio">About</label><textarea id="ed-bio" rows="3" maxlength="2000">${escapeHtml(profile.bio ?? '')}</textarea></div>
         <div class="field"><label for="ed-service-input">Services you offer</label><div class="tag-list" id="ed-services"></div><input id="ed-service-input" placeholder="Type a service, e.g. beauty, then pick or press Enter"></div>
@@ -426,7 +430,12 @@ async function editorSave(button, path, method, payload, message) {
 function wireEditor(profile) {
   const base = `/profiles/${encodeURIComponent(profile.id)}`;
   const value = (id) => document.querySelector(id)?.value.trim() ?? '';
-  document.querySelector('#editor-basics').addEventListener('submit', (event) => {
+  document.querySelector('#ed-avatar-file').addEventListener('change', (event) => {
+    editorAvatarFile = event.target.files[0] || null;
+    const preview = document.querySelector('#ed-avatar-preview');
+    if (editorAvatarFile) preview.innerHTML = `<img src="${URL.createObjectURL(editorAvatarFile)}" alt="Selected profile photo">`;
+  });
+  document.querySelector('#editor-basics').addEventListener('submit', async (event) => {
     event.preventDefault();
     addEditorKeyword(value('#ed-keyword-input'));
     const payload = {
@@ -434,7 +443,7 @@ function wireEditor(profile) {
       headline: value('#ed-headline'),
       city: value('#ed-city') || null,
       languages: value('#ed-languages').split(',').map((item) => item.trim()).filter(Boolean),
-      avatar_url: value('#ed-avatar') || null,
+      avatar_url: profile.avatar_url,
       bio: value('#ed-bio') || null,
       services: editorServices,
       keywords: editorKeywords,
@@ -447,6 +456,17 @@ function wireEditor(profile) {
     if (profile.plan_active) {
       payload.intro_video_url = value('#ed-video') || null;
       payload.portfolio_url = value('#ed-portfolio') || null;
+    }
+    if (editorAvatarFile) {
+      const button = document.querySelector('#ed-basics-save');
+      setButtonLoading(button, true, 'Uploading…');
+      try {
+        payload.avatar_url = await window.uploadProfileImage(editorAvatarFile, `profile-${profile.id}`);
+      } catch (error) {
+        setButtonLoading(button, false);
+        showToast(error.message, 'error');
+        return;
+      }
     }
     editorSave(document.querySelector('#ed-basics-save'), base, 'PATCH', payload, 'Profile saved.');
   });
@@ -868,17 +888,51 @@ function renderMe() {
 
 function renderMeEditor() {
   const user = currentUser;
-  document.querySelector('#me-body').innerHTML = `<form id="me-form" class="content-card" style="max-width:760px;margin-top:0">
+  let selectedAvatarFile = null;
+  let meInterests = [...(user.interests || [])];
+  const renderInterests = () => {
+    const list = document.querySelector('#me-interests');
+    if (!list) return;
+    list.innerHTML = meInterests.map((interest, index) => `<span class="tag">${escapeHtml(interest)}<button type="button" data-remove-interest="${index}" aria-label="Remove ${escapeHtml(interest)}">×</button></span>`).join('');
+    list.querySelectorAll('[data-remove-interest]').forEach((button) => button.addEventListener('click', () => {
+      meInterests.splice(Number(button.dataset.removeInterest), 1);
+      renderInterests();
+    }));
+  };
+  document.querySelector('#me-body').innerHTML = `<form id="me-form" class="content-card profile-edit-form">
       <h2>Edit profile</h2>
       <div class="editor-grid">
         ${field('me-name', 'Name', user.full_name, 'required minlength="2" maxlength="120"')}
         ${field('me-city', 'City', user.city, 'maxlength="100"')}
-        <div class="field" style="grid-column:1/-1"><label for="me-avatar">Photo link</label><input id="me-avatar" value="${escapeHtml(user.avatar_url ?? '')}" maxlength="500" placeholder="Paste an image link"></div>
+        <div class="field image-upload-field"><label for="me-avatar-file">Profile photo</label><div class="image-upload-control"><div class="image-preview" id="me-avatar-preview">${user.avatar_url ? `<img src="${safeHref(user.avatar_url)}" alt="Current profile photo">` : '<span>No photo</span>'}</div><input id="me-avatar-file" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="me-avatar-help"><small id="me-avatar-help">JPEG, PNG or WebP; up to 8 MB. Stored as an optimized image.</small></div></div>
       </div>
+      <div class="field"><label>Areas of interest</label><div class="tag-list" id="me-interests"></div><div class="interest-editor-row"><input id="me-interest-input" maxlength="120" placeholder="Add an area of interest"><button class="secondary" type="button" id="me-interest-add">Add</button></div><small>Up to 20 interests.</small></div>
       <div class="field"><label for="me-bio">About you</label><textarea id="me-bio" rows="4" maxlength="1000" placeholder="e.g. Small business owner in Chennai, looking for help with taxes and insurance.">${escapeHtml(user.bio ?? '')}</textarea></div>
       <p class="muted" style="margin:0 0 10px">Only experts and companies you send a request to can see this.</p>
       <div class="modal-actions"><button class="secondary" type="button" id="me-cancel">Cancel</button><button class="primary" type="submit" id="me-save">Save</button></div>
     </form>`;
+  renderInterests();
+  const addInterest = () => {
+    const input = document.querySelector('#me-interest-input');
+    const interest = input.value.trim().slice(0, 120);
+    if (!interest) return;
+    if (meInterests.some((existing) => existing.toLocaleLowerCase() === interest.toLocaleLowerCase())) {
+      input.value = '';
+      return;
+    }
+    if (meInterests.length >= 20) { showToast('You can save up to 20 interests.', 'error'); return; }
+    meInterests.push(interest);
+    input.value = '';
+    renderInterests();
+  };
+  document.querySelector('#me-interest-add').addEventListener('click', addInterest);
+  document.querySelector('#me-interest-input').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') { event.preventDefault(); addInterest(); }
+  });
+  document.querySelector('#me-avatar-file').addEventListener('change', (event) => {
+    selectedAvatarFile = event.target.files[0] || null;
+    if (selectedAvatarFile) document.querySelector('#me-avatar-preview').innerHTML = `<img src="${URL.createObjectURL(selectedAvatarFile)}" alt="Selected profile photo">`;
+  });
   document.querySelector('#me-cancel').addEventListener('click', renderMe);
   document.querySelector('#me-form').addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -886,7 +940,10 @@ function renderMeEditor() {
     const value = (id) => document.querySelector(id).value.trim();
     setButtonLoading(button, true, 'Saving…');
     try {
-      const updated = await api('/auth/me', { method: 'PATCH', body: JSON.stringify({ full_name: value('#me-name'), city: value('#me-city') || null, avatar_url: value('#me-avatar') || null, bio: value('#me-bio') || null }) });
+      const avatarUrl = selectedAvatarFile
+        ? await window.uploadProfileImage(selectedAvatarFile, `customer-${user.id}`)
+        : user.avatar_url;
+      const updated = await api('/auth/me', { method: 'PATCH', body: JSON.stringify({ full_name: value('#me-name'), city: value('#me-city') || null, avatar_url: avatarUrl, bio: value('#me-bio') || null, interests: meInterests }) });
       applySignedInUser(updated);
       renderMe();
       showToast('Profile saved.', 'success');

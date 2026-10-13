@@ -42,6 +42,15 @@
     .modal .field { display:grid; gap:5px; margin-bottom:12px; }
     .modal .field label { font-size:11px; font-weight:700; color:var(--muted); }
     .modal .field input,.modal .field textarea { padding:9px 10px; border:1px solid var(--line); border-radius:7px; font:inherit; }
+    .profile-edit-form { width:min(100%,760px); margin:0; }
+    .image-upload-control { display:grid; justify-items:start; gap:7px; min-width:0; }
+    .image-upload-control input { width:100%; min-width:0; }
+    .image-upload-control small,.field > small { color:var(--muted); font-size:11px; }
+    .image-preview { display:grid; place-items:center; width:64px; height:64px; overflow:hidden; border:1px solid var(--line); border-radius:8px; background:#f4f6fa; color:var(--muted); font-size:10px; }
+    .image-preview img { width:100%; height:100%; object-fit:cover; }
+    .interest-editor-row { display:flex; gap:8px; min-width:0; }
+    .interest-editor-row input { flex:1; min-width:0; padding:9px 10px; border:1px solid var(--line); border-radius:7px; font:inherit; }
+    .interest-editor-row .secondary { flex:none; }
     .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:6px; }
     .modal-note { margin:0 0 14px; padding:10px; color:#526078; border-radius:7px; background:#f4f6fa; font-size:11px; }
     .tag-list { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
@@ -196,6 +205,7 @@
     .price-tag { color:#0b5a53; font-weight:800; white-space:nowrap; }
     @media (max-width:1050px) { .kpi-grid { grid-template-columns:1fr 1fr; } .dash-grid,.mini-cards { grid-template-columns:1fr; } .pipeline { grid-template-columns:1fr 1fr; } }
     @media (max-width:720px) { .editor-grid,.window-row { grid-template-columns:1fr; } }
+    @media (max-width:720px) { .modal.wide { width:calc(100vw - 20px); max-height:calc(100dvh - 20px); padding:16px; }.modal-actions { flex-wrap:wrap; }.modal-actions > button { flex:1 1 auto; }.profile-edit-form { padding:17px; }.image-upload-field { grid-column:1/-1; } }
     @media (max-width:1050px) { .how-steps { grid-template-columns:1fr 1fr; } }
     @media (max-width:720px) { .support-fab { right:14px; bottom:84px; padding:10px 13px; } .how-steps { grid-template-columns:1fr; } }
     .mobile-nav { display:none; }
@@ -363,8 +373,14 @@
       <div class="field"><label for="company-work-email">Work email</label><input id="company-work-email" type="email" required></div>
       <div class="field"><label for="company-website">Website</label><input id="company-website" type="url" placeholder="https://"></div>
       <div class="field"><label for="company-city">City</label><input id="company-city"></div>
+      <div class="field"><label for="company-service">Main service offered</label><input id="company-service" maxlength="120" placeholder="e.g. Health insurance"></div>
       <div class="modal-actions"><button type="button" class="secondary" id="company-cancel">Cancel</button><button type="submit" class="primary" id="company-submit">Create company</button></div>
     </form>
+  </div>
+  <div class="modal" id="company-setup-modal" role="dialog" aria-modal="true" aria-labelledby="company-setup-title" hidden>
+    <h2 id="company-setup-title">Company created</h2>
+    <p class="modal-note">Add a description, logo and more services to help customers find your company. You can do this now or come back later.</p>
+    <div class="modal-actions"><button type="button" class="secondary" id="company-setup-later">Skip for later</button><button type="button" class="primary" id="company-setup-complete">Complete profile</button></div>
   </div>
   <div class="modal" id="otp-modal" hidden>
     <h2>Confirm your company email</h2>
@@ -1600,8 +1616,31 @@
     let currentUser = null;
     let pendingOtpOrganizationId = null;
     let pendingOtpEmail = null;
+    let pendingCompanySetup = null;
 
     function authHeaders() { return accessToken ? { Authorization: `Bearer ${accessToken}` } : {}; }
+
+    window.uploadProfileImage = async (file, imageKey) => {
+      if (!authClient) throw new Error('Sign in again before uploading a photo.');
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw new Error('Choose a JPEG, PNG, or WebP image.');
+      if (file.size > 8 * 1024 * 1024) throw new Error('Image must be 8 MB or smaller.');
+      if (!/^(customer|profile)-[0-9a-f-]{36}$/i.test(imageKey)) throw new Error('Invalid profile image target.');
+      const { data: { session } } = await authClient.auth.getSession();
+      if (!session?.user?.id) throw new Error('Your sign-in session has expired. Sign in again.');
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 512 / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+      const optimized = await new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Could not process this image.')), 'image/webp', 0.82));
+      if (optimized.size > 1048576) throw new Error('Optimized image must be 1 MB or smaller. Choose a smaller image.');
+      const path = `${session.user.id}/${imageKey}.webp`;
+      const { error } = await authClient.storage.from('profile-images').upload(path, optimized, { contentType: 'image/webp', cacheControl: '3600', upsert: true });
+      if (error) throw new Error(error.message || 'Could not upload the image.');
+      return authClient.storage.from('profile-images').getPublicUrl(path).data.publicUrl;
+    };
 
     const userMenuButton = document.querySelector('#user-menu-button');
     const userMenu = document.querySelector('#user-menu');
@@ -1656,7 +1695,7 @@
     }
 
     async function recordSearchInterest(term) {
-      if (!accessToken) return;
+      if (!accessToken || getActingType() !== 'customer') return;
       const normalized = term.trim();
       if (!normalized || currentInterests.some((existing) => existing.toLowerCase() === normalized.toLowerCase())) return;
       try {
@@ -1869,6 +1908,10 @@
       workspaceLabel.textContent = label;
       workspaceMenu.hidden = true;
       renderWorkspaceMenu();
+      const searchInput = document.querySelector('#search-input');
+      searchInput.value = type === 'customer' && currentUser?.looking_for_help !== false
+        ? (currentInterests[currentInterests.length - 1] || '')
+        : '';
       applyActingAsDefaultView(type);
     }
 
@@ -1970,6 +2013,7 @@
         work_email: workEmail,
         website: document.querySelector('#company-website').value || null,
         city: document.querySelector('#company-city').value || null,
+        primary_service: document.querySelector('#company-service').value.trim() || null,
       };
       const submitButton = document.querySelector('#company-submit');
       setButtonLoading(submitButton, true, 'Creating…');
@@ -1981,8 +2025,21 @@
       document.querySelector('#company-form').reset();
       await loadIdentities();
       setActingAs('company', company.name, company.organization_id);
-      showToast('Company created. Confirm your work email to speed up verification.', 'success');
-      openOtpModal(company.organization_id, workEmail, { autoSend: true });
+      pendingCompanySetup = { profileId: company.profile_id };
+      openModal('company-setup-modal');
+      showToast('Company created. Confirm your work email from the workspace menu when ready.', 'success');
+    });
+
+    document.querySelector('#company-setup-complete').addEventListener('click', () => {
+      const setup = pendingCompanySetup;
+      pendingCompanySetup = null;
+      closeModals();
+      if (setup?.profileId) openProfileEditor(setup.profileId);
+    });
+    document.querySelector('#company-setup-later').addEventListener('click', () => {
+      pendingCompanySetup = null;
+      closeModals();
+      showToast('You can complete the company profile or verify its email later from the workspace menu.', 'success');
     });
 
     function setOtpNote(message, isError) {
@@ -2051,9 +2108,11 @@
       currentUser = user;
       currentInterests = user.interests || [];
       const searchInput = document.querySelector('#search-input');
-      if (user.looking_for_help !== false && currentInterests.length && !searchInput.value.trim()) {
+      if (getActingType() === 'customer' && user.looking_for_help !== false && currentInterests.length && !searchInput.value.trim()) {
         searchInput.value = currentInterests[currentInterests.length - 1];
         loadProfiles();
+      } else if (getActingType() !== 'customer') {
+        searchInput.value = '';
       }
       maybeShowNeedDone(user);
     }

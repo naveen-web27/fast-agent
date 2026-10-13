@@ -84,11 +84,24 @@ class MyProfileUpdate(BaseModel):
     bio: str | None = Field(default=None, max_length=1000)
     city: str | None = Field(default=None, max_length=100)
     avatar_url: str | None = Field(default=None, max_length=500)
+    interests: list[str] | None = Field(default=None, max_length=20)
 
     @field_validator("avatar_url")
     @classmethod
     def _avatar(cls, value: str | None) -> str | None:
         return normalize_url(value) if value and value.strip() else None
+
+    @field_validator("interests")
+    @classmethod
+    def _clean_interests(cls, values: list[str] | None) -> list[str] | None:
+        if values is None:
+            return None
+        cleaned: dict[str, str] = {}
+        for value in values:
+            interest = value.strip()[:120]
+            if interest:
+                cleaned.setdefault(interest.casefold(), interest)
+        return list(cleaned.values())
 
 
 class ExpertProfileRequest(BaseModel):
@@ -121,6 +134,7 @@ class CompanyRequest(BaseModel):
     work_email: EmailStr
     website: str | None = Field(default=None, max_length=255)
     city: str | None = Field(default=None, max_length=100)
+    primary_service: str | None = Field(default=None, min_length=2, max_length=120)
     business_registration: str | None = Field(default=None, max_length=160)
 
 
