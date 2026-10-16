@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Preview Tamil services (static only)",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/bin/python",
+			"args": [
+				"-m",
+				"http.server",
+				"8011",
+				"--bind",
+				"127.0.0.1",
+				"--directory",
+				"${workspaceFolder}/frontend"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}

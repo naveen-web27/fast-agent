@@ -34,6 +34,15 @@ class Settings(BaseSettings):
     # Android TWA: package name + comma-separated SHA-256 cert fingerprints from Play Console > App signing.
     android_package_name: str = "app.rightconnect.twa"
     android_sha256_fingerprints: str = ""
+    ai_reports_enabled: bool = False
+    ai_report_api_key: str = ""
+    ai_report_api_url: str = "https://api.openai.com/v1/chat/completions"
+    ai_report_model: str = ""
+    ai_report_rate_salt: str = ""
+    ai_report_hourly_limit: int = 5
+    ai_report_daily_limit: int = 100
+    ai_report_retention_days: int = 30
+    ai_report_family_limit: int = 20
 
     @property
     def admin_email_list(self) -> set[str]:

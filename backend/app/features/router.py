@@ -2,6 +2,7 @@
 from fastapi import APIRouter
 
 from app.features.admin.router import router as admin_router
+from app.features.ai_reports.router import router as ai_reports_router
 from app.features.auth.router import router as auth_router
 from app.features.booking.router import router as booking_router
 from app.features.dashboard.router import router as dashboard_router
@@ -13,6 +14,7 @@ from app.features.profiles.router import router as profiles_router
 from app.features.requests.router import router as requests_router
 
 feature_router = APIRouter()
+feature_router.include_router(ai_reports_router)
 feature_router.include_router(health_router, tags=["health"])
 feature_router.include_router(auth_router, prefix="/auth", tags=["auth"])
 feature_router.include_router(marketplace_router, tags=["marketplace"])

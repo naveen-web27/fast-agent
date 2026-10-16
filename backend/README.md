@@ -7,6 +7,7 @@
 - `app/models/`: SQLAlchemy ORM models.
 - `app/db/`: database base and async sessions.
 - `app/core/` and `app/security/`: shared configuration and cross-feature authentication.
+- Tamil AI reports are an isolated, disabled-by-default feature. Setup, module boundaries, guest access and optional saved family members: [Tamil AI report workflow](../docs/features/11-tamil-ai-reports.md).
 
 ## Local Setup
 
