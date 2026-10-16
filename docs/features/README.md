@@ -18,7 +18,7 @@ Legend: ✅ Done · 🟡 Partial · ❌ Not started
 | 8 | Customer / Expert / Company Dashboards | ❌ Not started (no dedicated endpoints/pages) | [08-dashboards.md](08-dashboards.md) |
 | 9 | Notifications & Billing | ❌ Not started (only OTP emails exist) | [09-notifications-billing.md](09-notifications-billing.md) |
 | 10 | Backlog: recommendations, disputes, analytics (saved profiles & share links now done) | 🟡 Partial | [10-backlog.md](10-backlog.md) |
-| 11 | Tamil AI reports and optional saved family members | Built behind disabled feature flag; deployment and rule review pending | [11-tamil-ai-reports.md](11-tamil-ai-reports.md) |
+| 11 | Tamil AI reports and optional saved family members | 12-check Porutham page first; six service pages are placeholders; report API remains disabled pending setup | [11-tamil-ai-reports.md](11-tamil-ai-reports.md) |
 
 ## How To Use These Docs
 

@@ -161,14 +161,20 @@ class ArithmeticTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             astrology.vimshottari(0, birth, birth - timedelta(seconds=1))
 
-    def test_all_ten_porutham_outcomes_and_count_fixture(self):
+    def test_all_twelve_porutham_outcomes_and_count_fixture(self):
         result = rules.porutham(0, 13, 0, 6)
         outcomes = {check["key"]: check["matches_rule"] for check in result["checks"]}
         self.assertEqual(outcomes, {"dina": False, "gana": False, "mahendra": False,
                                   "stree_deergha": True, "yoni": True, "rasi": True,
-                                  "rasi_adhipathi": False, "vasiya": False, "rajju": True, "vedha": True})
-        self.assertEqual(result["matched_count"], 5)
-        self.assertEqual(result["total_checks"], 10)
+                                  "rasi_adhipathi": False, "vasiya": False, "rajju": True,
+                                  "vedha": True, "nadi": True, "varna": False})
+        self.assertEqual(result["matched_count"], 6)
+        self.assertEqual(result["total_checks"], 12)
+        self.assertEqual([check["key"] for check in result["checks"]],
+                 ["dina", "gana", "mahendra", "stree_deergha", "yoni", "rasi",
+                  "rasi_adhipathi", "vasiya", "rajju", "vedha", "nadi", "varna"])
+        self.assertTrue(all(check["name_ta"] and check["name_en"] for check in result["checks"]))
+        self.assertIn("caste-coded", next(check for check in result["checks"] if check["key"] == "varna")["details"]["rule"])
         self.assertEqual(result["review_status"], "unreviewed")
         self.assertTrue(result["sources"])
         self.assertTrue(any("probability" in limit for limit in result["limitations"]))
@@ -185,7 +191,7 @@ class ArithmeticTests(unittest.TestCase):
         for bride_star in range(27):
             for groom_star in range(27):
                 result = rules.porutham(bride_star, groom_star, bride_star % 12, groom_star % 12)
-                self.assertEqual(len(result["checks"]), 10)
+                self.assertEqual(len(result["checks"]), 12)
                 self.assertEqual(result["matched_count"], sum(check["matches_rule"] for check in result["checks"]))
         with self.assertRaises(ValueError):
             rules.porutham(-1, 0, 0, 0)

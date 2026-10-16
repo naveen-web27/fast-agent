@@ -12,12 +12,13 @@ class CompatibilityService:
     key = "compatibility"
     title_ta = "திருமணப் பொருத்தம்"
     title_en = "Traditional Porutham"
-    description_ta = "பத்து பாரம்பரிய விதிகளின் வெளிப்படையான ஒப்பீடு; திருமண வெற்றி கணிப்பு அல்ல."
-    description_en = "Ten explicit traditional checks, not a marriage probability or recommendation."
+    description_ta = "பன்னிரண்டு பாரம்பரியக் கணக்கீடுகளின் வெளிப்படையான ஒப்பீடு; திருமண வெற்றி கணிப்பு அல்ல."
+    description_en = "Twelve explicit traditional checks, not a marriage probability or recommendation."
     icon = "heart-handshake"
     input_schema = CompatibilityInput
     sections = ("Birth Stars and Rule Variant", "Dina Gana and Mahendra", "Stree Deergha and Yoni",
-                "Rasi Rasi Adhipathi and Vasiya", "Rajju and Vedha", "Rule Count and Uncertainty")
+                "Rasi Rasi Adhipathi and Vasiya", "Rajju Vedha and Nadi", "Varna Convention and Limitations",
+                "Twelve Rule Count and Uncertainty")
 
     def calculate(self, inputs: CompatibilityInput) -> dict:
         bride = birth_chart(inputs.bride)

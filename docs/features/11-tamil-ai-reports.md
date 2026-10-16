@@ -2,7 +2,9 @@
 
 ## Scope and Isolation
 
-Page: `/pages/services.html`. API: `/api/v1/ai-reports`.
+Catalogue: `/pages/services.html`. First working service page: `/pages/thirumana-porutham.html`.
+Each service has its own URL; six individual pages are currently marked as coming later.
+API: `/api/v1/ai-reports`.
 The feature owns its tables, frontend assets, calculation modules and writer.
 The only existing runtime integrations are additive settings and one router registration.
 Marketplace requests, reviews, subscriptions and Razorpay behavior are unchanged.
@@ -54,7 +56,7 @@ report-only signup experience is future work.
 | `backend/app/features/ai_reports/contracts.py` | Strict common inputs and structured report contract |
 | `modules/horoscope.py` | Rasi, Nakshatra, Pada, Lagnam and planetary measurements |
 | `modules/numerology.py` | English-spelling Pythagorean name and life-path arithmetic |
-| `modules/compatibility.py` | Ten explicit traditional Porutham checks |
+| `modules/compatibility.py` | Twelve explicit traditional Porutham checks |
 | `modules/vastu.py` | Direction-based layout checklist |
 | `modules/gemstone.py` | Traditional planetary associations and current mahadasa |
 | `modules/baby_names.py` | Nakshatra/Pada syllables and curated Tamil names |
@@ -86,9 +88,11 @@ writer guidance and frontend form descriptor, then add calculation/schema tests.
   DST times are rejected. Historical timezone conversion uses Python zoneinfo.
 - Numerology uses A-Z English spelling, direct digit sums and preserved master
   numbers 11/22/33. Other numerology traditions may differ.
-- Porutham is an **unreviewed educational variant**, with regional exceptions
-  omitted. It is not a certified Tamil almanac or marriage-success probability.
-  Full-chart Doshas, fertility/medical claims and prescriptive remedies are absent.
+- Porutham is an **unreviewed educational twelve-check variant**: ten common
+  checks plus Nadi and Varna. Regional exceptions are omitted. Varna is a
+  caste-coded historical convention, disclosed as such and not an assessment of
+  a person's caste, dignity or suitability. The rule count is not a marriage-
+  success probability. Full-chart Doshas and medical claims are absent.
 - Gemstone associations are not individualized wearing prescriptions. Dasa uses
   a documented 365.2425-day Vimshottari year and mahadasa only.
 - Baby names use a small curated lexical dataset. Uncovered syllables explicitly

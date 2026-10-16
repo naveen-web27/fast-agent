@@ -8,7 +8,7 @@ The local ten-check variant is unreviewed, omits regional exceptions, and must
 not be represented as a certified reproduction of a particular publication.
 """
 
-RULE_VERSION = "tamil-ten-check-educational-v1-unreviewed"
+RULE_VERSION = "tamil-twelve-check-educational-v1-unreviewed"
 RULE_SOURCES = [
     {"reference": "B. V. Raman, Muhurtha, marriage matching chapter",
      "scope": "Background for star-count, gana, yoni, rajju and vedha conventions",
@@ -69,6 +69,24 @@ DINA_COUNTS = frozenset(count for count in range(1, 28) if count % 9 in (0, 2, 4
 MAHENDRA_COUNTS = frozenset((4, 7, 10, 13, 16, 19, 22, 25))
 STREE_COUNTS = frozenset(range(13, 28))
 RASI_COUNTS = frozenset((7, 9, 10, 11, 12))
+NADI = ("adi", "madhya", "antya") * 9
+VARNA_BY_RASI = ("kshatriya", "vaishya", "shudra", "brahmin", "kshatriya", "vaishya",
+                 "shudra", "brahmin", "kshatriya", "vaishya", "shudra", "brahmin")
+VARNA_RANK = {"shudra": 0, "vaishya": 1, "kshatriya": 2, "brahmin": 3}
+PORUTHAM_LABELS = {
+    "dina": ("தினப் பொருத்தம்", "Dina Porutham"),
+    "gana": ("கணப் பொருத்தம்", "Gana Porutham"),
+    "mahendra": ("மகேந்திரப் பொருத்தம்", "Mahendra Porutham"),
+    "stree_deergha": ("ஸ்திரீ தீர்க்கப் பொருத்தம்", "Stree Deergha Porutham"),
+    "yoni": ("யோனிப் பொருத்தம்", "Yoni Porutham"),
+    "rasi": ("ராசிப் பொருத்தம்", "Rasi Porutham"),
+    "rasi_adhipathi": ("ராசி அதிபதிப் பொருத்தம்", "Rasi Athipathi Porutham"),
+    "vasiya": ("வசியப் பொருத்தம்", "Vasiya Porutham"),
+    "rajju": ("ரஜ்ஜுப் பொருத்தம்", "Rajju Porutham"),
+    "vedha": ("வேதைப் பொருத்தம்", "Vedha Porutham"),
+    "nadi": ("நாடிப் பொருத்தம்", "Nadi Porutham"),
+    "varna": ("வர்ணப் பொருத்தம்", "Varna Porutham"),
+}
 
 
 def porutham(bride_star: int, groom_star: int, bride_rasi: int, groom_rasi: int) -> dict:
@@ -105,12 +123,20 @@ def porutham(bride_star: int, groom_star: int, bride_rasi: int, groom_rasi: int)
           "rule": "different groups; ascending/descending exceptions omitted"}),
         ("vedha", not any(bride_star != groom_star and {bride_star, groom_star} <= group for group in VEDHA_GROUPS),
          {"rule": "no listed pair or head-rajju triple opposition", "bride_star": bride_star, "groom_star": groom_star}),
+                ("nadi", NADI[bride_star] != NADI[groom_star],
+                 {"bride": NADI[bride_star], "groom": NADI[groom_star],
+                    "rule": "Adi, Madhya, Antya repeat by nakshatra index modulo three; regional exceptions omitted"}),
+                ("varna", VARNA_RANK[VARNA_BY_RASI[bride_rasi]] <= VARNA_RANK[VARNA_BY_RASI[groom_rasi]],
+                 {"bride": VARNA_BY_RASI[bride_rasi], "groom": VARNA_BY_RASI[groom_rasi],
+                    "rule": "traditional sign-based bride-not-higher-than-groom ordering; caste-coded convention, not an assessment of people"}),
     )
     return {"variant": RULE_VERSION, "review_status": "unreviewed",
-            "checks": [{"key": key, "matches_rule": bool(passed), "details": details} for key, passed, details in checks],
-            "matched_count": sum(passed for _, passed, _ in checks), "total_checks": 10,
+            "checks": [{"key": key, "name_ta": PORUTHAM_LABELS[key][0], "name_en": PORUTHAM_LABELS[key][1],
+                "matches_rule": bool(passed), "details": details} for key, passed, details in checks],
+                        "matched_count": sum(passed for _, passed, _ in checks), "total_checks": 12,
             "sources": RULE_SOURCES,
             "limitations": ["Count is not a marriage probability, recommendation, or measure of a person's worth.",
+                                                        "Twelve-check educational variant adds Nadi and the caste-coded Varna convention; Varna is an unreviewed descriptive tradition, not a claim about a person's caste, worth or suitability.",
                             "Regional exceptions, same-star exceptions, full-chart synthesis and dosha are not implemented.",
                             "No medical, fertility, longevity or relationship-outcome inference is supported."]}
 

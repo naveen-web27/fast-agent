@@ -6,8 +6,18 @@
   const words = {
     ta: {
       appTitle: 'தமிழ் ஜோதிடம் & கலைகள் AI அறிக்கைகள்', eyebrow: 'பாரம்பரியக் கலைகள்',
+      compatibilityPageTitle: 'திருமணப் பொருத்தம்', compatibilityNav: 'திருமணப் பொருத்தம்',
+      compatibilityDisclaimer: 'பன்னிரண்டு பாரம்பரிய விதிகள் ஒப்பிடப்படுகின்றன. இவை அறிவியல் கணிப்போ திருமண வெற்றியின் சதவீதமோ அல்ல. வர்ணம் ஒரு வரலாற்று, சாதி சார்ந்த வகைப்பாடு; இது யாருடைய மதிப்பையும் தீர்மானிக்காது.',
       skip: 'உள்ளடக்கத்திற்குச் செல்ல', language: 'மொழி', views: 'பகுதிகள்', services: 'சேவைகள்',
       chooseService: 'சேவையைத் தேர்ந்தெடுக்கவும்', loadingServices: 'சேவைகள் ஏற்றப்படுகின்றன…',
+      catalogueUnavailable: 'அறிக்கை சேவையகத்தை அடைய முடியவில்லை. சேவையகத்தைத் தொடங்கி மீண்டும் முயற்சிக்கவும்.',
+      compatibilityOnly: 'திருமணப் பொருத்தம் தனிப் பக்கத்தில் முதலில் உருவாக்கப்படுகிறது. மற்ற சேவைகள் தனித்தனியாக பின்னர் சேர்க்கப்படும்.',
+      comingSoon: 'இந்தச் சேவை விரைவில் சேர்க்கப்படும்.',
+      nadi: 'நாடி பொருத்தம்', varna: 'வர்ணப் பொருத்தம் (பாரம்பரிய வகைப்பாடு)',
+      featureDisabled: 'திருமணப் பொருத்த அறிக்கை இன்னும் இயக்கப்படவில்லை.',
+      providerMissing: 'AI வழங்குநரின் URL, மாடல் மற்றும் API key அமைக்கப்படவில்லை.',
+      rateSaltMissing: 'AI_REPORT_RATE_SALT பாதுகாப்பாக அமைக்கப்படவில்லை.',
+      ephemerisMissing: 'Swiss Ephemeris கணக்கீட்டுத் தொகுப்பு நிறுவப்படவில்லை.',
       login: 'Google மூலம் உள்நுழை', logout: 'வெளியேறு', guest: 'விருந்தினர்', signedIn: 'உள்நுழைந்துள்ளீர்கள்',
       optionalLogin: 'உள்நுழைவு விருப்பமானது. விருந்தினராகவும் அறிக்கை பெறலாம்.',
       tradition: 'பாரம்பரிய நம்பிக்கைகளை அடிப்படையாகக் கொண்டவை; அறிவியல் ஆதாரம் இல்லை. மருத்துவம், நிதி அல்லது முக்கிய முடிவுகளுக்கான ஆலோசனை அல்ல.',
@@ -55,7 +65,16 @@
     },
     en: {
       appTitle: 'Tamil Astrology & Arts AI Reports', eyebrow: 'Traditional arts', skip: 'Skip to content', language: 'Language', views: 'Views', services: 'Services',
+      compatibilityPageTitle: 'Marriage Compatibility', compatibilityNav: 'Marriage compatibility',
+      compatibilityDisclaimer: 'This compares twelve traditional rules. They are not scientific predictions or a marriage-success percentage. Varna is a historical caste-coded classification; it does not determine anyone’s worth.',
       chooseService: 'Choose a service', loadingServices: 'Loading services…', login: 'Sign in with Google', logout: 'Sign out', guest: 'Guest', signedIn: 'Signed in',
+      catalogueUnavailable: 'The report API could not be reached. Start the server and try again.',
+      compatibilityOnly: 'Marriage compatibility is being built first on its own page. The other services will follow as separate pages.',
+      comingSoon: 'This service will be added later.', nadi: 'Nadi Porutham', varna: 'Varna Porutham (traditional classification)',
+      featureDisabled: 'Marriage report generation has not been enabled.',
+      providerMissing: 'Configure the AI provider URL, model and API key.',
+      rateSaltMissing: 'Configure AI_REPORT_RATE_SALT as a server-side secret.',
+      ephemerisMissing: 'Install the Swiss Ephemeris calculation package.',
       optionalLogin: 'Sign-in is optional. Guests can generate reports.',
       tradition: 'Based on traditional beliefs, without scientific evidence. Not advice for medical, financial or other important decisions.',
       history: 'Report history', family: 'Family details', familyHelp: 'Birth details are saved to your account only with your permission. Saving is not required for reports.',
@@ -95,13 +114,13 @@
     }
   };
   const descriptors = [
-    { key: 'horoscope', icon: 'orbit', ta: ['ஜாதகம்', 'பிறந்த நேரம் மற்றும் இடத்தின் அடிப்படையில் பாரம்பரிய ஜாதக விளக்கம்.'], en: ['Horoscope', 'A traditional interpretation based on birth time and place.'] },
-    { key: 'compatibility', icon: 'heart-handshake', ta: ['திருமணப் பொருத்தம்', 'இருவரின் பிறந்த விவரங்களுடன் பாரம்பரியப் பொருத்த விளக்கம்.'], en: ['Compatibility', 'Traditional compatibility using both partners’ birth details.'] },
-    { key: 'numerology', icon: 'binary', ta: ['எண் கணிதம்', 'ஆங்கிலப் பெயர் மற்றும் பிறந்த தேதியின் எண் கணித விளக்கம்.'], en: ['Numerology', 'Traditional number interpretations of an English name and birth date.'] },
-    { key: 'vastu', icon: 'house', ta: ['வாஸ்து', 'வீடு மற்றும் அறைகளின் திசைகள் பற்றிய பாரம்பரியக் கருத்துகள்.'], en: ['Vastu', 'Traditional perspectives on home and room directions.'] },
-    { key: 'gemstone', icon: 'gem', ta: ['ரத்தினக் கற்கள்', 'பிறந்த விவரங்களின் அடிப்படையில் பாரம்பரிய ரத்தின விளக்கம்.'], en: ['Gemstones', 'Traditional gemstone interpretations using birth details.'] },
-    { key: 'baby-names', icon: 'baby', ta: ['குழந்தைப் பெயர்கள்', 'பிறந்த விவரங்களுடன் குழந்தைப் பெயர் பரிந்துரைகள்.'], en: ['Baby names', 'Name suggestions using birth details and a name category.'] },
-    { key: 'forecast', icon: 'sun', ta: ['ராசி பலன்', 'தேர்ந்தெடுத்த ராசிக்கான தினசரி அல்லது வாராந்திர பாரம்பரியப் பலன்.'], en: ['Rasi forecast', 'Daily or weekly traditional readings for your selected rasi.'] }
+    { key: 'horoscope', page: 'jathaka-palan.html', icon: 'orbit', ta: ['ஜாதகம்', 'பிறந்த நேரம் மற்றும் இடத்தின் அடிப்படையில் பாரம்பரிய ஜாதக விளக்கம்.'], en: ['Horoscope', 'A traditional interpretation based on birth time and place.'] },
+    { key: 'compatibility', page: 'thirumana-porutham.html', icon: 'heart-handshake', ta: ['திருமணப் பொருத்தம்', 'பன்னிரண்டு பாரம்பரியப் பொருத்தங்களை ஒப்பிடும் தனிப்பட்ட அறிக்கை.'], en: ['Compatibility', 'A dedicated report comparing twelve traditional checks.'] },
+    { key: 'numerology', page: 'numerology.html', icon: 'binary', ta: ['எண் கணிதம்', 'ஆங்கிலப் பெயர் மற்றும் பிறந்த தேதியின் எண் கணித விளக்கம்.'], en: ['Numerology', 'Traditional number interpretations of an English name and birth date.'] },
+    { key: 'vastu', page: 'vastu.html', icon: 'house', ta: ['வாஸ்து', 'வீடு மற்றும் அறைகளின் திசைகள் பற்றிய பாரம்பரியக் கருத்துகள்.'], en: ['Vastu', 'Traditional perspectives on home and room directions.'] },
+    { key: 'gemstone', page: 'gemstone.html', icon: 'gem', ta: ['ரத்தினக் கற்கள்', 'பிறந்த விவரங்களின் அடிப்படையில் பாரம்பரிய ரத்தின விளக்கம்.'], en: ['Gemstones', 'Traditional gemstone interpretations using birth details.'] },
+    { key: 'baby-names', page: 'baby-names.html', icon: 'baby', ta: ['குழந்தைப் பெயர்கள்', 'பிறந்த விவரங்களுடன் குழந்தைப் பெயர் பரிந்துரைகள்.'], en: ['Baby names', 'Name suggestions using birth details and a name category.'] },
+    { key: 'forecast', page: 'rasi-forecast.html', icon: 'sun', ta: ['ராசி பலன்', 'தேர்ந்தெடுத்த ராசிக்கான தினசரி அல்லது வாராந்திர பாரம்பரியப் பலன்.'], en: ['Rasi forecast', 'Daily or weekly traditional readings for your selected rasi.'] }
   ];
   const cities = [
     ['Chennai', 'சென்னை', 13.0827, 80.2707, 'Asia/Kolkata'],
@@ -241,7 +260,7 @@
   }
   function updateLanguageText() {
     document.documentElement.lang = state.language;
-    document.title = `${t('appTitle')} | RightConnect`;
+    document.title = `${t(document.body.dataset.servicePage === 'compatibility' ? 'compatibilityPageTitle' : 'appTitle')} | RightConnect`;
     document.querySelectorAll('[data-i18n]').forEach(element => { element.textContent = t(element.dataset.i18n); });
     document.querySelectorAll('[data-i18n-aria]').forEach(element => { element.setAttribute('aria-label', t(element.dataset.i18nAria)); });
     $('#account-status').textContent = t(state.session ? 'signedIn' : 'guest');
@@ -257,11 +276,24 @@
       state.services = result.services;
       state.aiAvailable = result.ai_available;
     } catch (failure) {
-      state.catalogueError = failure;
+      state.catalogueError = error('catalogueUnavailable');
       state.services = [];
       state.aiAvailable = false;
     }
     renderCatalogue();
+    const pageService = document.body.dataset.servicePage;
+    if (pageService) {
+      const descriptor = descriptors.find(item => item.key === pageService);
+      if (descriptor) {
+        selectService(descriptor);
+        const service = state.services.find(item => item.key === pageService);
+        const reasons = service && Array.isArray(service.unavailable_reasons) ? service.unavailable_reasons : [];
+        const labels = { feature_disabled: 'featureDisabled', ai_provider_missing: 'providerMissing', rate_limit_secret_missing: 'rateSaltMissing', ephemeris_missing: 'ephemerisMissing' };
+        notice(state.catalogueError ? t('catalogueUnavailable') : reasons.length
+          ? reasons.map(reason => t(labels[reason] || 'unavailable')).join(' ')
+          : !state.aiAvailable ? t('aiUnavailable') : '');
+      }
+    }
   }
   function renderCatalogue() {
     const grid = $('#service-grid');
@@ -272,10 +304,9 @@
     $('#reload-services').hidden = state.aiAvailable && !state.catalogueError;
     for (const [index, descriptor] of descriptors.entries()) {
       const service = state.services.find(item => item.key === descriptor.key);
-      const available = state.aiAvailable && service && service.available === true;
-      const card = text('button', undefined, 'service-card');
-      card.type = 'button';
-      card.disabled = !available;
+      const available = Boolean(state.aiAvailable && service && service.available === true);
+      const card = text('a', undefined, 'service-card');
+      card.href = `/pages/${descriptor.page}`;
       const symbol = text('span', undefined, 'service-icon');
       symbol.setAttribute('aria-hidden', 'true');
       const icon = text('i');
@@ -283,9 +314,22 @@
       symbol.append(icon, text('span', String(index + 1).padStart(2, '0'), 'icon-fallback'));
       card.append(symbol, text('span', titleFor(descriptor), 'service-title'));
       card.append(text('span', service && service[`description_${state.language}`] || descriptor[state.language][1], 'service-description'));
-      if (!available) card.append(text('span', t('unavailable'), 'unavailable'));
-      card.addEventListener('click', () => selectService(descriptor));
+      if (!available) {
+        const reasons = service && Array.isArray(service.unavailable_reasons) ? service.unavailable_reasons : [];
+        const labels = { feature_disabled: 'featureDisabled', ai_provider_missing: 'providerMissing', rate_limit_secret_missing: 'rateSaltMissing', ephemeris_missing: 'ephemerisMissing' };
+        if (descriptor.key === 'compatibility' && reasons.length) {
+          card.append(text('span', reasons.map(reason => t(labels[reason] || 'unavailable')).join(' '), 'unavailable'));
+        } else {
+          card.append(text('span', descriptor.key === 'compatibility' ? t('unavailable') : t('comingSoon'), 'unavailable'));
+        }
+      }
       grid.append(card);
+    }
+    $('#compatibility-only-note')?.remove();
+    if (!document.body.dataset.servicePage) {
+      const guidance = text('p', t('compatibilityOnly'), 'form-help');
+      guidance.id = 'compatibility-only-note';
+      grid.after(guidance);
     }
     icons();
   }
@@ -502,6 +546,10 @@
   }
   function showCatalogue() {
     if (state.busy) return;
+    if (document.body.dataset.servicePage) {
+      location.href = '/pages/services.html';
+      return;
+    }
     state.selected = null;
     state.inputs = null;
     state.report = null;
@@ -864,7 +912,7 @@
         setTimeout(() => { applySession(session).catch(() => notice(t('authError'))); }, 0);
       });
       $('#login').disabled = false;
-    } catch (_) { state.client = null; $('#login').disabled = true; notice(t('loginUnavailable')); }
+    } catch (_) { state.client = null; $('#login').disabled = true; }
   }
   async function switchLanguage(next) {
     if (state.busy || next === state.language) return;
