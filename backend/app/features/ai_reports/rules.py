@@ -67,9 +67,10 @@ ENEMIES = {
 VASIYA = ({4, 7}, {3, 6}, {5}, {7, 8}, {6}, {2, 11}, {5, 9}, {3}, {11}, {10}, {9}, {9})
 DINA_COUNTS = frozenset(count for count in range(1, 28) if count % 9 in (0, 2, 4, 6, 8))
 MAHENDRA_COUNTS = frozenset((4, 7, 10, 13, 16, 19, 22, 25))
-STREE_COUNTS = frozenset(range(13, 28))
-RASI_COUNTS = frozenset((7, 9, 10, 11, 12))
-NADI = ("adi", "madhya", "antya") * 9
+STREE_COUNTS = frozenset(range(14, 28))
+RASI_COUNTS = frozenset((1, 3, 4, 7, 10, 11))
+# Nadi zig-zags every six stars: Ashwini Adi, Krittika and Rohini Antya, Ardra and Punarvasu Adi.
+NADI = tuple(("adi", "madhya", "antya", "antya", "madhya", "adi")[index % 6] for index in range(27))
 VARNA_BY_RASI = ("kshatriya", "vaishya", "shudra", "brahmin", "kshatriya", "vaishya",
                  "shudra", "brahmin", "kshatriya", "vaishya", "shudra", "brahmin")
 VARNA_RANK = {"shudra": 0, "vaishya": 1, "kshatriya": 2, "brahmin": 3}
@@ -111,13 +112,13 @@ def porutham(bride_star: int, groom_star: int, bride_rasi: int, groom_rasi: int)
          {"bride": YONI[bride_star], "groom": YONI[groom_star], "rule": "not a listed opposed pair; no sex subdivision"}),
         ("rasi", sign_count in RASI_COUNTS,
          {"inclusive_sign_count": sign_count, "allowed_counts": sorted(RASI_COUNTS),
-          "rule": "Conservative distance-only variant; same-sign and sign-lord exceptions omitted"}),
+          "rule": "Favorable bride-to-groom counts 1, 3, 4, 7, 10, 11; 2/12, 5/9, 6/8 are unfavorable in this distance-only variant; regional exceptions omitted"}),
         ("rasi_adhipathi", lord_pass,
          {"bride_lord": bride_lord, "groom_lord": groom_lord,
           "rule": "same lord or at least one natural friendship with neither direction inimical"}),
-        ("vasiya", groom_rasi in VASIYA[bride_rasi] or bride_rasi in VASIYA[groom_rasi],
-         {"bride_targets": sorted(VASIYA[bride_rasi]), "groom_targets": sorted(VASIYA[groom_rasi]),
-          "rule": "either-direction sign table; not five-category North Indian vashya"}),
+        ("vasiya", groom_rasi in VASIYA[bride_rasi],
+         {"bride_targets": sorted(VASIYA[bride_rasi]),
+          "rule": "groom's Rasi must be in the bride's Rasi Vasya list (one direction only)"}),
         ("rajju", RAJJU[bride_star] != RAJJU[groom_star],
          {"bride_group": RAJJU[bride_star], "groom_group": RAJJU[groom_star],
           "rule": "different groups; ascending/descending exceptions omitted"}),
@@ -125,7 +126,7 @@ def porutham(bride_star: int, groom_star: int, bride_rasi: int, groom_rasi: int)
          {"rule": "no listed pair or head-rajju triple opposition", "bride_star": bride_star, "groom_star": groom_star}),
                 ("nadi", NADI[bride_star] != NADI[groom_star],
                  {"bride": NADI[bride_star], "groom": NADI[groom_star],
-                    "rule": "Adi, Madhya, Antya repeat by nakshatra index modulo three; regional exceptions omitted"}),
+                    "rule": "different Adi, Madhya or Antya Nadi; regional exceptions omitted"}),
                 ("varna", VARNA_RANK[VARNA_BY_RASI[bride_rasi]] <= VARNA_RANK[VARNA_BY_RASI[groom_rasi]],
                  {"bride": VARNA_BY_RASI[bride_rasi], "groom": VARNA_BY_RASI[groom_rasi],
                     "rule": "traditional sign-based bride-not-higher-than-groom ordering; caste-coded convention, not an assessment of people"}),

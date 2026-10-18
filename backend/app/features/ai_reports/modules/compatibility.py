@@ -23,6 +23,8 @@ class CompatibilityService:
     def calculate(self, inputs: CompatibilityInput) -> dict:
         bride = birth_chart(inputs.bride)
         groom = birth_chart(inputs.groom)
+        bride["birth"]["name"] = bride["birth"]["name"] or "பெண்"
+        groom["birth"]["name"] = groom["birth"]["name"] or "பையன்"
         results = porutham(bride["moon"]["nakshatra"], groom["moon"]["nakshatra"],
                            bride["moon"]["rasi"], groom["moon"]["rasi"])
         return {"metadata": metadata(), "bride": bride, "groom": groom, "porutham": results,

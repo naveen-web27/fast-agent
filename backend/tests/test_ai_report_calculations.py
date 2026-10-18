@@ -58,6 +58,7 @@ class SchemaTests(unittest.TestCase):
         for key, fields in expected.items():
             self.assertEqual(set(SERVICES[key].input_schema.model_fields), fields)
         self.assertIsInstance(CompatibilityInput(bride=BIRTH, groom=BIRTH).bride, BirthInput)
+        self.assertEqual(CompatibilityInput(bride={**BIRTH, "name": ""}, groom=BIRTH).bride.name, "")
         self.assertEqual(BabyNamesInput(**BIRTH).gender, "neutral")
 
     def test_invalid_birth_and_form_values(self):
@@ -182,6 +183,39 @@ class ArithmeticTests(unittest.TestCase):
         self.assertFalse(next(check for check in same["checks"] if check["key"] == "rajju")["matches_rule"])
         opposed = rules.porutham(0, 17, 0, 7)
         self.assertFalse(next(check for check in opposed["checks"] if check["key"] == "vedha")["matches_rule"])
+
+    def test_nadi_table_and_stree_deergha_boundary(self):
+        antya = {2, 3, 8, 9, 14, 15, 20, 21, 26}
+        madhya = {1, 4, 7, 10, 13, 16, 19, 22, 25}
+        for star in range(27):
+            expected = "antya" if star in antya else "madhya" if star in madhya else "adi"
+            self.assertEqual(rules.NADI[star], expected, star)
+        stree = lambda groom: next(c for c in rules.porutham(0, groom, 0, 0)["checks"] if c["key"] == "stree_deergha")
+        self.assertFalse(stree(12)["matches_rule"])
+        self.assertTrue(stree(13)["matches_rule"])
+
+    def test_rasi_porutham_all_twelve_directional_counts(self):
+        favorable = {1, 3, 4, 7, 10, 11}
+        for count in range(1, 13):
+            result = rules.porutham(0, 0, 0, (count - 1) % 12)
+            check = next(item for item in result["checks"] if item["key"] == "rasi")
+            self.assertEqual(check["matches_rule"], count in favorable, count)
+            self.assertEqual(check["details"]["inclusive_sign_count"], count)
+
+    def test_reference_site_case_makaram_thiruvonam_with_thulam_visakam(self):
+        # Verdicts from the user's 12-porutham reference screenshot; its 12th check is Vriksha, not Varna.
+        result = rules.porutham(21, 15, 9, 6)
+        outcomes = {check["key"]: check["matches_rule"] for check in result["checks"]}
+        expected = {"dina": True, "gana": False, "mahendra": True, "stree_deergha": True, "yoni": True,
+                    "rasi": True, "rasi_adhipathi": True, "vasiya": False, "rajju": True, "vedha": True,
+                    "nadi": False}
+        self.assertEqual({key: outcomes[key] for key in expected}, expected)
+
+    def test_vasiya_is_one_directional_from_bride_rasi(self):
+        vasiya = lambda bride_rasi, groom_rasi: next(
+            c for c in rules.porutham(0, 0, bride_rasi, groom_rasi)["checks"] if c["key"] == "vasiya")["matches_rule"]
+        self.assertFalse(vasiya(9, 6))
+        self.assertTrue(vasiya(6, 9))
 
     def test_porutham_tables_cover_all_stars_and_all_pairs_are_total(self):
         self.assertEqual(len(rules.GANA), 27)
@@ -323,7 +357,7 @@ class SwissEphemerisTests(unittest.TestCase):
 
     def test_every_service_calculates_json_serializable_raw_data(self):
         examples = {"horoscope": BIRTH, "numerology": {"full_name": "Arul Mani", "birth_date": "2000-01-01"},
-                    "compatibility": {"bride": BIRTH, "groom": BIRTH},
+                    "compatibility": {"bride": COMPATIBILITY_BIRTH, "groom": COMPATIBILITY_BIRTH},
                     "vastu": {"facing": "W", "main_door": "E", "kitchen": "SE", "bedroom": "SW"},
                     "gemstone": BIRTH, "baby-names": BIRTH, "forecast": {"rasi": 0, "period": "weekly"}}
         for key, example in examples.items():
