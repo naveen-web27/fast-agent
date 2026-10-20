@@ -6,6 +6,9 @@
   const words = {
     ta: {
       appTitle: 'தமிழ் ஜோதிடம் & கலைகள் AI அறிக்கைகள்', eyebrow: 'பாரம்பரியக் கலைகள்',
+      servicesHubTitle: 'சேவைகள்', servicesHubEyebrow: 'RightConnect சேவைகள்',
+      astrologyHubTitle: 'ஜோதிடம் மற்றும் தொடர்புடைய சேவைகள்', astrologyHubEyebrow: 'பாரம்பரியக் கலைகள்',
+      allServiceCategories: 'அனைத்து சேவை வகைகளும்',
       compatibilityPageTitle: 'திருமணப் பொருத்தம்', compatibilityNav: 'திருமணப் பொருத்தம்',
       compatibilityDisclaimer: 'பன்னிரண்டு பாரம்பரிய விதிகள் ஒப்பிடப்படுகின்றன. இவை அறிவியல் கணிப்போ திருமண வெற்றியின் சதவீதமோ அல்ல. வர்ணம் ஒரு வரலாற்று, சாதி சார்ந்த வகைப்பாடு; இது யாருடைய மதிப்பையும் தீர்மானிக்காது.',
       backToRasi: 'ராசி முடிவுகளுக்குத் திரும்பு',
@@ -27,7 +30,12 @@
       rajjuWarning: 'ரஜ்ஜு பொருந்தவில்லை. பாரம்பரியத்தில் இது முக்கியமானதாகக் கருதப்படுவதால், முடிவு மத்திமத்திற்கு மேல் காட்டப்படாது.',
       profileHeading: 'இருவரின் ஜாதக விவரங்கள்', attribute: 'விவரம்', rowGana: 'கணம்', rowStar: 'நட்சத்திரம்', brideHeading: 'மணமகள்', groomHeading: 'மணமகன்', rowYoni: 'யோனி', rowRajju: 'ரஜ்ஜு', rowNadi: 'நாடி', rowLord: 'ராசி அதிபதி', matchesOutOf: 'பொருத்தங்கள்',
       skip: 'உள்ளடக்கத்திற்குச் செல்ல', language: 'மொழி', views: 'பகுதிகள்', services: 'சேவைகள்',
-      chooseService: 'சேவையைத் தேர்ந்தெடுக்கவும்', loadingServices: 'சேவைகள் ஏற்றப்படுகின்றன…',
+      chooseService: 'சேவையைத் தேர்ந்தெடுக்கவும்', astrologyServices: 'ஜோதிடம் மற்றும் தொடர்புடைய சேவைகள்', loadingServices: 'சேவைகள் ஏற்றப்படுகின்றன…',
+      examKicker: 'போட்டித் தேர்வு உதவி', examTitle: 'போட்டித் தேர்வு விண்ணப்பச் சேவைகள்',
+      examDescription: 'தேர்வுக்கு ஏற்ப புகைப்படம், கையொப்பம் மற்றும் ஆவண விதிகளைத் தயாரிக்க உதவும் கருவிகள்.',
+      examComing: 'விரைவில்', examServices: 'போட்டித் தேர்வு சேவைகள்',
+      examPhoto: 'புகைப்படம்: அளவு, KB, பெயர் / தேதி', examSignature: 'கையொப்பம்: அளவு மற்றும் வடிவம்',
+      examDocuments: 'ஆவணங்கள்: PDF அளவு / மாற்றம்',
       catalogueUnavailable: 'அறிக்கை சேவையகத்தை அடைய முடியவில்லை. சேவையகத்தைத் தொடங்கி மீண்டும் முயற்சிக்கவும்.',
       compatibilityOnly: 'திருமணப் பொருத்தம் தனிப் பக்கத்தில் முதலில் உருவாக்கப்படுகிறது. மற்ற சேவைகள் தனித்தனியாக பின்னர் சேர்க்கப்படும்.',
       comingSoon: 'இந்தச் சேவை விரைவில் சேர்க்கப்படும்.',
@@ -92,7 +100,9 @@
       invalidField: 'இந்த விவரத்தைச் சரிபார்த்து சரியாக உள்ளிடவும்.', invalidNumber: 'குறிப்பிட்ட வரம்பிற்குள் சரியான எண்ணை உள்ளிடவும்.'
     },
     en: {
-      appTitle: 'Tamil Astrology & Arts AI Reports', eyebrow: 'Traditional arts', skip: 'Skip to content', language: 'Language', views: 'Views', services: 'Services',
+      appTitle: 'Tamil Astrology & Arts AI Reports', eyebrow: 'Traditional arts',
+      servicesHubTitle: 'Services', servicesHubEyebrow: 'RightConnect services', skip: 'Skip to content', language: 'Language', views: 'Views', services: 'Services',
+      astrologyHubTitle: 'Astrology & related services', astrologyHubEyebrow: 'Traditional arts', allServiceCategories: 'All service categories',
       compatibilityPageTitle: 'Marriage Compatibility', compatibilityNav: 'Marriage compatibility',
       compatibilityDisclaimer: 'This compares twelve traditional rules. They are not scientific predictions or a marriage-success percentage. Varna is a historical caste-coded classification; it does not determine anyone’s worth.',
       backToRasi: 'Back to Rasi results',
@@ -113,7 +123,12 @@
       levelHigh: 'Uthamam — high match', levelMedium: 'Mathimam — medium match', levelLow: 'Athamam — low match',
       rajjuWarning: 'Rajju does not match. Tradition treats this as important, so the verdict is capped at medium.',
       profileHeading: 'Birth-star attributes', attribute: 'Attribute', rowGana: 'Gana', rowStar: 'Nakshatra', brideHeading: 'Bride', groomHeading: 'Groom', rowYoni: 'Yoni', rowRajju: 'Rajju', rowNadi: 'Nadi', rowLord: 'Rasi lord', matchesOutOf: 'matches',
-      chooseService: 'Choose a service', loadingServices: 'Loading services…', login: 'Sign in with Google', logout: 'Sign out', guest: 'Guest', signedIn: 'Signed in',
+      chooseService: 'Choose a service', astrologyServices: 'Astrology & related services', loadingServices: 'Loading services…', login: 'Sign in with Google', logout: 'Sign out', guest: 'Guest', signedIn: 'Signed in',
+      examKicker: 'Competitive exam help', examTitle: 'Competitive exam application services',
+      examDescription: 'Tools to prepare photos, signatures and documents to match each exam’s requirements.',
+      examComing: 'Coming soon', examServices: 'Competitive exam services',
+      examPhoto: 'Photo: dimensions, file size, name / date', examSignature: 'Signature: dimensions and format',
+      examDocuments: 'Documents: PDF size / conversion',
       catalogueUnavailable: 'The report API could not be reached. Start the server and try again.',
       compatibilityOnly: 'Marriage compatibility is being built first on its own page. The other services will follow as separate pages.',
       comingSoon: 'This service will be added later.', nadi: 'Nadi Porutham', varna: 'Varna Porutham (traditional classification)',
@@ -382,7 +397,11 @@
   }
   function updateLanguageText() {
     document.documentElement.lang = state.language;
-    document.title = `${t(document.body.dataset.servicePage === 'compatibility' ? 'compatibilityPageTitle' : 'appTitle')} | RightConnect`;
+    const titleKey = document.body.dataset.servicePage === 'compatibility'
+      ? 'compatibilityPageTitle'
+      : document.body.classList.contains('astrology-catalogue') ? 'astrologyHubTitle'
+        : document.body.classList.contains('services-hub') ? 'servicesHubTitle' : 'appTitle';
+    document.title = `${t(titleKey)} | RightConnect`;
     document.querySelectorAll('[data-i18n]').forEach(element => { element.textContent = t(element.dataset.i18n); });
     document.querySelectorAll('[data-i18n-aria]').forEach(element => { element.setAttribute('aria-label', t(element.dataset.i18nAria)); });
     $('#account-status').textContent = t(state.session ? 'signedIn' : 'guest');

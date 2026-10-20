@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ta">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#7d1410">
+  <title>ஜோதிடம் மற்றும் தொடர்புடைய சேவைகள் | RightConnect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/ai-reports.css?v=20261020v5">
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script defer src="/assets/ai-reports.js?v=20261020v5"></script>
+</head>
+<body class="astrology-catalogue">
+  <a class="skip-link" href="#main" data-i18n="skip">உள்ளடக்கத்திற்குச் செல்ல</a>
+  <header class="site-header">
+    <a class="brand" href="/pages/services.html"><img src="/assets/rightconnect-mark.svg" width="32" height="32" alt=""><span>RightConnect</span></a>
+    <div class="header-actions">
+      <label class="language-label" for="language" data-i18n="language">மொழி</label>
+      <select id="language"><option value="ta">தமிழ்</option><option value="en">English</option></select>
+      <button type="button" id="login" class="button secondary" disabled data-i18n="login">Google மூலம் உள்நுழை</button>
+      <button type="button" id="logout" class="button quiet" hidden data-i18n="logout">வெளியேறு</button>
+    </div>
+  </header>
+  <main id="main" class="workspace">
+    <p class="back-link"><a href="/pages/services.html" data-i18n="allServiceCategories">← அனைத்து சேவை வகைகளும்</a></p>
+    <div class="page-heading"><div><p class="eyebrow" data-i18n="astrologyHubEyebrow">பாரம்பரியக் கலைகள்</p><h1 data-i18n="astrologyHubTitle">ஜோதிடம் மற்றும் தொடர்புடைய சேவைகள்</h1></div><span class="guest-label" id="account-status">விருந்தினர்</span></div>
+    <p class="tradition-note" data-i18n="tradition">பாரம்பரிய நம்பிக்கைகளை அடிப்படையாகக் கொண்டவை; அறிவியல் ஆதாரம் இல்லை. மருத்துவம், நிதி அல்லது முக்கிய முடிவுகளுக்கான ஆலோசனை அல்ல.</p>
+    <nav class="view-nav" aria-label="பகுதிகள்" data-i18n-aria="views">
+      <button type="button" data-view="services" aria-current="page" data-i18n="services">சேவைகள்</button>
+      <button type="button" data-view="history" hidden data-auth data-i18n="history">முந்தைய அறிக்கைகள்</button>
+      <button type="button" data-view="family" hidden data-auth data-i18n="family">குடும்ப விவரங்கள்</button>
+    </nav>
+    <p id="global-status" class="notice" role="status" aria-live="polite" hidden></p>
+    <section id="services-view" aria-labelledby="catalogue-heading">
+      <div id="catalogue">
+        <h2 id="catalogue-heading" data-i18n="astrologyHubTitle">ஜோதிடம் மற்றும் தொடர்புடைய சேவைகள்</h2>
+        <p id="catalogue-status" role="status" data-i18n="loadingServices">சேவைகள் ஏற்றப்படுகின்றன…</p>
+        <div id="service-grid" class="service-grid"></div>
+        <button id="reload-services" type="button" class="button secondary" hidden data-i18n="reload">மீண்டும் ஏற்று</button>
+      </div>
+      <section id="input-panel" class="input-panel" hidden aria-labelledby="form-title"></section>
+      <section id="report-panel" class="report-panel" hidden aria-labelledby="report-heading" aria-live="polite"></section>
+      <section id="recovery-panel" class="recovery-panel" hidden aria-labelledby="recovery-title"></section>
+    </section>
+    <section id="history-view" hidden aria-labelledby="history-heading"><h2 id="history-heading" data-i18n="history">முந்தைய அறிக்கைகள்</h2><div id="history-content"></div></section>
+    <section id="family-view" hidden aria-labelledby="family-heading"><h2 id="family-heading" data-i18n="family">குடும்ப விவரங்கள்</h2><p class="muted" data-i18n="familyHelp">உங்கள் அனுமதியுடன் மட்டும் பிறந்த விவரங்கள் கணக்கில் சேமிக்கப்படும். அறிக்கை பெற சேமிக்க வேண்டியதில்லை.</p><div id="family-content"></div></section>
+    <noscript><p class="notice">இந்தப் பக்கத்திற்கு JavaScript தேவை. JavaScript is required for this page.</p></noscript>
+  </main>
+  <footer class="site-footer"><a href="/pages/services.html" data-i18n="allServiceCategories">அனைத்து சேவை வகைகளும்</a><span data-i18n="optionalLogin">உள்நுழைவு விருப்பமானது. விருந்தினராகவும் அறிக்கை பெறலாம்.</span></footer>
+</body>
+</html>
