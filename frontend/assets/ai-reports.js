@@ -54,8 +54,14 @@
       name: 'பெயர் (விருப்பம்)', brideDefaultName: 'பெயர் இல்லையெனில்: பெண்', groomDefaultName: 'பெயர் இல்லையெனில்: பையன்',
       birthDate: 'பிறந்த தேதி', birthTime: 'பிறந்த நேரம்', localTime: 'பிறந்த இடத்தின் உள்ளூர் நேரம்; நேரம் தெரியாவிட்டால் ஊகிக்க வேண்டாம்.',
       cityPreset: 'நகரத் தேர்வு', manualCity: 'வேறு இடம் / கைமுறை', place: 'பிறந்த இடம்', latitude: 'அட்சரேகை', longitude: 'தீர்க்கரேகை', timezone: 'IANA நேர மண்டலம்',
-      nearestCity: 'பிறந்த ஊர் / அருகிலுள்ள நகரம்', placeOptional: 'ஊர்ப் பெயர் (விருப்பம்)',
-      kattamPlaceHelp: 'பிறந்த ஊர் பட்டியலில் இல்லையெனில் அருகிலுள்ள நகரத்தைத் தேர்ந்தெடுக்கவும்; தேர்ந்தெடுக்காவிட்டால் சென்னை எடுத்துக்கொள்ளப்படும். ஊர்ப் பெயர் அறிக்கையில் காட்ட மட்டும்.',
+      birthCityOptional: 'பிறந்த ஊர் (விருப்பம்)',
+      kattamPlaceHelp: 'ஊர்ப் பெயரைத் தட்டச்சு செய்யவும். காலியாக விட்டால் அல்லது ஊர் அடையாளம் காணப்படாவிட்டால் சென்னை அடிப்படையில் கணக்கிடப்படும்.',
+      placeUnknown: '{name}: “{place}” ஊர் அடையாளம் காணப்படவில்லை; சென்னை (இந்திய நேரம்) அடிப்படையில் கணக்கிடப்பட்டது. லக்னம் சிறிது மாறலாம்.',
+      placeMissing: '{name}: பிறந்த ஊர் கொடுக்கப்படவில்லை; சென்னை அடிப்படையில் கணக்கிடப்பட்டது. லக்னம் சிறிது மாறலாம்.',
+      chooseTitle: 'எந்தப் பொருத்தம் பார்க்க வேண்டும்?', chooseRasiTitle: 'ராசி பொருத்தம்', chooseKattamTitle: 'கட்டப் பொருத்தம்',
+      chooseRasiHelp: 'ராசி, நட்சத்திரம் மட்டும் தெரிந்தால் — 12 பொருத்தங்கள். பிறகு கட்டப் பொருத்தமும் பார்க்கலாம்.',
+      chooseKattamHelp: 'பிறந்த தேதி, நேரம் தெரிந்தால் — நேரடியாக முழு ஜாதகப் பொருத்தம்: தோஷம், தசை, எதிர்காலம்.',
+      backToChoice: 'பொருத்த வகைக்குத் திரும்பு',
       locationHelp: 'நகர மைய ஆயத்தொலைவுகள் மட்டுமே. பிறந்த இடத்திற்கேற்ப திருத்தவும். மற்ற இடங்களுக்கு சரியான ஆயத்தொலைவுகளை நீங்களே உள்ளிடவும்; தானியங்கி இடத்தேடல் இல்லை.',
       compatibilityPlaceHelp: 'பிறந்த ஊரைத் தேர்ந்தெடுக்கவும்; நேர மண்டலம் தானாக நிரப்பப்படும். இந்தப் பொருத்தக் கணக்கிற்கு அட்சரேகை, தீர்க்கரேகை தேவையில்லை.',
       confirmLocation: 'பிறந்த இடம், அட்சரேகை, தீர்க்கரேகை மற்றும் நேர மண்டலத்தைச் சரிபார்த்து உறுதிப்படுத்துகிறேன்.',
@@ -130,8 +136,14 @@
       birthDate: 'Birth date', birthTime: 'Birth time',
       localTime: 'Local time at the birthplace. Do not guess an unknown birth time.', cityPreset: 'City preset', manualCity: 'Other place / manual',
       place: 'Birthplace', latitude: 'Latitude', longitude: 'Longitude', timezone: 'IANA timezone',
-      nearestCity: 'Birth city / nearest city', placeOptional: 'Place name (optional)',
-      kattamPlaceHelp: 'If the birthplace is not listed, choose the nearest city; Chennai is used if you leave it unchanged. The place name is only shown in the report.',
+      birthCityOptional: 'Birth city (optional)',
+      kattamPlaceHelp: 'Type the birth city. If it is left blank or not recognised, Chennai is used for the calculation.',
+      placeUnknown: '{name}: “{place}” was not recognised, so Chennai (Indian time) was used. The Lagna may shift slightly.',
+      placeMissing: '{name}: no birth city was given, so Chennai was used. The Lagna may shift slightly.',
+      chooseTitle: 'Which matching would you like?', chooseRasiTitle: 'Rasi matching', chooseKattamTitle: 'Kattam matching',
+      chooseRasiHelp: 'If you only know the Rasi and Nakshatra — the 12 checks. You can continue to Kattam matching afterwards.',
+      chooseKattamHelp: 'If you know the birth date and time — go straight to full chart matching: dosha, dasa and future.',
+      backToChoice: 'Back to matching type',
       locationHelp: 'Presets are city-centre coordinates. Adjust to the actual birthplace. Enter accurate coordinates for other places; there is no automatic geocoding.',
       compatibilityPlaceHelp: 'Choose the birthplace to fill its timezone. Latitude and longitude are not needed for this compatibility calculation.',
       confirmLocation: 'I have checked and confirm the birthplace, latitude, longitude and timezone.', timezoneHelp: 'For example, Asia/Kolkata. Confirm the local timezone for the birth date.',
@@ -168,19 +180,19 @@
     { key: 'forecast', page: 'rasi-forecast.html', icon: 'sun', ta: ['ராசி பலன்', 'தேர்ந்தெடுத்த ராசிக்கான தினசரி அல்லது வாராந்திர பாரம்பரியப் பலன்.'], en: ['Rasi forecast', 'Daily or weekly traditional readings for your selected rasi.'] }
   ];
   const cities = [
-    ['Chennai', 'சென்னை', 13.0827, 80.2707, 'Asia/Kolkata'],
+    ['Chennai', 'சென்னை', 13.0827, 80.2707, 'Asia/Kolkata', ['Madras', 'மெட்ராஸ்']],
     ['Madurai', 'மதுரை', 9.9252, 78.1198, 'Asia/Kolkata'],
-    ['Coimbatore', 'கோயம்புத்தூர்', 11.0168, 76.9558, 'Asia/Kolkata'],
-    ['Trichy', 'திருச்சி', 10.7905, 78.7047, 'Asia/Kolkata'],
+    ['Coimbatore', 'கோயம்புத்தூர்', 11.0168, 76.9558, 'Asia/Kolkata', ['Kovai', 'கோவை']],
+    ['Trichy', 'திருச்சி', 10.7905, 78.7047, 'Asia/Kolkata', ['Tiruchirappalli', 'Tiruchi', 'திருச்சிராப்பள்ளி']],
     ['Salem', 'சேலம்', 11.6643, 78.146, 'Asia/Kolkata'],
-    ['Tirunelveli', 'திருநெல்வேலி', 8.7139, 77.7567, 'Asia/Kolkata'],
+    ['Tirunelveli', 'திருநெல்வேலி', 8.7139, 77.7567, 'Asia/Kolkata', ['Nellai', 'நெல்லை']],
     ['Erode', 'ஈரோடு', 11.341, 77.7172, 'Asia/Kolkata'],
     ['Vellore', 'வேலூர்', 12.9165, 79.1325, 'Asia/Kolkata'],
-    ['Thanjavur', 'தஞ்சாவூர்', 10.787, 79.1378, 'Asia/Kolkata'],
-    ['Thoothukudi', 'தூத்துக்குடி', 8.7642, 78.1348, 'Asia/Kolkata'],
+    ['Thanjavur', 'தஞ்சாவூர்', 10.787, 79.1378, 'Asia/Kolkata', ['Tanjore', 'தஞ்சை']],
+    ['Thoothukudi', 'தூத்துக்குடி', 8.7642, 78.1348, 'Asia/Kolkata', ['Tuticorin']],
     ['Nagercoil', 'நாகர்கோவில்', 8.1833, 77.4119, 'Asia/Kolkata'],
-    ['Puducherry', 'புதுச்சேரி', 11.9416, 79.8083, 'Asia/Kolkata'],
-    ['Bengaluru', 'பெங்களூரு', 12.9716, 77.5946, 'Asia/Kolkata'],
+    ['Puducherry', 'புதுச்சேரி', 11.9416, 79.8083, 'Asia/Kolkata', ['Pondicherry', 'Pondy', 'பாண்டிச்சேரி']],
+    ['Bengaluru', 'பெங்களூரு', 12.9716, 77.5946, 'Asia/Kolkata', ['Bangalore', 'பெங்களூர்']],
     ['Jaffna', 'யாழ்ப்பாணம்', 9.6615, 80.0255, 'Asia/Colombo'],
     ['Colombo', 'கொழும்பு', 6.9271, 79.8612, 'Asia/Colombo'],
     ['Singapore', 'சிங்கப்பூர்', 1.3521, 103.8198, 'Asia/Singapore'],
@@ -248,7 +260,7 @@
     language: 'ta', services: [], aiAvailable: false, selected: null, session: null,
     client: null, members: [], membersLoaded: false, report: null, inputs: null,
     busy: false, view: 'services', familyEditor: null, capabilities: new Map(),
-    compatibilityStep: 'rasi', quickMatch: null,
+    compatibilityStep: 'choose', kattamFrom: null, quickMatch: null,
     authVersion: 0, reportVersion: 0, storageWarning: false, catalogueError: null
   };
   const $ = selector => document.querySelector(selector);
@@ -491,7 +503,7 @@
   }
   function birthGroup(parent, prefix, heading, details = {}, allowSaved = true) {
     const compatibility = state.selected && state.selected.key === 'compatibility';
-    const detailedKattam = compatibility && state.compatibilityStep === 'kattam';
+    const detailedKattam = compatibility && state.compatibilityStep === 'kattam' && (prefix === 'bride' || prefix === 'groom');
     const group = document.createElement('fieldset');
     group.dataset.birth = prefix;
     group.append(text('legend', t(heading)));
@@ -506,12 +518,7 @@
       picker.addEventListener('change', () => {
         const member = state.members.find(item => item.id === picker.value);
         for (const [key, control] of Object.entries(controls)) control.value = member && member.details[key] !== undefined ? member.details[key] : key === 'timezone' ? 'Asia/Kolkata' : '';
-        if (detailedKattam) {
-          preset.value = cityFor(member && member.details);
-          preset.dispatchEvent(new Event('change'));
-        } else {
-          preset.value = '';
-        }
+        if (preset) preset.value = '';
         if (confirmation) confirmation.checked = false;
       });
     }
@@ -523,37 +530,36 @@
     ];
     for (const [key, label, type, extras] of definitions) controls[key] = makeField(grid, { name: `${prefix}.${key}`, label, type, value: details[key] || '', ...extras });
     if (compatibility) controls.name.placeholder = t(prefix === 'bride' ? 'brideDefaultName' : 'groomDefaultName');
-    const cityOptions = cities.map(city => [city[0], state.language === 'ta' ? city[1] : city[0]]);
-    const preset = detailedKattam
-      ? makeField(grid, { name: `${prefix}-city`, label: 'nearestCity', value: cityFor(details), options: cityOptions })
-      : makeField(grid, { name: `${prefix}-city`, label: 'cityPreset', required: false, options: [['', t('manualCity')], ...cityOptions] });
-    controls.place = makeField(grid, { name: `${prefix}.place`, label: detailedKattam ? 'placeOptional' : 'place', value: details.place || '', maxLength: 160, required: !detailedKattam });
-    controls.place.minLength = 2;
+    let preset = null;
+    const confirmation = null;
     if (detailedKattam) {
-      const city = cities.find(item => item[0] === preset.value);
-      for (const [key, index] of [['latitude', 2], ['longitude', 3]]) {
-        const hidden = document.createElement('input');
-        hidden.type = 'hidden';
-        hidden.name = `${prefix}.${key}`;
-        hidden.value = city[index];
-        grid.append(hidden);
-        controls[key] = hidden;
+      controls.place = makeField(grid, { name: `${prefix}.place`, label: 'birthCityOptional', value: details.place || '', maxLength: 160, required: false, help: 'kattamPlaceHelp' });
+      const suggestions = document.createElement('datalist');
+      suggestions.id = `ai-${prefix}-city-list`;
+      for (const city of cities) {
+        const option = document.createElement('option');
+        option.value = state.language === 'ta' ? city[1] : city[0];
+        suggestions.append(option);
       }
-    } else if (!compatibility) {
+      controls.place.setAttribute('list', suggestions.id);
+      grid.append(suggestions);
+      group.append(grid);
+      parent.append(group);
+      return;
+    }
+    preset = makeField(grid, { name: `${prefix}-city`, label: 'cityPreset', required: false, options: [['', t('manualCity')], ...cities.map(city => [city[0], state.language === 'ta' ? city[1] : city[0]])] });
+    controls.place = makeField(grid, { name: `${prefix}.place`, label: 'place', value: details.place || '', maxLength: 160 });
+    controls.place.minLength = 2;
+    if (!compatibility) {
       controls.latitude = makeField(grid, { name: `${prefix}.latitude`, label: 'latitude', type: 'number', min: -90, max: 90, step: 'any', value: details.latitude === undefined ? '' : details.latitude });
       controls.longitude = makeField(grid, { name: `${prefix}.longitude`, label: 'longitude', type: 'number', min: -180, max: 180, step: 'any', value: details.longitude === undefined ? '' : details.longitude });
     }
     controls.timezone = makeField(grid, { name: `${prefix}.timezone`, label: 'timezone', value: details.timezone || 'Asia/Kolkata', maxLength: 80, help: 'timezoneHelp' });
-    group.append(grid, text('p', t(detailedKattam ? 'kattamPlaceHelp' : compatibility ? 'compatibilityPlaceHelp' : 'locationHelp'), 'form-help'));
-    const confirmation = null;
-    if (!detailedKattam) for (const key of compatibility ? ['place', 'timezone'] : ['place', 'latitude', 'longitude', 'timezone']) controls[key].addEventListener('input', () => { if (confirmation) confirmation.checked = false; preset.value = ''; });
+    group.append(grid, text('p', t(compatibility ? 'compatibilityPlaceHelp' : 'locationHelp'), 'form-help'));
+    for (const key of compatibility ? ['place', 'timezone'] : ['place', 'latitude', 'longitude', 'timezone']) controls[key].addEventListener('input', () => { if (confirmation) confirmation.checked = false; preset.value = ''; });
     preset.addEventListener('change', () => {
       const city = cities.find(item => item[0] === preset.value);
-      if (detailedKattam) {
-        controls.latitude.value = city[2];
-        controls.longitude.value = city[3];
-        controls.timezone.value = city[4];
-      } else if (city) {
+      if (city) {
         controls.place.value = state.language === 'ta' ? city[1] : city[0];
         if (controls.latitude) controls.latitude.value = city[2];
         if (controls.longitude) controls.longitude.value = city[3];
@@ -568,18 +574,30 @@
     });
     parent.append(group);
   }
-  // Kattam coordinates come from a city list; an exact match restores the saved city, otherwise Chennai is the default.
-  function cityFor(details) {
-    const latitude = Number(details && details.latitude);
-    const longitude = Number(details && details.longitude);
-    const match = cities.find(city => Math.abs(city[2] - latitude) < 0.01 && Math.abs(city[3] - longitude) < 0.01);
-    return (match || cities[0])[0];
+  const normalisePlace = value => String(value || '').toLowerCase().replace(/[\s.,()-]/g, '');
+  // No geocoding: a typed place resolves only against the city list and its aliases.
+  function findCity(place) {
+    const key = normalisePlace(place);
+    if (!key) return null;
+    const names = city => [city[0], city[1], ...(city[5] || [])].map(normalisePlace);
+    return cities.find(city => names(city).includes(key))
+      || cities.find(city => names(city).some(name => name.length >= 4 && key.includes(name)))
+      || null;
+  }
+  function getKattamBirth(form, prefix, fallbackName) {
+    const value = key => form.elements.namedItem(`${prefix}.${key}`).value.trim();
+    const typed = value('place');
+    const city = findCity(typed);
+    const used = city || cities[0];
+    return {
+      name: value('name') || fallbackName, birth_date: value('birth_date'), birth_time: value('birth_time'),
+      place: typed, place_status: city ? 'ok' : typed ? 'unknown' : 'missing',
+      latitude: used[2], longitude: used[3], timezone: used[4]
+    };
   }
   function getBirth(form, prefix, { coordinates = true, fallbackName = '' } = {}) {
     const value = key => form.elements.namedItem(`${prefix}.${key}`).value.trim();
-    const preset = form.elements.namedItem(`${prefix}-city`);
-    const presetLabel = preset && preset.value ? preset.selectedOptions[0].textContent : '';
-    const birth = { name: value('name') || fallbackName, birth_date: value('birth_date'), birth_time: value('birth_time'), place: value('place') || presetLabel, timezone: value('timezone') };
+    const birth = { name: value('name') || fallbackName, birth_date: value('birth_date'), birth_time: value('birth_time'), place: value('place'), timezone: value('timezone') };
     if (coordinates) {
       const coordinate = key => value(key) === '' ? '' : Number(value(key));
       birth.latitude = coordinate('latitude');
@@ -606,8 +624,8 @@
   }
   function readInputs(form, descriptor) {
     if (descriptor.key === 'compatibility') return {
-      bride: getBirth(form, 'bride', { fallbackName: 'பெண்' }),
-      groom: getBirth(form, 'groom', { fallbackName: 'பையன்' })
+      bride: getKattamBirth(form, 'bride', 'பெண்'),
+      groom: getKattamBirth(form, 'groom', 'பையன்')
     };
     if (descriptor.key === 'numerology') return { full_name: form.elements.namedItem('full_name').value.trim(), birth_date: form.elements.namedItem('birth_date').value };
     if (descriptor.key === 'vastu') return Object.fromEntries(['facing', 'main_door', 'kitchen', 'bedroom'].map(key => [key, form.elements.namedItem(key).value]));
@@ -620,7 +638,7 @@
     state.selected = descriptor;
     state.report = null;
     state.inputs = inputs;
-    if (descriptor.key === 'compatibility' && !state.quickMatch) state.compatibilityStep = 'rasi';
+    if (descriptor.key === 'compatibility' && !state.quickMatch) state.compatibilityStep = 'choose';
     state.reportVersion += 1;
     notice('');
     $('#report-panel').hidden = true;
@@ -629,6 +647,10 @@
     focusHeading('#form-title');
   }
   function renderSelectedInput(inputs = {}) {
+    if (state.selected && state.selected.key === 'compatibility' && state.compatibilityStep === 'choose') {
+      renderCompatibilityChoice();
+      return;
+    }
     if (state.selected && state.selected.key === 'compatibility' && state.compatibilityStep === 'rasi') {
       renderQuickMatchForm(inputs);
       return;
@@ -667,6 +689,7 @@
 
   function captureSelectedInputs() {
     if (!state.selected) return state.inputs;
+    if (state.selected.key === 'compatibility' && state.compatibilityStep === 'choose') return state.inputs;
     if (state.selected.key === 'compatibility' && state.compatibilityStep === 'rasi') {
       if (!state.quickMatch && $('#input-panel form')) state.inputs = readQuickMatch($('#input-panel form'));
       else if (state.quickInputs) state.inputs = state.quickInputs;
@@ -685,6 +708,67 @@
     renderSelectedInput(state.inputs || {});
   }
 
+  function showCompatibilityChoice() {
+    $('#report-panel').hidden = true;
+    state.compatibilityStep = 'choose';
+    renderCompatibilityChoice();
+    focusHeading('#form-title');
+  }
+
+  function backFromKattam() {
+    if (state.kattamFrom === 'rasi' && state.quickMatch) {
+      $('#report-panel').hidden = true;
+      state.compatibilityStep = 'rasi';
+      renderQuickMatchResults();
+      focusHeading('#form-title');
+    } else {
+      showCompatibilityChoice();
+    }
+  }
+
+  function renderCompatibilityChoice() {
+    const panel = $('#input-panel');
+    panel.replaceChildren();
+    panel.hidden = false;
+    $('#report-panel').hidden = true;
+    $('#catalogue').hidden = true;
+    const top = text('div', undefined, 'panel-top');
+    const heading = text('h2', t('chooseTitle'));
+    heading.id = 'form-title';
+    top.append(heading, button(t('back'), showCatalogue, 'quiet', 'arrow-left'));
+    panel.append(top);
+    const grid = text('div', undefined, 'service-grid match-choice');
+    const options = [
+      ['chooseRasiTitle', 'chooseRasiHelp', 'star', () => {
+        state.compatibilityStep = 'rasi';
+        state.quickMatch = null;
+        renderQuickMatchForm(state.quickInputs || {});
+        focusHeading('#form-title');
+      }],
+      ['chooseKattamTitle', 'chooseKattamHelp', 'layout-grid', () => {
+        state.compatibilityStep = 'kattam';
+        state.kattamFrom = 'choose';
+        state.inputs = state.kattam ? state.kattam.inputs : {};
+        renderInput(state.inputs);
+        focusHeading('#form-title');
+      }]
+    ];
+    options.forEach(([title, help, iconName, action], index) => {
+      const card = text('button', undefined, 'service-card');
+      card.type = 'button';
+      const symbol = text('span', undefined, 'service-icon');
+      symbol.setAttribute('aria-hidden', 'true');
+      const icon = text('i');
+      icon.dataset.lucide = iconName;
+      symbol.append(icon, text('span', String(index + 1), 'icon-fallback'));
+      card.append(symbol, text('span', t(title), 'service-title'), text('span', t(help), 'service-description'));
+      card.addEventListener('click', action);
+      grid.append(card);
+    });
+    panel.append(grid);
+    icons();
+  }
+
   function renderQuickMatchForm(values = {}) {
     const panel = $('#input-panel');
     panel.replaceChildren();
@@ -694,7 +778,7 @@
     const top = text('div', undefined, 'panel-top');
     const heading = text('h2', t('rasiStepTitle'));
     heading.id = 'form-title';
-    top.append(heading, button(t('back'), showCatalogue, 'quiet', 'arrow-left'));
+    top.append(heading, button(t('backToChoice'), showCompatibilityChoice, 'quiet', 'arrow-left'));
     panel.append(top, text('p', t('rasiStepHelp'), 'form-help'));
 
     const form = document.createElement('form');
@@ -826,6 +910,7 @@
     const actions = text('div', undefined, 'form-actions match-actions');
     actions.append(button(t('viewKattam'), () => {
       state.compatibilityStep = 'kattam';
+      state.kattamFrom = 'rasi';
       const inputs = { bride: { name: state.quickMatch.bride.name }, groom: { name: state.quickMatch.groom.name } };
       state.inputs = inputs;
       renderInput(inputs);
@@ -870,12 +955,9 @@
     const top = text('div', undefined, 'panel-top');
     const heading = text('h2', descriptor.key === 'compatibility' ? t('kattamStepTitle') : titleFor(descriptor));
     heading.id = 'form-title';
-    top.append(heading, button(t(descriptor.key === 'compatibility' ? 'backToRasi' : 'back'),
-      descriptor.key === 'compatibility' ? () => {
-        state.compatibilityStep = 'rasi';
-        renderQuickMatchResults();
-        focusHeading('#form-title');
-      } : showCatalogue, 'quiet', 'arrow-left'));
+    top.append(heading, descriptor.key === 'compatibility'
+      ? button(t(state.kattamFrom === 'rasi' && state.quickMatch ? 'backToRasi' : 'backToChoice'), backFromKattam, 'quiet', 'arrow-left')
+      : button(t('back'), showCatalogue, 'quiet', 'arrow-left'));
     panel.append(top);
     const form = document.createElement('form');
     form.noValidate = true;
@@ -957,7 +1039,8 @@
     state.report = null;
     state.quickMatch = null;
     state.quickInputs = null;
-    state.compatibilityStep = 'rasi';
+    state.compatibilityStep = 'choose';
+    state.kattamFrom = null;
     state.reportVersion += 1;
     $('#input-panel').replaceChildren();
     $('#input-panel').hidden = true;
@@ -1048,11 +1131,17 @@
   function renderKattamReport() {
     const kattam = state.kattam;
     if (!kattam) return;
+    const chennai = state.language === 'ta' ? cities[0][1] : cities[0][0];
+    const shown = person => ({ ...person, place: person.place || chennai });
     const report = window.KattamReport.build({
-      charts: kattam.charts, people: kattam.inputs, selected: state.quickInputs, language: state.language,
+      charts: kattam.charts, people: { bride: shown(kattam.inputs.bride), groom: shown(kattam.inputs.groom) },
+      selected: state.kattamFrom === 'rasi' ? state.quickInputs : null, language: state.language,
       rasis: rasis[state.language], nakshatras: nakshatras[state.language], nowMs: kattam.nowMs
     });
-    kattam.text = report.text;
+    const placeNotes = [kattam.inputs.groom, kattam.inputs.bride]
+      .filter(person => person.place_status && person.place_status !== 'ok')
+      .map(person => t(person.place_status === 'unknown' ? 'placeUnknown' : 'placeMissing').replace('{name}', person.name).replace('{place}', person.place));
+    kattam.text = placeNotes.length ? [...placeNotes, '', report.text].join('\n') : report.text;
     $('#input-panel').hidden = true;
     $('#catalogue').hidden = true;
     const panel = $('#report-panel');
@@ -1061,12 +1150,7 @@
     const top = text('div', undefined, 'panel-top');
     const heading = text('h2', report.title);
     heading.id = 'report-heading';
-    top.append(heading, button(t('backToRasi'), () => {
-      panel.hidden = true;
-      state.compatibilityStep = 'rasi';
-      renderQuickMatchResults();
-      focusHeading('#form-title');
-    }, 'quiet', 'arrow-left'));
+    top.append(heading, button(t(state.kattamFrom === 'rasi' && state.quickMatch ? 'backToRasi' : 'backToChoice'), backFromKattam, 'quiet', 'arrow-left'));
     const actions = text('div', undefined, 'report-actions');
     actions.append(
       button(t('download'), () => {
@@ -1087,7 +1171,13 @@
         focusHeading('#form-title');
       }, 'quiet', 'pencil')
     );
-    panel.append(top, report.node, actions);
+    panel.append(top);
+    if (placeNotes.length) {
+      const box = text('div', undefined, 'notice');
+      placeNotes.forEach(note => box.append(text('p', note)));
+      panel.append(box);
+    }
+    panel.append(report.node, actions);
     icons();
   }
   async function changeReport(action, language, status) {
