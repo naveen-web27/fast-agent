@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     razorpay_webhook_secret: str = ""
     razorpay_pro_amount_paise: int = 0
     razorpay_enterprise_amount_paise: int = 0
+    razorpay_kattam_report_amount_paise: int = 9900
     app_base_url: str = "http://127.0.0.1:8000"
     # Admin console is only served when ADMIN_PATH is set, e.g. "/ops-7f3k2", behind HTTP Basic auth.
     admin_path: str = ""

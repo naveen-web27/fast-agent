@@ -97,7 +97,7 @@
     ta: {
       verdict: { high: 'நல்ல பொருத்தம்', medium: 'பொருந்தும் — சில விஷயங்களில் கவனம் தேவை', low: 'கவனமாக முடிவெடுக்கவும் — முக்கியக் குறைகள் உள்ளன' },
       verdictDetail: (stars, kattam) => `நட்சத்திரப் பொருத்தம் ${stars}/12 · கட்டப் பொருத்தம் ${kattam}/4`,
-      sections: { dosha: '1. தோஷம் இருக்கிறதா?', together: '2. இருவருக்கும் பொருந்துமா?', dasa: '3. இப்போது நடக்கும் தசை, அடுத்து வரும் தசை', timeline: '4. இருவரின் தசையும் சேர்த்துப் பார்த்தால்', life: '5. எதிர்கால வாழ்க்கை', summary: '6. சுருக்கமாக', expert: 'ஜோதிடர்களுக்கான முழு விவரம் — கட்டங்கள், கிரக நிலை, கணக்கு' },
+      sections: { stars: '1. நட்சத்திரப் பொருத்தம் — 12 பொருத்தங்கள்', dosha: '2. தோஷம் இருக்கிறதா?', together: '3. இருவருக்கும் பொருந்துமா?', dasa: '4. இப்போது நடக்கும் தசை, அடுத்து வரும் தசை', timeline: '5. இருவரின் தசையும் சேர்த்துப் பார்த்தால்', life: '6. எதிர்கால வாழ்க்கை', summary: '7. சுருக்கமாக', expert: 'ஜோதிடர்களுக்கான முழு விவரம் — கட்டங்கள், கிரக நிலை, கணக்கு' },
       chevvaiWhat: 'செவ்வாய் தோஷம் என்றால்: ஜாதகத்தில் செவ்வாய் கிரகம் லக்னம் அல்லது சந்திரனிலிருந்து 2, 4, 7, 8, 12-ஆம் வீடுகளில் இருப்பது. 7-ஆம் வீடு கணவன் / மனைவியைக் குறிக்கும் இடம்; அதனால் திருமணத்தில் இது முக்கியமாகப் பார்க்கப்படுகிறது.',
       nagaWhat: 'நாக தோஷம் (ராகு–கேது தோஷம்) என்றால்: ராகு அல்லது கேது லக்னத்திலிருந்து 1, 2, 7, 8-ஆம் வீடுகளில் இருப்பது. சில வட்டார மரபுகள் வேறு வீடுகளையும் சேர்க்கின்றன.',
       chevvaiLabel: 'செவ்வாய் தோஷம்', nagaLabel: 'நாக தோஷம் (ராகு–கேது)',
@@ -178,7 +178,7 @@
     en: {
       verdict: { high: 'Good match', medium: 'Compatible — a few points need attention', low: 'Decide carefully — significant concerns' },
       verdictDetail: (stars, kattam) => `Nakshatra porutham ${stars}/12 · Kattam porutham ${kattam}/4`,
-      sections: { dosha: '1. Is there a dosha?', together: '2. Do the two charts match?', dasa: '3. Current and next dasa', timeline: '4. Both dasas side by side', life: '5. Future life', summary: '6. In short', expert: 'Full details for astrologers — charts, planets, calculations' },
+      sections: { stars: '1. Nakshatra porutham — the 12 checks', dosha: '2. Is there a dosha?', together: '3. Do the two charts match?', dasa: '4. Current and next dasa', timeline: '5. Both dasas side by side', life: '6. Future life', summary: '7. In short', expert: 'Full details for astrologers — charts, planets, calculations' },
       chevvaiWhat: 'Chevvai (Mars) dosha means Mars sits in the 2nd, 4th, 7th, 8th or 12th house from the Lagna or the Moon. The 7th house represents the spouse, so this is given weight in marriage matching.',
       nagaWhat: 'Naga (Rahu–Ketu) dosha means Rahu or Ketu sits in the 1st, 2nd, 7th or 8th house from the Lagna. Some regional traditions add other houses.',
       chevvaiLabel: 'Chevvai dosha', nagaLabel: 'Naga dosha (Rahu–Ketu)',
@@ -296,6 +296,13 @@
       alerts.forEach(text => box.append(el('p', text)));
       report.append(box);
       lines.push(p.starAlert, ...alerts);
+    }
+
+    if (ctx.poruthamSection) {
+      heading(p.sections.stars);
+      const stars = ctx.poruthamSection(porutham);
+      report.append(...stars.nodes);
+      lines.push(...stars.lines);
     }
 
     heading(p.sections.dosha);
@@ -559,7 +566,7 @@
     }
     starNotes.push(w.poruthamScore(porutham.matchedCount, w.poruthamLevels[porutham.level]));
 
-    const plainLines = plainSections(report, { analysis, porutham, finalLevel, roles, w, p, formatMonth, alerts, yearMs: engine.YEAR_MS });
+    const plainLines = plainSections(report, { analysis, porutham, finalLevel, roles, w, p, formatMonth, alerts, yearMs: engine.YEAR_MS, poruthamSection: options.poruthamSection });
 
     const details = el('details', undefined, 'kattam-expert');
     details.append(el('summary', p.sections.expert));

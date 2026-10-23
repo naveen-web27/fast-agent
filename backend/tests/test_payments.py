@@ -2,6 +2,7 @@
 import ast
 import hashlib
 import hmac
+import re
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -75,6 +76,8 @@ def route_scope():
         "timedelta": timedelta, "timezone": timezone, "hmac": hmac, "hashlib": hashlib,
         "valid_payment_signature": valid_payment_signature, "matching_payment": matching_payment,
         "foreign_origin": foreign_origin, "status": SimpleNamespace(HTTP_400_BAD_REQUEST=400),
+        "KATTAM_PRODUCT": "kattam_report", "ORDER_ID": re.compile(r"order_[A-Za-z0-9]{1,40}"),
+        "PAYMENT_ID": re.compile(r"pay_[A-Za-z0-9]{1,40}"),
     }
     exec(compile(ast.fix_missing_locations(module), str(source), "exec"), scope)
     return scope
@@ -256,6 +259,77 @@ class PaymentRouteTests(unittest.IsolatedAsyncioTestCase):
             await self.webhook(self.order_event(), valid_signature=False)
         self.assertEqual(raised.exception.status_code, 400)
         self.session.get.assert_not_awaited()
+
+
+class KattamReportPaymentTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.scope = route_scope()
+        self.settings = SimpleNamespace(razorpay_key_id="rzp_test_unit", razorpay_key_secret="unit-secret",
+                                        razorpay_kattam_report_amount_paise=9900, app_base_url="https://dev.example")
+        self.order = {"id": "order_test", "amount": 9900, "currency": "INR",
+                      "notes": {"rightconnect_product": "kattam_report", "rightconnect_origin": "https://dev.example"}}
+        self.entity = {"id": "pay_test", "order_id": "order_test", "amount": 9900, "currency": "INR", "status": "captured"}
+        self.scope["razorpay_api"] = AsyncMock(side_effect=[self.order, self.entity])
+        self.body = {"razorpay_order_id": "order_test", "razorpay_payment_id": "pay_test",
+                     "razorpay_signature": hmac.new(b"unit-secret", b"order_test|pay_test", hashlib.sha256).hexdigest()}
+
+    async def verify(self, body=None):
+        return await self.scope["verify_kattam_report_payment"](self.body if body is None else body, self.settings)
+
+    async def test_order_uses_server_price_and_product_note(self):
+        self.scope["razorpay_api"] = AsyncMock(return_value={"id": "order_test", "amount": 9900, "currency": "INR"})
+        result = await self.scope["create_kattam_report_order"](self.settings)
+        payload = self.scope["razorpay_api"].call_args.args[3]
+        self.assertEqual(payload["amount"], 9900)
+        self.assertEqual(payload["notes"], {"rightconnect_product": "kattam_report", "rightconnect_origin": "https://dev.example"})
+        self.assertLessEqual(len(payload["receipt"]), 40)
+        self.assertEqual(result["amount"], 9900)
+        self.assertNotIn("unit-secret", str(result))
+
+    async def test_order_unavailable_without_keys_or_valid_price(self):
+        for change in ({"razorpay_key_secret": ""}, {"razorpay_kattam_report_amount_paise": 99}):
+            settings = SimpleNamespace(**{**vars(self.settings), **change})
+            with self.assertRaises(HTTPException) as raised:
+                await self.scope["create_kattam_report_order"](settings)
+            self.assertEqual(raised.exception.status_code, 503)
+        self.scope["razorpay_api"].assert_not_awaited()
+
+    async def test_captured_payment_unlocks(self):
+        self.assertEqual(await self.verify(), {"status": "paid", "payment_id": "pay_test"})
+
+    async def test_invalid_signature_or_reference_never_calls_provider(self):
+        for body in ({**self.body, "razorpay_signature": "invalid"}, {**self.body, "razorpay_payment_id": "pay_x/../refunds"}, {}):
+            with self.assertRaises(HTTPException) as raised:
+                await self.verify(body)
+            self.assertEqual(raised.exception.status_code, 400)
+        self.scope["razorpay_api"].assert_not_awaited()
+
+    async def test_other_products_origins_and_amounts_are_rejected(self):
+        for order in ({**self.order, "notes": {"rightconnect_payment_id": "plan"}},
+                      {**self.order, "notes": {**self.order["notes"], "rightconnect_origin": "https://prod.example"}},
+                      {**self.order, "currency": "USD"}):
+            self.scope["razorpay_api"] = AsyncMock(side_effect=[order, self.entity])
+            with self.assertRaises(HTTPException) as raised:
+                await self.verify()
+            self.assertEqual(raised.exception.status_code, 400)
+        self.scope["razorpay_api"] = AsyncMock(side_effect=[self.order, {**self.entity, "amount": 100}])
+        with self.assertRaises(HTTPException):
+            await self.verify()
+
+    async def test_authorized_payment_stays_locked(self):
+        self.scope["razorpay_api"] = AsyncMock(side_effect=[self.order, {**self.entity, "status": "authorized"}])
+        self.assertEqual((await self.verify())["status"], "pending")
+
+    async def test_report_order_webhook_is_ignored_without_database_access(self):
+        session = SimpleNamespace(get=AsyncMock(), commit=AsyncMock())
+        settings = SimpleNamespace(**vars(self.settings), razorpay_webhook_secret="webhook-unit")
+        event = {"event": "order.paid", "payload": {"order": {"entity": {**self.order, "status": "paid"}}, "payment": {"entity": self.entity}}}
+        import json
+        body = json.dumps(event).encode()
+        request = SimpleNamespace(body=AsyncMock(return_value=body), json=AsyncMock(return_value=event),
+                                  headers={"x-razorpay-signature": hmac.new(b"webhook-unit", body, hashlib.sha256).hexdigest()})
+        self.assertEqual(await self.scope["razorpay_webhook"](request, session, settings), {"status": "ignored"})
+        session.get.assert_not_awaited()
 
 
 if __name__ == "__main__":

@@ -66,6 +66,7 @@ Users are in India, so Singapore is also the closest region to them (~50 ms vs ~
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | **Live** keys |
 | `RAZORPAY_WEBHOOK_SECRET` | secret of the live webhook (section 3), different from dev |
 | `RAZORPAY_PRO_AMOUNT_PAISE` / `RAZORPAY_ENTERPRISE_AMOUNT_PAISE` | prices in paise, e.g. `49900` = ₹499 |
+| `RAZORPAY_KATTAM_REPORT_AMOUNT_PAISE` | optional, one-time Kattam porutham PDF price; default `9900` = ₹99 |
 | `ADMIN_PATH` | long random path, e.g. `/ops-8f2k9q` |
 | `ADMIN_BASIC_USER` / `ADMIN_BASIC_PASSWORD` | strong, unique credentials |
 | `ADMIN_EMAILS` | comma-separated emails allowed to use the admin APIs |

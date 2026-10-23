@@ -3,6 +3,9 @@
 
   const API = '/api/v1/ai-reports';
   const CAPABILITY_KEY = 'rightconnect-ai-report-capabilities-v1';
+  const PAID_KEY = 'rightconnect-kattam-paid-v1';
+  const RAZORPAY_CHECKOUT = 'https://checkout.razorpay.com/v1/checkout.js';
+  const PDF_SCRIPTS = ['/assets/vendor/html2canvas-1.4.1.min.js', '/assets/vendor/jspdf-2.5.2.umd.min.js'];
   const words = {
     ta: {
       appTitle: 'தமிழ் ஜோதிடம் & கலைகள் AI அறிக்கைகள்', eyebrow: 'பாரம்பரியக் கலைகள்',
@@ -68,7 +71,21 @@
       placeMissing: '{name}: பிறந்த ஊர் கொடுக்கப்படவில்லை; சென்னை அடிப்படையில் கணக்கிடப்பட்டது. லக்னம் சிறிது மாறலாம்.',
       chooseTitle: 'எந்தப் பொருத்தம் பார்க்க வேண்டும்?', chooseRasiTitle: 'ராசி பொருத்தம்', chooseKattamTitle: 'கட்டப் பொருத்தம்',
       chooseRasiHelp: 'ராசி, நட்சத்திரம் மட்டும் தெரிந்தால் — 12 பொருத்தங்கள். பிறகு கட்டப் பொருத்தமும் பார்க்கலாம்.',
-      chooseKattamHelp: 'பிறந்த தேதி, நேரம் தெரிந்தால் — நேரடியாக முழு ஜாதகப் பொருத்தம்: தோஷம், தசை, எதிர்காலம்.',
+      chooseKattamHelp: 'பிறந்த தேதி, நேரம் தெரிந்தால் — நேரடியாக முழு ஜாதகப் பொருத்தம்: தோஷம், தசை, எதிர்காலம். முன்னோட்டம் இலவசம்; முழு அறிக்கை PDF {price}.',
+      freePreview: 'இலவச முன்னோட்டம்', lockedTitle: 'முழு கட்டப் பொருத்த அறிக்கை',
+      lockedLead: 'மேலே உள்ளது இலவச முன்னோட்டம் மட்டும். முழு அறிக்கையில்:',
+      lockedItems: ['இருவருக்கும் செவ்வாய் தோஷம், நாக தோஷம் உண்டா — ஏன் என்ற விளக்கத்துடன்', 'இருவரின் ஜாதகமும் பொருந்துமா — செவ்வாய், நாக தோஷம், பாப சாம்யம், தசா சந்தி', 'இப்போதைய தசை, அடுத்த தசை — என்ன பலன், எப்போது வரை', 'அடுத்த 25 ஆண்டுகள் — இருவரின் தசையும் சேர்த்துப் பார்த்தால்', 'வேலை, உடல்நலம், குழந்தை பாக்கியம், இல்லற வாழ்க்கை', 'ராசி, நவாம்சக் கட்டங்கள், கிரக நிலைகள் — ஜோதிடரிடம் காட்ட', 'உங்கள் சாதனத்தில் PDF ஆகப் பதிவிறக்கம்'],
+      payUnlock: '{price} செலுத்தி முழு அறிக்கை PDF பெறுக',
+      payNote: 'Razorpay மூலம் பாதுகாப்பான கட்டணம் — UPI, கார்டு, நெட்பேங்கிங். பிறந்த விவரங்கள் கட்டணச் சேவைக்கு அனுப்பப்படுவதில்லை. ஒரு கட்டணம் இந்த இருவரின் அறிக்கைக்கு மட்டும்.',
+      payOpening: 'பாதுகாப்பான கட்டணப் பக்கம் திறக்கிறது…', payVerifying: 'கட்டணம் சரிபார்க்கப்படுகிறது…',
+      payPending: 'கட்டணம் பெறப்பட்டது; உறுதிப்படுத்தல் நிலுவையில் உள்ளது. மீண்டும் கட்டணம் செலுத்த வேண்டாம். சிறிது நேரம் கழித்து “நிலையைச் சரிபார்” அழுத்தவும்.',
+      payFailed: 'கட்டணம் நிறைவேறவில்லை. பணம் கழிக்கப்பட்டிருந்தால் தானாகத் திருப்பி அளிக்கப்படும். மீண்டும் முயற்சிக்கலாம்.',
+      payCancelled: 'கட்டணம் ரத்து செய்யப்பட்டது. முன்னோட்டம் தொடர்ந்து கிடைக்கும்.',
+      payUnavailable: 'கட்டண வசதி இப்போது கிடைக்கவில்லை. பின்னர் முயற்சிக்கவும்.',
+      payVerifyError: 'கட்டணத்தைச் சரிபார்க்க முடியவில்லை. மீண்டும் கட்டணம் செலுத்த வேண்டாம்; “நிலையைச் சரிபார்” அழுத்தவும்.',
+      paidThanks: 'நன்றி! கட்டணம் உறுதியானது. PDF பதிவிறக்கம் தொடங்கவில்லை எனில் “PDF பதிவிறக்கு” அழுத்தவும்.',
+      downloadPdf: 'PDF பதிவிறக்கு', pdfPreparing: 'PDF தயாராகிறது…', pdfReady: 'PDF உங்கள் சாதனத்தில் பதிவிறக்கப்பட்டது.',
+      pdfError: 'PDF உருவாக்க முடியவில்லை. “PDF / அச்சிடு” மூலம் சேமிக்கலாம்.', pdfGenerated: 'உருவாக்கிய நாள்',
       backToChoice: 'பொருத்த வகைக்குத் திரும்பு',
       locationHelp: 'நகர மைய ஆயத்தொலைவுகள் மட்டுமே. பிறந்த இடத்திற்கேற்ப திருத்தவும். மற்ற இடங்களுக்கு சரியான ஆயத்தொலைவுகளை நீங்களே உள்ளிடவும்; தானியங்கி இடத்தேடல் இல்லை.',
       compatibilityPlaceHelp: 'பிறந்த ஊரைத் தேர்ந்தெடுக்கவும்; நேர மண்டலம் தானாக நிரப்பப்படும். இந்தப் பொருத்தக் கணக்கிற்கு அட்சரேகை, தீர்க்கரேகை தேவையில்லை.',
@@ -157,7 +174,21 @@
       placeMissing: '{name}: no birth city was given, so Chennai was used. The Lagna may shift slightly.',
       chooseTitle: 'Which matching would you like?', chooseRasiTitle: 'Rasi matching', chooseKattamTitle: 'Kattam matching',
       chooseRasiHelp: 'If you only know the Rasi and Nakshatra — the 12 checks. You can continue to Kattam matching afterwards.',
-      chooseKattamHelp: 'If you know the birth date and time — go straight to full chart matching: dosha, dasa and future.',
+      chooseKattamHelp: 'If you know the birth date and time — go straight to full chart matching: dosha, dasa and future. Free preview; full report PDF {price}.',
+      freePreview: 'Free preview', lockedTitle: 'Full Kattam porutham report',
+      lockedLead: 'Above is only the free preview. The full report includes:',
+      lockedItems: ['Chevvai and Naga dosha for each person — with the reason', 'Do the two charts match — Chevvai and Naga dosha, papa samyam, dasa sandhi', 'Current and next dasa — what it brings and until when', 'The next 25 years — both dasas side by side', 'Career, health, children and married life', 'Rasi and Navamsa charts with planet positions — to show your astrologer', 'Downloaded to your device as a PDF'],
+      payUnlock: 'Pay {price} & get the full report PDF',
+      payNote: 'Secure payment via Razorpay — UPI, cards, netbanking. Birth details are never sent to the payment service. One payment covers this couple’s report.',
+      payOpening: 'Opening secure payment…', payVerifying: 'Verifying payment…',
+      payPending: 'Payment received; confirmation is pending. Do not pay again. Press “Check status” shortly.',
+      payFailed: 'The payment did not go through. Any amount debited is refunded automatically. You can try again.',
+      payCancelled: 'Payment cancelled. The preview remains available.',
+      payUnavailable: 'Payments are currently unavailable. Please try again later.',
+      payVerifyError: 'The payment could not be verified. Do not pay again; press “Check status”.',
+      paidThanks: 'Thank you! Payment confirmed. If the PDF did not start downloading, press “Download PDF”.',
+      downloadPdf: 'Download PDF', pdfPreparing: 'Preparing PDF…', pdfReady: 'The PDF has been downloaded to your device.',
+      pdfError: 'Could not create the PDF. You can save it with “PDF / Print”.', pdfGenerated: 'Generated on',
       backToChoice: 'Back to matching type',
       locationHelp: 'Presets are city-centre coordinates. Adjust to the actual birthplace. Enter accurate coordinates for other places; there is no automatic geocoding.',
       compatibilityPlaceHelp: 'Choose the birthplace to fill its timezone. Latitude and longitude are not needed for this compatibility calculation.',
@@ -276,7 +307,8 @@
     client: null, members: [], membersLoaded: false, report: null, inputs: null,
     busy: false, view: 'services', familyEditor: null, capabilities: new Map(),
     compatibilityStep: 'choose', kattamFrom: null, quickMatch: null,
-    authVersion: 0, reportVersion: 0, storageWarning: false, catalogueError: null
+    authVersion: 0, reportVersion: 0, storageWarning: false, catalogueError: null,
+    kattamPrice: 9900, kattamPaidHashes: new Set(), kattamPaying: false, kattamPending: null, kattamPayMessage: '', pdfBusy: false
   };
   const $ = selector => document.querySelector(selector);
   const t = key => words[state.language][key] || words.ta[key] || key;
@@ -440,12 +472,13 @@
     const grid = $('#service-grid');
     grid.replaceChildren();
     const catalogueStatus = $('#catalogue-status');
-    catalogueStatus.textContent = state.catalogueError ? message(state.catalogueError) : state.aiAvailable ? '' : t('aiUnavailable');
-    catalogueStatus.hidden = !catalogueStatus.textContent;
-    $('#reload-services').hidden = state.aiAvailable && !state.catalogueError;
+    catalogueStatus.textContent = '';
+    catalogueStatus.hidden = true;
+    $('#reload-services').hidden = true;
     for (const [index, descriptor] of descriptors.entries()) {
       const service = state.services.find(item => item.key === descriptor.key);
-      const available = Boolean(state.aiAvailable && service && service.available === true);
+      // Compatibility is calculated in the browser and does not need the AI report API.
+      const available = descriptor.key === 'compatibility' || Boolean(state.aiAvailable && service && service.available === true);
       const card = text('a', undefined, 'service-card');
       card.href = `/pages/${descriptor.page}`;
       const symbol = text('span', undefined, 'service-icon');
@@ -455,22 +488,8 @@
       symbol.append(icon, text('span', String(index + 1).padStart(2, '0'), 'icon-fallback'));
       card.append(symbol, text('span', titleFor(descriptor), 'service-title'));
       card.append(text('span', service && service[`description_${state.language}`] || descriptor[state.language][1], 'service-description'));
-      if (!available) {
-        const reasons = service && Array.isArray(service.unavailable_reasons) ? service.unavailable_reasons : [];
-        const labels = { feature_disabled: 'featureDisabled', ai_provider_missing: 'providerMissing', rate_limit_secret_missing: 'rateSaltMissing', ephemeris_missing: 'ephemerisMissing' };
-        if (descriptor.key === 'compatibility' && reasons.length) {
-          card.append(text('span', reasons.map(reason => t(labels[reason] || 'unavailable')).join(' '), 'unavailable'));
-        } else {
-          card.append(text('span', descriptor.key === 'compatibility' ? t('unavailable') : t('comingSoon'), 'unavailable'));
-        }
-      }
+      if (!available) card.append(text('span', t('comingSoon'), 'unavailable'));
       grid.append(card);
-    }
-    $('#compatibility-only-note')?.remove();
-    if (!document.body.dataset.servicePage) {
-      const guidance = text('p', t('compatibilityOnly'), 'form-help');
-      guidance.id = 'compatibility-only-note';
-      grid.after(guidance);
     }
     icons();
   }
@@ -780,7 +799,7 @@
       const icon = text('i');
       icon.dataset.lucide = iconName;
       symbol.append(icon, text('span', String(index + 1), 'icon-fallback'));
-      card.append(symbol, text('span', t(title), 'service-title'), text('span', t(help), 'service-description'));
+      card.append(symbol, text('span', t(title), 'service-title'), text('span', t(help).replace('{price}', priceLabel()), 'service-description'));
       card.addEventListener('click', action);
       grid.append(card);
     });
@@ -842,8 +861,8 @@
     icons();
   }
 
-  function quickAnalysis() {
-    const { bride, groom, result } = state.quickMatch;
+  function quickAnalysis(match = state.quickMatch) {
+    const { bride, groom, result } = match;
     const vocab = poruthamText[state.language];
     const helpers = {
       ...vocab,
@@ -878,24 +897,7 @@
     };
   }
 
-  function renderQuickMatchResults() {
-    const panel = $('#input-panel');
-    panel.replaceChildren();
-    panel.hidden = false;
-    if (!state.quickMatch) return;
-    const analysis = quickAnalysis();
-    const top = text('div', undefined, 'panel-top');
-    const heading = text('h2', t('twelveMatches'));
-    heading.id = 'form-title';
-    top.append(heading, button(t('editRasi'), () => renderQuickMatchForm(state.quickInputs), 'quiet', 'arrow-left'));
-    panel.append(top);
-
-    const verdict = text('div', undefined, `match-verdict level-${analysis.result.level}`);
-    verdict.setAttribute('role', 'status');
-    verdict.append(text('strong', analysis.verdict), text('span', `${analysis.bride.name} · ${analysis.groom.name}`));
-    if (analysis.result.rajjuFails) verdict.append(text('p', t('rajjuWarning')));
-    panel.append(verdict);
-
+  function poruthamNodes(analysis) {
     const table = text('table', undefined, 'match-profile');
     table.append(text('caption', t('profileHeading')));
     const head = text('tr');
@@ -915,8 +917,6 @@
       tbody.append(row);
     }
     table.append(thead, tbody);
-    panel.append(table);
-
     const list = text('ol', undefined, 'match-results');
     for (const check of analysis.checks) {
       const item = text('li', undefined, `match-result ${check.matches ? 'is-match' : 'no-match'}`);
@@ -924,7 +924,40 @@
       if (check.key === 'varna') item.append(text('small', t('varnaNotice')));
       list.append(item);
     }
-    panel.append(list, text('p', t('quickDisclaimer'), 'form-help'));
+    return [table, list];
+  }
+
+  // 12 poruthams from the Moon Rasi/Nakshatra calculated from each birth time.
+  function kattamPorutham(kattam, porutham) {
+    const person = role => ({ name: kattam.inputs[role].name, rasi: kattam.charts[role].planets.Moon.sign, nakshatra: kattam.charts[role].planets.Moon.star });
+    const analysis = quickAnalysis({ bride: person('bride'), groom: person('groom'), result: porutham });
+    const nodes = [text('p', analysis.verdict, 'kattam-note')];
+    if (porutham.rajjuFails) nodes.push(text('p', t('rajjuWarning'), 'notice'));
+    nodes.push(...poruthamNodes(analysis));
+    const lines = [analysis.verdict];
+    if (porutham.rajjuFails) lines.push(t('rajjuWarning'));
+    for (const [label, brideValue, groomValue] of analysis.rows) lines.push(`${label}: ${brideValue} | ${groomValue}`);
+    analysis.checks.forEach((check, index) => lines.push(`${index + 1}. ${check.name} — ${check.status}`, `   ${check.explanation}`));
+    return { nodes, lines };
+  }
+
+  function renderQuickMatchResults() {
+    const panel = $('#input-panel');
+    panel.replaceChildren();
+    panel.hidden = false;
+    if (!state.quickMatch) return;
+    const analysis = quickAnalysis();
+    const top = text('div', undefined, 'panel-top');
+    const heading = text('h2', t('twelveMatches'));
+    heading.id = 'form-title';
+    top.append(heading, button(t('editRasi'), () => renderQuickMatchForm(state.quickInputs), 'quiet', 'arrow-left'));
+    panel.append(top);
+
+    const verdict = text('div', undefined, `match-verdict level-${analysis.result.level}`);
+    verdict.setAttribute('role', 'status');
+    verdict.append(text('strong', analysis.verdict), text('span', `${analysis.bride.name} · ${analysis.groom.name}`));
+    if (analysis.result.rajjuFails) verdict.append(text('p', t('rajjuWarning')));
+    panel.append(verdict, ...poruthamNodes(analysis), text('p', t('quickDisclaimer'), 'form-help'));
 
     const actions = text('div', undefined, 'form-actions match-actions');
     actions.append(button(t('viewKattam'), () => {
@@ -1014,7 +1047,7 @@
     status.setAttribute('role', 'status');
     status.hidden = true;
     form.append(editable, status);
-    form.addEventListener('submit', event => {
+    form.addEventListener('submit', async event => {
       event.preventDefault();
       if (state.busy || !validateForm(form)) return;
       const inputs = readInputs(form, descriptor);
@@ -1022,13 +1055,19 @@
         state.inputs = inputs;
         try {
           const charts = { bride: window.JathagamEngine.chart(inputs.bride), groom: window.JathagamEngine.chart(inputs.groom) };
-          state.kattam = { inputs, charts, nowMs: Date.now() };
+          state.kattam = { inputs, charts, nowMs: Date.now(), hash: null, paid: false };
         } catch (failure) {
           status.hidden = false;
           status.dataset.error = 'true';
           status.textContent = t(/time/.test(failure.message) ? 'kattamTimeError' : 'invalidError');
           return;
         }
+        const kattam = state.kattam;
+        kattam.hash = await kattamHash(inputs);
+        kattam.paid = Boolean(kattam.hash && state.kattamPaidHashes.has(kattam.hash));
+        state.kattamPending = null;
+        state.kattamPayMessage = '';
+        if (state.kattam !== kattam) return;
         renderKattamReport();
         focusHeading('#report-heading');
         return;
@@ -1155,12 +1194,15 @@
     const report = window.KattamReport.build({
       charts: kattam.charts, people: { bride: shown(kattam.inputs.bride), groom: shown(kattam.inputs.groom) },
       selected: state.kattamFrom === 'rasi' ? state.quickInputs : null, language: state.language,
-      rasis: rasis[state.language], nakshatras: nakshatras[state.language], nowMs: kattam.nowMs
+      rasis: rasis[state.language], nakshatras: nakshatras[state.language], nowMs: kattam.nowMs,
+      poruthamSection: porutham => kattamPorutham(kattam, porutham)
     });
     const placeNotes = [kattam.inputs.groom, kattam.inputs.bride]
       .filter(person => person.place_status && person.place_status !== 'ok')
       .map(person => t(person.place_status === 'unknown' ? 'placeUnknown' : 'placeMissing').replace('{name}', person.name).replace('{place}', person.place));
-    kattam.text = placeNotes.length ? [...placeNotes, '', report.text].join('\n') : report.text;
+    kattam.title = report.title;
+    kattam.placeNotes = placeNotes;
+    kattam.node = kattam.paid ? report.node : null;
     $('#input-panel').hidden = true;
     $('#catalogue').hidden = true;
     const panel = $('#report-panel');
@@ -1170,34 +1212,315 @@
     const heading = text('h2', report.title);
     heading.id = 'report-heading';
     top.append(heading, button(t(state.kattamFrom === 'rasi' && state.quickMatch ? 'backToRasi' : 'backToChoice'), backFromKattam, 'quiet', 'arrow-left'));
+    const editBirth = button(t('editBirth'), () => {
+      if (state.kattamPaying || state.pdfBusy) return;
+      panel.hidden = true;
+      state.compatibilityStep = 'kattam';
+      renderInput(kattam.inputs);
+      focusHeading('#form-title');
+    }, 'quiet', 'pencil');
     const actions = text('div', undefined, 'report-actions');
-    actions.append(
-      button(t('download'), () => {
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(new Blob(['\uFEFF', kattam.text], { type: 'text/plain;charset=utf-8' }));
-        link.href = url;
-        link.download = 'rightconnect-kattam-porutham.txt';
-        document.body.append(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      }, 'secondary', 'download'),
-      button(t('printReport'), () => window.print(), 'secondary', 'printer'),
-      button(t('editBirth'), () => {
-        panel.hidden = true;
-        state.compatibilityStep = 'kattam';
-        renderInput(kattam.inputs);
-        focusHeading('#form-title');
-      }, 'quiet', 'pencil')
-    );
+    if (kattam.paid) {
+      const pdf = button(t('downloadPdf'), downloadKattamPdf, '', 'file-down');
+      pdf.dataset.pdf = '';
+      actions.append(pdf, button(t('printReport'), () => window.print(), 'secondary', 'printer'), editBirth);
+    } else {
+      actions.append(payButton(), editBirth);
+    }
     panel.append(top);
+    if (!kattam.paid) panel.append(text('p', t('freePreview'), 'kattam-preview-label'));
     if (placeNotes.length) {
       const box = text('div', undefined, 'notice');
       placeNotes.forEach(note => box.append(text('p', note)));
       panel.append(box);
     }
-    panel.append(report.node, actions);
+    if (!kattam.paid) lockKattam(report.node);
+    panel.append(report.node, actions, payStatus());
     icons();
+  }
+  const priceLabel = () => {
+    const rupees = state.kattamPrice / 100;
+    return `₹${Number.isInteger(rupees) ? rupees : rupees.toFixed(2)}`;
+  };
+  const FILLER = {
+    ta: 'ஜாதகம் பொருத்தம் கிரகம் தசை புத்தி லக்னம் ராசி வீடு பலன் காலம் நன்மை கவனம் இருவருக்கும் நட்சத்திரம் அதிபதி சுபம்',
+    en: 'chart match planet dasa bhukti lagna rasi house result period good care both star lord period'
+  };
+  function lockKattam(node) {
+    const start = node.querySelectorAll(':scope > h3.kattam-heading')[1];
+    if (!start) return;
+    const locked = text('div', undefined, 'kattam-locked-content');
+    locked.setAttribute('aria-hidden', 'true');
+    locked.inert = true;
+    const disclaimer = node.querySelector(':scope > .kattam-disclaimer');
+    start.before(locked);
+    for (let current = start; current && current !== disclaimer;) {
+      const next = current.nextElementSibling;
+      locked.append(current);
+      current = next;
+    }
+    locked.querySelectorAll('details').forEach(details => { details.open = true; });
+    locked.querySelectorAll('[aria-label]').forEach(element => element.removeAttribute('aria-label'));
+    // Replace locked text so the paid details are not readable in the page source either.
+    const filler = (FILLER[state.language] || FILLER.ta).split(' ');
+    const walker = document.createTreeWalker(locked, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    let index = 0;
+    for (const textNode of nodes) {
+      if (textNode.parentElement.matches('.kattam-locked-content > h3')) continue;
+      const length = textNode.nodeValue.trim().length;
+      if (!length) continue;
+      let value = '';
+      while (value.length < length) value += `${filler[index++ % filler.length]} `;
+      textNode.nodeValue = value.slice(0, length);
+    }
+    const paywall = text('section', undefined, 'kattam-paywall');
+    paywall.setAttribute('aria-labelledby', 'kattam-paywall-title');
+    const badge = text('span', undefined, 'kattam-paywall-icon');
+    const lock = text('i');
+    lock.dataset.lucide = 'lock';
+    lock.setAttribute('aria-hidden', 'true');
+    badge.append(lock);
+    const title = text('h3', t('lockedTitle'));
+    title.id = 'kattam-paywall-title';
+    const list = text('ul', undefined, 'kattam-paywall-list');
+    for (const item of t('lockedItems')) list.append(text('li', item));
+    paywall.append(badge, title, text('strong', priceLabel(), 'kattam-paywall-price'), text('p', t('lockedLead')), list, payButton(), text('small', t('payNote'), 'kattam-paywall-note'), payStatus());
+    locked.before(paywall);
+  }
+  function payButton() {
+    const pending = state.kattamPending && state.kattamPending.kattam === state.kattam;
+    const control = pending
+      ? button(t('refresh'), () => confirmKattamPayment(state.kattamPending.kattam, state.kattamPending.response), '', 'refresh-cw')
+      : button(t('payUnlock').replace('{price}', priceLabel()), startKattamPayment, '', 'lock-open');
+    control.dataset.pay = '';
+    control.disabled = state.kattamPaying;
+    return control;
+  }
+  function payStatus() {
+    const status = text('p', state.kattamPayMessage, 'inline-status kattam-pay-status');
+    status.setAttribute('role', 'status');
+    status.hidden = !state.kattamPayMessage;
+    return status;
+  }
+  function setPayStatus(value) {
+    state.kattamPayMessage = value;
+    document.querySelectorAll('.kattam-pay-status').forEach(status => {
+      status.textContent = value;
+      status.hidden = !value;
+    });
+  }
+  function setPaying(value) {
+    state.kattamPaying = value;
+    document.querySelectorAll('[data-pay]').forEach(control => { control.disabled = value; });
+  }
+  async function kattamHash(inputs) {
+    const pick = person => [person.birth_date, person.birth_time, normalisePlace(person.place)];
+    try {
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`rightconnect-kattam|${JSON.stringify([pick(inputs.bride), pick(inputs.groom)])}`));
+      return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+    } catch (_) { return null; }
+  }
+  function loadPaidHashes() {
+    try {
+      const stored = JSON.parse(sessionStorage.getItem(PAID_KEY) || '[]');
+      if (Array.isArray(stored)) stored.filter(hash => typeof hash === 'string' && /^[0-9a-f]{64}$/.test(hash)).forEach(hash => state.kattamPaidHashes.add(hash));
+    } catch (_) { return; }
+  }
+  function rememberPaid(hash) {
+    if (!hash) return;
+    state.kattamPaidHashes.add(hash);
+    try { sessionStorage.setItem(PAID_KEY, JSON.stringify(Array.from(state.kattamPaidHashes).slice(-20))); } catch (_) { return; }
+  }
+  const scripts = new Map();
+  function loadScript(src) {
+    if (!scripts.has(src)) scripts.set(src, new Promise((resolve, reject) => {
+      const tag = document.createElement('script');
+      tag.src = src;
+      tag.async = true;
+      tag.onload = resolve;
+      tag.onerror = () => { scripts.delete(src); tag.remove(); reject(error('networkError')); };
+      document.head.append(tag);
+    }));
+    return scripts.get(src);
+  }
+  async function paymentApi(path, body) {
+    let response;
+    try {
+      response = await fetch(`/api/v1/payments/kattam-report${path}`, {
+        method: body === undefined ? 'GET' : 'POST',
+        headers: body === undefined ? { Accept: 'application/json' } : { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: body === undefined ? undefined : JSON.stringify(body), cache: 'no-store', credentials: 'omit'
+      });
+    } catch (_) { throw error('networkError'); }
+    if (!response.ok) throw error({ 400: 'payVerifyError', 503: 'payUnavailable' }[response.status] || 'payUnavailable');
+    try { return await response.json(); } catch (_) { throw error('invalidResponse'); }
+  }
+  async function loadKattamPrice() {
+    try {
+      const result = await paymentApi('');
+      if (Number.isInteger(result.amount_paise) && result.amount_paise >= 100) state.kattamPrice = result.amount_paise;
+    } catch (_) { return; }
+    if (state.compatibilityStep === 'choose' && !$('#input-panel').hidden) renderCompatibilityChoice();
+  }
+  async function startKattamPayment() {
+    const kattam = state.kattam;
+    if (!kattam || kattam.paid || state.kattamPaying || state.busy) return;
+    setPaying(true);
+    setPayStatus(t('payOpening'));
+    try {
+      await loadScript(RAZORPAY_CHECKOUT);
+      if (!window.Razorpay) throw error('payUnavailable');
+      const order = await paymentApi('/order', {});
+      if (!order || typeof order.order_id !== 'string' || typeof order.key_id !== 'string' || !Number.isInteger(order.amount)) throw error('invalidResponse');
+      const email = state.session && state.session.user && state.session.user.email;
+      const checkout = new window.Razorpay({
+        key: order.key_id, order_id: order.order_id, amount: order.amount, currency: order.currency || 'INR',
+        name: 'RightConnect', description: t('lockedTitle'), theme: { color: '#7d1410' },
+        prefill: email ? { email } : {},
+        handler: response => { confirmKattamPayment(kattam, response); },
+        modal: { ondismiss: () => { if (state.kattamPaying && !state.kattamPending) { setPaying(false); setPayStatus(t('payCancelled')); } } }
+      });
+      checkout.on('payment.failed', () => setPayStatus(t('payFailed')));
+      setPayStatus('');
+      checkout.open();
+    } catch (failure) {
+      setPaying(false);
+      setPayStatus(message(failure));
+    }
+  }
+  async function confirmKattamPayment(kattam, response) {
+    if (!response || typeof response.razorpay_payment_id !== 'string') return;
+    state.kattamPending = { kattam, response };
+    setPaying(true);
+    setPayStatus(t('payVerifying'));
+    let paid = false;
+    try {
+      const result = await paymentApi('/verify', {
+        razorpay_order_id: response.razorpay_order_id, razorpay_payment_id: response.razorpay_payment_id, razorpay_signature: response.razorpay_signature
+      });
+      paid = result && result.status === 'paid';
+      state.kattamPayMessage = paid ? t('paidThanks') : t('payPending');
+    } catch (failure) {
+      state.kattamPayMessage = t('payVerifyError');
+    }
+    if (paid) {
+      kattam.paid = true;
+      state.kattamPending = null;
+      rememberPaid(kattam.hash);
+    }
+    state.kattamPaying = false;
+    if (state.kattam === kattam) {
+      renderKattamReport();
+      if (paid) {
+        focusHeading('#report-heading');
+        downloadKattamPdf();
+      }
+    }
+  }
+  function pdfPages(holder, pageHeight) {
+    const origin = holder.getBoundingClientRect().top;
+    const total = Math.ceil(holder.scrollHeight);
+    const blocks = Array.from(holder.querySelectorAll('h2, h3, h4, p, li, tr, figure, caption, summary, .match-verdict, .kattam-summary, .notice'), node => {
+      const rect = node.getBoundingClientRect();
+      return { top: rect.top - origin, bottom: rect.bottom - origin, heading: /^H[2-4]$/.test(node.tagName) };
+    });
+    const pages = [];
+    for (let start = 0; total - start > 2;) {
+      let end = Math.min(total, start + pageHeight);
+      if (end < total) {
+        const minimum = start + pageHeight * 0.4;
+        end = blocks.filter(block => block.top < end && block.bottom > end && block.top >= minimum).reduce((cut, block) => Math.min(cut, block.top), end);
+        const orphan = blocks.find(block => block.heading && block.top >= minimum && block.bottom <= end && end - block.bottom < 60);
+        if (orphan) end = orphan.top;
+      }
+      pages.push({ start, end });
+      start = end;
+    }
+    return pages;
+  }
+  async function downloadKattamPdf() {
+    const kattam = state.kattam;
+    if (!kattam || !kattam.paid || !kattam.node || state.pdfBusy) return;
+    state.pdfBusy = true;
+    document.querySelectorAll('[data-pdf]').forEach(control => { control.disabled = true; });
+    setPayStatus(t('pdfPreparing'));
+    const holder = text('div', undefined, 'kattam-pdf');
+    holder.id = 'kattam-pdf';
+    holder.lang = state.language;
+    const head = text('header', undefined, 'kattam-pdf-head');
+    head.append(text('strong', 'RightConnect', 'kattam-pdf-brand'), text('h2', kattam.title),
+      text('p', `${kattam.inputs.groom.name} · ${kattam.inputs.bride.name}`),
+      text('small', `${t('pdfGenerated')}: ${dateLabel(new Date().toISOString())}`));
+    holder.append(head);
+    if (kattam.placeNotes.length) {
+      const box = text('div', undefined, 'notice');
+      kattam.placeNotes.forEach(note => box.append(text('p', note)));
+      holder.append(box);
+    }
+    holder.append(kattam.node.cloneNode(true));
+    holder.querySelectorAll('details').forEach(details => { details.open = true; });
+    document.body.append(holder);
+    try {
+      await Promise.all([loadScript(PDF_SCRIPTS[0]), loadScript(PDF_SCRIPTS[1])]);
+      if (!window.html2canvas || !window.jspdf) throw error('pdfError');
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      const margin = 12;
+      const contentWidth = 210 - margin * 2;
+      const mmPerPx = contentWidth / holder.offsetWidth;
+      const pages = pdfPages(holder, Math.floor((297 - margin - 16) / mmPerPx));
+      // Render a few pages per canvas to stay under mobile canvas size limits.
+      const chunks = [];
+      for (const page of pages) {
+        const last = chunks[chunks.length - 1];
+        if (last && page.end - last.start <= 3200) { last.end = page.end; last.pages.push(page); }
+        else chunks.push({ start: page.start, end: page.end, pages: [page] });
+      }
+      const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true });
+      let pageNumber = 0;
+      for (const chunk of chunks) {
+        const canvas = await window.html2canvas(holder, {
+          scale: 2, y: chunk.start, height: chunk.end - chunk.start, width: holder.offsetWidth,
+          backgroundColor: '#ffffff', logging: false,
+          onclone: clone => { const copy = clone.getElementById('kattam-pdf'); if (copy) copy.style.left = '0px'; }
+        });
+        const ratio = canvas.height / (chunk.end - chunk.start);
+        for (const page of chunk.pages) {
+          const slice = document.createElement('canvas');
+          slice.width = canvas.width;
+          slice.height = Math.max(1, Math.round((page.end - page.start) * ratio));
+          const context = slice.getContext('2d');
+          context.fillStyle = '#ffffff';
+          context.fillRect(0, 0, slice.width, slice.height);
+          context.drawImage(canvas, 0, Math.round((page.start - chunk.start) * ratio), canvas.width, slice.height, 0, 0, slice.width, slice.height);
+          if (pageNumber) pdf.addPage();
+          pdf.addImage(slice.toDataURL('image/jpeg', 0.9), 'JPEG', margin, margin, contentWidth, (page.end - page.start) * mmPerPx);
+          pageNumber += 1;
+        }
+      }
+      for (let index = 1; index <= pageNumber; index += 1) {
+        pdf.setPage(index);
+        pdf.setFontSize(8);
+        pdf.setTextColor(125, 20, 16);
+        pdf.text(`RightConnect  |  ${index} / ${pageNumber}`, 105, 290, { align: 'center' });
+      }
+      const url = URL.createObjectURL(pdf.output('blob'));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'rightconnect-kattam-porutham.pdf';
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      setPayStatus(t('pdfReady'));
+    } catch (_) {
+      setPayStatus(t('pdfError'));
+    } finally {
+      holder.remove();
+      state.pdfBusy = false;
+      document.querySelectorAll('[data-pdf]').forEach(control => { control.disabled = false; });
+    }
   }
   async function changeReport(action, language, status) {
     const report = state.report;
@@ -1504,11 +1827,15 @@
     if (signOutError) throw error('authError');
     await applySession(null);
   }));
-  // TODO: Add payment integration only when a checkout contract is available.
-  // TODO: Add an explicit print-to-PDF action after print output is verified.
   loadCapabilities();
+  loadPaidHashes();
   updateLanguageText();
   renderRecovery();
-  loadServices();
+  if (document.body.dataset.servicePage === 'compatibility') {
+    selectService(descriptorFor('compatibility'));
+    loadKattamPrice();
+  } else {
+    loadServices();
+  }
   initAuth();
 })();

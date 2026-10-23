@@ -33,6 +33,8 @@ services:
         sync: false
       - key: RAZORPAY_ENTERPRISE_AMOUNT_PAISE
         sync: false
+      - key: RAZORPAY_KATTAM_REPORT_AMOUNT_PAISE
+        sync: false
       - key: APP_BASE_URL
         sync: false
       - key: ADMIN_PATH

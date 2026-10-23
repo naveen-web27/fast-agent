@@ -8,8 +8,20 @@ API: `/api/v1/ai-reports`.
 The feature owns its tables, frontend assets, calculation modules and writer.
 The only existing runtime integrations are additive settings and one router registration.
 Marketplace requests, reviews, subscriptions and Razorpay behavior are unchanged.
-All services accept only the free `basic` tier. Premium checkout is not implemented.
+All AI services accept only the free `basic` tier.
 Generation is disabled by default. A disabled catalogue can be viewed without a database.
+
+### Thirumana porutham (released)
+
+Rasi matching (12 checks) is free. Kattam matching runs fully in the browser and does not need the AI API.
+Its section 1 recomputes the 12 poruthams from each person's calculated Moon Rasi/Nakshatra (no extra input).
+The verdict and that section are a free preview; dosha and later sections are blurred and replaced with filler text.
+A one-time guest Razorpay payment (`RAZORPAY_KATTAM_REPORT_AMOUNT_PAISE`, default 9900 = ₹99) unlocks the
+report and downloads an A4 PDF (vendored html2canvas 1.4.1 + jsPDF 2.5.2, rendered client-side so Tamil text shapes correctly).
+Endpoints: `GET /api/v1/payments/kattam-report`, `POST .../order`, `POST .../verify`. No login, database row or
+migration; orders carry `rightconnect_product=kattam_report` notes and the plan webhook ignores them. Birth details
+never leave the browser. The unlock is remembered per tab (sessionStorage SHA-256 of birth data) only.
+Because calculation is client-side, a technical user could bypass the paywall; moving the paid sections server-side is required to prevent that.
 
 ## User Flow
 
