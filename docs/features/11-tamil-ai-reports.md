@@ -13,15 +13,23 @@ Generation is disabled by default. A disabled catalogue can be viewed without a 
 
 ### Thirumana porutham (released)
 
-Rasi matching (12 checks) is free. Kattam matching runs fully in the browser and does not need the AI API.
-Its section 1 recomputes the 12 poruthams from each person's calculated Moon Rasi/Nakshatra (no extra input).
-The verdict and that section are a free preview; dosha and later sections are blurred and replaced with filler text.
-A one-time guest Razorpay payment (`RAZORPAY_KATTAM_REPORT_AMOUNT_PAISE`, default 9900 = ₹99) unlocks the
-report and downloads an A4 PDF (vendored html2canvas 1.4.1 + jsPDF 2.5.2, rendered client-side so Tamil text shapes correctly).
-Endpoints: `GET /api/v1/payments/kattam-report`, `POST .../order`, `POST .../verify`. No login, database row or
-migration; orders carry `rightconnect_product=kattam_report` notes and the plan webhook ignores them. Birth details
-never leave the browser. The unlock is remembered per tab (sessionStorage SHA-256 of birth data) only.
-Because calculation is client-side, a technical user could bypass the paywall; moving the paid sections server-side is required to prevent that.
+All calculation and wording live on the server in `backend/app/features/porutham/` (`engine.py` = sidereal charts with
+Astronomy Engine 2.1.19 (`astronomy-engine`, MIT), `report.py` = structured report + preview redaction, `words.py` = Tamil/English text).
+The page `frontend/pages/thirumana-porutham.html` only renders the JSON blocks it receives; it contains no rules or engine.
+
+API under `/api/v1/porutham`: `POST /rasi` (free 12 checks), `POST /kattam` (preview + price), `POST /kattam/order`,
+`POST /kattam/full` (needs a captured Razorpay payment). No login, database row or migration.
+
+Report order: verdict, Rasi/Nakshatra 12 checks (free), then Kattam 1 dosha (free), 2 together and 3 dasa (titles + badges),
+4 25-year timeline (first two rows; the last three rows show only the period), 5 future life (headings + one line),
+6 Kattam checks (first two rows), 7 summary and the astrologer details (locked). Locked text never leaves the server: the
+preview carries only text lengths, which the page shows as blurred filler with a one-line teaser and unlock buttons.
+
+Payment: `RAZORPAY_KATTAM_REPORT_AMOUNT_PAISE` (default 9900 = ₹99). The order note `report_key` is an HMAC (Razorpay key
+secret) of both birth date/time/coordinates/timezone, so one payment unlocks only that couple (names and language may change).
+Orders carry `rightconnect_product=kattam_report`; the plan webhook ignores them. The browser keeps the payment proof (not birth
+details) in sessionStorage to reopen or re-translate a paid report. The PDF is rendered client-side (vendored html2canvas 1.4.1 +
+jsPDF 2.5.2) from the paid report so Tamil text shapes correctly. Birth details are sent to the server for calculation only and are not stored.
 
 ## User Flow
 

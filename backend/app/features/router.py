@@ -10,6 +10,7 @@ from app.features.health.router import router as health_router
 from app.features.marketplace.router import router as marketplace_router
 from app.features.organizations.router import router as organizations_router
 from app.features.payments.router import router as payments_router
+from app.features.porutham.router import router as porutham_router
 from app.features.profiles.router import router as profiles_router
 from app.features.requests.router import router as requests_router
 
@@ -25,3 +26,4 @@ feature_router.include_router(booking_router, prefix="/requests", tags=["booking
 feature_router.include_router(organizations_router, prefix="/organizations", tags=["organizations"])
 feature_router.include_router(dashboard_router, prefix="/dashboard", tags=["dashboard"])
 feature_router.include_router(payments_router, prefix="/payments", tags=["payments"])
+feature_router.include_router(porutham_router, prefix="/porutham", tags=["porutham"])

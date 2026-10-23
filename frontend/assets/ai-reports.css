@@ -208,9 +208,20 @@ legend { font-size: 16px; font-weight: 600; padding: 0 12px 0 0; color: var(--ku
 .kattam-paywall .button { width: min(100%, 420px); min-height: 50px; font-size: 15px; font-weight: 700; }
 .kattam-paywall-note { display: block; max-width: 520px; margin: 12px auto 0; color: var(--muted); font-size: 11px; }
 .kattam-pay-status:not([hidden]) { display: block; margin: 12px auto 0; max-width: 560px; }
-.kattam-locked-content { max-height: 1300px; overflow: hidden; margin-top: 22px; user-select: none; -webkit-mask-image: linear-gradient(#000 65%, transparent); mask-image: linear-gradient(#000 65%, transparent); }
-.kattam-locked-content > :not(h3) { filter: blur(5px); }
-.kattam-locked-content > h3 { opacity: .75; }
+.kattam-part { margin: 34px 0 8px; padding: 10px 14px; border-radius: 8px; background: var(--kumkum-dark); color: var(--turmeric); font-size: 17px; line-height: 1.6; }
+.kattam-lead { margin: 6px 0 10px; font-weight: 700; color: var(--kumkum-dark); }
+.kattam-teaser { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; padding: 8px 12px; border: 1px dashed var(--gold); border-radius: 8px; background: var(--wash); color: var(--kumkum-dark); font-size: 13px; font-weight: 600; }
+.kattam-teaser svg { width: 16px; height: 16px; flex-shrink: 0; }
+.kattam-teaser span { flex: 1 1 220px; }
+.kattam-teaser-unlock { border: 0; border-radius: 999px; padding: 4px 14px; background: var(--kumkum); color: #fff; font: inherit; font-size: 12px; cursor: pointer; }
+.kattam-teaser-unlock:disabled { opacity: .6; cursor: default; }
+.is-blurred { filter: blur(4.5px); color: var(--muted); user-select: none; pointer-events: none; }
+.match-result.tone-locked { border-left-color: #c9b98d; }
+.match-result.tone-locked .match-status { background: #efe6cf; color: transparent; }
+.kattam-unlock-bar { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; gap: 12px; margin: 18px 0 0; padding: 10px 14px; border-top: 2px solid var(--gold); border-radius: 10px 10px 0 0; background: #fffdf6f2; box-shadow: 0 -8px 24px #7d141022; }
+.kattam-unlock-bar svg { width: 20px; height: 20px; color: var(--kumkum); flex-shrink: 0; }
+.kattam-unlock-bar span { flex: 1; font-size: 13px; font-weight: 600; color: var(--kumkum-dark); }
+.kattam-unlock-bar .button { min-height: 42px; white-space: nowrap; }
 .kattam-pdf { position: absolute; left: -12000px; top: 0; width: 760px; padding: 0 4px 12px; background: #fff; color: var(--ink); font-size: 14px; line-height: 1.8; }
 .kattam-pdf-head { margin-bottom: 16px; padding-bottom: 10px; border-bottom: 3px solid var(--gold); }
 .kattam-pdf-brand { color: var(--kumkum); font-size: 13px; letter-spacing: .04em; }
@@ -257,13 +268,15 @@ legend { font-size: 16px; font-weight: 600; padding: 0 12px 0 0; color: var(--ku
   .view-nav { gap: 18px; font-size: 12px; }
   .form-actions .button { width: 100%; }
   .report-actions .button { flex: 1 1 130px; }
+  .kattam-unlock-bar { gap: 8px; padding: 8px 10px; }
+  .kattam-unlock-bar span { font-size: 12px; line-height: 1.5; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
 @media print {
   body { background: white; color: black; }
-  .site-header, .view-nav, .tradition-note, .page-heading, .site-footer, #global-status, #catalogue, #input-panel, #recovery-panel, .report-actions, .report-panel .panel-top .button, .kattam-paywall, .kattam-locked-content, .kattam-preview-label, .kattam-pay-status, .kattam-pdf { display: none !important; }
+  .site-header, .view-nav, .tradition-note, .page-heading, .site-footer, #global-status, #catalogue, #input-panel, #recovery-panel, .report-actions, .report-panel .panel-top .button, .kattam-paywall, .kattam-teaser, .kattam-unlock-bar, .kattam-preview-label, .kattam-pay-status, .kattam-pdf { display: none !important; }
   .workspace { padding: 0; max-width: none; }
   .report-panel { max-width: none; padding: 0; }
   .report-section { break-inside: avoid; }

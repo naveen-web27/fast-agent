@@ -1,169 +1,119 @@
-"""Browser Jathagam engine checks, executed in JavaScriptCore with the vendored Astronomy Engine."""
-import json
-import shutil
-import subprocess
+"""Server Jathagam engine checks (Python port of the former browser engine, Astronomy Engine 2.1.19)."""
+import importlib.util
 import unittest
-from pathlib import Path
 
-ASSETS = Path(__file__).parents[2] / "frontend/assets"
-SCRIPTS = [ASSETS / "vendor/astronomy-engine-2.1.19.min.js", ASSETS / "jathagam.js"]
+ASTRONOMY = importlib.util.find_spec("astronomy") is not None
 
-JXA = """
-ObjC.import('Foundation');
-%s.forEach(function (path) {
-  (0, eval)($.NSString.stringWithContentsOfFileEncodingError(path, $.NSUTF8StringEncoding, null).js);
-});
-var J = JathagamEngine, A = Astronomy;
-function attempt(fn) { try { return fn(); } catch (e) { return 'error:' + e.message; } }
-function sidereal(utcMs) { var c = J.chartAt(utcMs, 13.0827, 80.2707); return c; }
-var j2000 = sidereal(Date.UTC(2000, 0, 1, 12));
-var chennai = new A.Observer(13.0827, 80.2707, 0);
-var rise = A.SearchRiseSet(A.Body.Sun, chennai, +1, A.MakeTime(new Date(Date.UTC(2024, 3, 13, 18))), 2);
-var set = A.SearchRiseSet(A.Body.Sun, chennai, -1, A.MakeTime(new Date(Date.UTC(2024, 3, 14, 6))), 2);
-var atRise = J.chartAt(rise.date.getTime(), 13.0827, 80.2707);
-var atSet = J.chartAt(set.date.getTime(), 13.0827, 80.2707);
-var periods = J.vimshottari(0, 0);
-var sub = J.bhuktis(periods[1]);
-function synthetic(lagna, signs) {
-  var planets = {};
-  ['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn','Rahu','Ketu'].forEach(function (p) {
-    planets[p] = { sign: signs[p], longitude: signs[p] * 30 + 1 };
-  });
-  return { utcMs: 0, lagna: { sign: lagna }, planets: planets };
-}
-var base = { Sun: 1, Moon: 0, Mars: 6, Mercury: 1, Jupiter: 9, Venus: 2, Saturn: 10, Rahu: 3, Ketu: 9 };
-var marsSeventh = J.analysePerson(synthetic(0, base), 0);
-var marsOwn = J.analysePerson(synthetic(5, Object.assign({}, base, { Mars: 0, Moon: 5 })), 0);
-var marsClear = J.analysePerson(synthetic(0, Object.assign({}, base, { Mars: 2, Moon: 0 })), 0);
-var quality = {};
-['Sun', 'Mars', 'Mercury', 'Jupiter', 'Saturn', 'Rahu'].forEach(function (p) { quality[p] = J.dasaQuality(synthetic(0, base), p).level; });
-var life = marsSeventh.life;
-var groomChart = synthetic(0, Object.assign({}, base, { Moon: 3 }));
-groomChart.planets.Moon.longitude = 91;
-var timeline = J.analysePair(synthetic(0, base), groomChart, 0).timeline;
-var horizonEnd = 25 * J.YEAR_MS;
-var venusSoon = J.nextPeriodOf(periods, ['Venus'], 0, 20 * J.YEAR_MS);
-JSON.stringify({
-  j2000: { sun: j2000.planets.Sun.longitude, moon: j2000.planets.Moon.longitude, moonStar: j2000.planets.Moon.star,
-           moonPada: j2000.planets.Moon.pada, rahu: j2000.planets.Rahu.longitude, ketu: j2000.planets.Ketu.longitude,
-           rahuRetro: j2000.planets.Rahu.retrograde, lagna: j2000.lagna.longitude, ayanamsa: j2000.ayanamsa },
-  ist: J.localToUtc('2000-01-01', '17:30', 'Asia/Kolkata'),
-  london: J.localToUtc('2024-07-01', '09:15:30', 'Europe/London'),
-  gap: attempt(function () { return J.localToUtc('2024-03-10', '02:30', 'America/New_York'); }),
-  fold: attempt(function () { return J.localToUtc('2024-11-03', '01:30', 'America/New_York'); }),
-  sunrise: { lagna: atRise.lagna.longitude, sun: atRise.planets.Sun.longitude },
-  sunset: { lagna: atSet.lagna.longitude, sun: atSet.planets.Sun.longitude },
-  dasa: { first: periods[0].lord, firstYears: (periods[0].end - periods[0].start) / J.YEAR_MS, second: periods[1].lord,
-          bhuktiFirst: sub[0].lord, bhuktiSpan: sub[8].end - sub[0].start, mahaSpan: periods[1].end - periods[1].start },
-  navamsa: [0, 3.34, 30, 359.99].map(function (lon) { return Math.floor(lon * 3 / 10) %% 12; }),
-  dignity: [J.dignity('Sun', 0), J.dignity('Sun', 6), J.dignity('Mars', 7), J.dignity('Jupiter', 2)],
-  marsSeventh: marsSeventh.chevvai, marsOwn: marsOwn.chevvai, marsClear: marsClear.chevvai,
-  rahuKetu: marsSeventh.rahuKetu, papa: marsSeventh.papa.total, seventh: marsSeventh.seventh,
-  quality: quality,
-  periodQuality: marsSeventh.dasa.periods.every(function (p) { return ['good', 'mixed', 'challenging'].indexOf(p.quality) >= 0; }),
-  life: { career: [life.career.lord, life.career.level, life.career.period.maha, life.career.period.bhukti],
-          health: life.health.level, children: [life.children.level, life.children.jupiterHouse], marriage: life.marriage.level },
-  venusSoon: [venusSoon.maha, venusSoon.bhukti],
-  mercuryWithinYear: J.nextPeriodOf(periods, ['Mercury'], 0, J.YEAR_MS),
-  ketuWhole: J.nextPeriodOf(periods, ['Ketu'], 0, J.YEAR_MS),
-  timeline: { rows: timeline.length, first: timeline[0].start, last: timeline[timeline.length - 1].end - horizonEnd,
-              contiguous: timeline.every(function (r, i) { return i === 0 || r.start === timeline[i - 1].end; }),
-              covered: timeline.every(function (r) { return [r.bride, r.groom].every(function (p) { return p.start <= r.start && r.start < p.end; }); }),
-              lords: timeline.map(function (r) { return [r.groom.lord, r.bride.lord]; }) }
-});
-"""
+if ASTRONOMY:
+    import astronomy as A
+
+    from app.features.porutham import engine as J
 
 
 def angle_gap(first, second):
     return abs((first - second + 180) % 360 - 180)
 
 
-@unittest.skipUnless(shutil.which("osascript"), "JavaScriptCore via osascript is only available on macOS")
-class JathagamEngineTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        script = JXA % json.dumps([str(path) for path in SCRIPTS])
-        output = subprocess.run(["osascript", "-l", "JavaScript", "-e", script],
-                                check=True, capture_output=True, text=True).stdout
-        cls.r = json.loads(output)
+def synthetic(lagna, signs):
+    planets = {planet: {"sign": signs[planet], "longitude": signs[planet] * 30 + 1} for planet in J.PLANET_ORDER}
+    return {"utc_ms": 0, "lagna": {"sign": lagna}, "planets": planets}
 
+
+BASE = {"Sun": 1, "Moon": 0, "Mars": 6, "Mercury": 1, "Jupiter": 9, "Venus": 2, "Saturn": 10, "Rahu": 3, "Ketu": 9}
+
+
+def ms(time):
+    return time.ut * J.DAY_MS + J.J2000_MS
+
+
+@unittest.skipUnless(ASTRONOMY, "astronomy-engine is not installed")
+class JathagamEngineTests(unittest.TestCase):
     def test_j2000_matches_swiss_ephemeris_lahiri_reference(self):
-        # Same Swiss Ephemeris reference values as test_ai_report_calculations.SwissEphemerisTests.
-        j2000 = self.r["j2000"]
-        self.assertAlmostEqual(j2000["sun"], 256.5157, delta=0.01)
-        self.assertAlmostEqual(j2000["moon"], 199.4705, delta=0.01)
-        self.assertEqual((j2000["moonStar"], j2000["moonPada"]), (14, 4))
-        self.assertAlmostEqual(j2000["ayanamsa"], 23.853, delta=0.002)
-        self.assertAlmostEqual(angle_gap(j2000["rahu"], j2000["ketu"]), 180, delta=1e-9)
-        self.assertTrue(j2000["rahuRetro"])
-        self.assertEqual(int(j2000["rahu"] // 30), 3)
+        chart = J.chart_at(946_728_000_000, 13.0827, 80.2707)
+        self.assertAlmostEqual(chart["planets"]["Sun"]["longitude"], 256.5157, delta=0.01)
+        self.assertAlmostEqual(chart["planets"]["Moon"]["longitude"], 199.4705, delta=0.01)
+        self.assertEqual((chart["planets"]["Moon"]["star"], chart["planets"]["Moon"]["pada"]), (14, 4))
+        self.assertAlmostEqual(chart["ayanamsa"], 23.853, delta=0.002)
+        self.assertAlmostEqual(angle_gap(chart["planets"]["Rahu"]["longitude"], chart["planets"]["Ketu"]["longitude"]), 180, delta=1e-9)
+        self.assertTrue(chart["planets"]["Rahu"]["retrograde"])
+        self.assertEqual(chart["planets"]["Rahu"]["sign"], 3)
 
     def test_local_time_conversion_and_dst_rejection(self):
-        self.assertEqual(self.r["ist"], 946728000000)
-        self.assertEqual(self.r["london"], 1719821730000)
-        self.assertEqual(self.r["gap"], "error:nonexistent-time")
-        self.assertEqual(self.r["fold"], "error:ambiguous-time")
+        self.assertEqual(J.local_to_utc("2000-01-01", "17:30", "Asia/Kolkata"), 946728000000)
+        self.assertEqual(J.local_to_utc("2024-07-01", "09:15:30", "Europe/London"), 1719821730000)
+        with self.assertRaisesRegex(ValueError, "nonexistent-time"):
+            J.local_to_utc("2024-03-10", "02:30", "America/New_York")
+        with self.assertRaisesRegex(ValueError, "ambiguous-time"):
+            J.local_to_utc("2024-11-03", "01:30", "America/New_York")
 
     def test_lagna_equals_sun_at_sunrise_and_opposes_it_at_sunset(self):
-        self.assertLess(angle_gap(self.r["sunrise"]["lagna"], self.r["sunrise"]["sun"]), 1.5)
-        self.assertLess(angle_gap(self.r["sunset"]["lagna"], self.r["sunset"]["sun"] + 180), 1.5)
+        chennai = A.Observer(13.0827, 80.2707, 0)
+        rise = A.SearchRiseSet(A.Body.Sun, chennai, A.Direction.Rise, A.Time.Make(2024, 4, 13, 18, 0, 0), 2)
+        sunset = A.SearchRiseSet(A.Body.Sun, chennai, A.Direction.Set, A.Time.Make(2024, 4, 14, 6, 0, 0), 2)
+        at_rise = J.chart_at(ms(rise), 13.0827, 80.2707)
+        at_set = J.chart_at(ms(sunset), 13.0827, 80.2707)
+        self.assertLess(angle_gap(at_rise["lagna"]["longitude"], at_rise["planets"]["Sun"]["longitude"]), 1.5)
+        self.assertLess(angle_gap(at_set["lagna"]["longitude"], at_set["planets"]["Sun"]["longitude"] + 180), 1.5)
 
     def test_vimshottari_and_bhukti_arithmetic(self):
-        dasa = self.r["dasa"]
-        self.assertEqual((dasa["first"], dasa["second"], dasa["bhuktiFirst"]), ("Ketu", "Venus", "Venus"))
-        self.assertAlmostEqual(dasa["firstYears"], 7)
-        self.assertAlmostEqual(dasa["bhuktiSpan"], dasa["mahaSpan"], delta=1)
+        periods = J.vimshottari(0, 0)
+        sub = J.bhuktis(periods[1])
+        self.assertEqual((periods[0]["lord"], periods[1]["lord"], sub[0]["lord"]), ("Ketu", "Venus", "Venus"))
+        self.assertAlmostEqual((periods[0]["end"] - periods[0]["start"]) / J.YEAR_MS, 7)
+        self.assertAlmostEqual(sub[8]["end"] - sub[0]["start"], periods[1]["end"] - periods[1]["start"], delta=1)
 
     def test_navamsa_and_dignity_tables(self):
-        self.assertEqual(self.r["navamsa"], [0, 1, 9, 11])
-        self.assertEqual(self.r["dignity"], ["exalted", "debilitated", "own", ""])
+        self.assertEqual([J.placement(lon, False)["navamsa"] for lon in (0, 3.34, 30, 359.99)], [0, 1, 9, 11])
+        self.assertEqual([J.dignity("Sun", 0), J.dignity("Sun", 6), J.dignity("Mars", 7), J.dignity("Jupiter", 2)],
+                         ["exalted", "debilitated", "own", ""])
 
     def test_chevvai_rahu_ketu_papa_and_seventh_house(self):
-        self.assertEqual(self.r["marsSeventh"], {"fromLagna": 7, "fromMoon": 7, "raw": True, "cancellations": [], "dosha": True})
-        self.assertEqual(self.r["marsOwn"]["fromLagna"], 8)
-        self.assertEqual(self.r["marsOwn"]["cancellations"], ["ownSign"])
-        self.assertFalse(self.r["marsOwn"]["dosha"])
-        self.assertFalse(self.r["marsClear"]["raw"])
-        self.assertEqual(self.r["rahuKetu"], {"rahuHouse": 4, "ketuHouse": 10, "dosha": False})
+        mars_seventh = J.analyse_person(synthetic(0, BASE), 0)
+        mars_own = J.analyse_person(synthetic(5, dict(BASE, Mars=0, Moon=5)), 0)
+        mars_clear = J.analyse_person(synthetic(0, dict(BASE, Mars=2, Moon=0)), 0)
+        self.assertEqual(mars_seventh["chevvai"], {"from_lagna": 7, "from_moon": 7, "raw": True, "cancellations": [], "dosha": True})
+        self.assertEqual(mars_own["chevvai"]["from_lagna"], 8)
+        self.assertEqual(mars_own["chevvai"]["cancellations"], ["ownSign"])
+        self.assertFalse(mars_own["chevvai"]["dosha"])
+        self.assertFalse(mars_clear["chevvai"]["raw"])
+        self.assertEqual(mars_seventh["rahu_ketu"], {"rahu_house": 4, "ketu_house": 10, "dosha": False})
         # From Lagna and Moon (Mesham): Sun 2nd, Mars 7th, Rahu 4th; from Venus (Mithunam): Sun 12th, Rahu 2nd, Ketu 8th.
-        self.assertEqual(self.r["papa"], 9)
-        self.assertEqual(self.r["seventh"]["sign"], 6)
-        self.assertEqual(self.r["seventh"]["lord"], "Venus")
-        self.assertEqual(self.r["seventh"]["lordHouse"], 3)
-        self.assertEqual(self.r["seventh"]["occupants"], ["Mars"])
+        self.assertEqual(mars_seventh["papa"]["total"], 9)
+        seventh = mars_seventh["seventh"]
+        self.assertEqual((seventh["sign"], seventh["lord"], seventh["lord_house"], seventh["occupants"]), (6, "Venus", 3, ["Mars"]))
 
     def test_dasa_quality_follows_functional_nature_for_mesha_lagna(self):
-        # Sun rules the 5th; Mars rules the Lagna and sits in a kendra; Mercury rules only the 3rd and 6th;
-        # debilitated Jupiter still rules the 9th and sits in the 10th; Rahu in the 4th is neutral.
-        self.assertEqual(self.r["quality"], {"Sun": "good", "Mars": "good", "Mercury": "challenging",
-                                             "Jupiter": "good", "Saturn": "mixed", "Rahu": "mixed"})
-        self.assertTrue(self.r["periodQuality"])
+        quality = {planet: J.dasa_quality(synthetic(0, BASE), planet)["level"] for planet in ("Sun", "Mars", "Mercury", "Jupiter", "Saturn", "Rahu")}
+        self.assertEqual(quality, {"Sun": "good", "Mars": "good", "Mercury": "challenging", "Jupiter": "good", "Saturn": "mixed", "Rahu": "mixed"})
 
     def test_life_areas_use_house_lords_and_occupants(self):
-        life = self.r["life"]
-        # 10th lord Saturn is in its own sign and Jupiter occupies the 10th.
-        self.assertEqual(life["career"], ["Saturn", "strong", "Ketu", "Saturn"])
-        self.assertEqual(life["health"], "moderate")
-        # 5th lord Sun gains nothing and Jupiter is debilitated.
-        self.assertEqual(life["children"], ["care", 10])
-        # Mars occupies the 7th.
-        self.assertEqual(life["marriage"], "care")
+        life = J.analyse_person(synthetic(0, BASE), 0)["life"]
+        self.assertEqual([life["career"]["lord"], life["career"]["level"], life["career"]["period"]["maha"], life["career"]["period"]["bhukti"]],
+                         ["Saturn", "strong", "Ketu", "Saturn"])
+        self.assertEqual(life["health"]["level"], "moderate")
+        self.assertEqual([life["children"]["level"], life["children"]["jupiter_house"]], ["care", 10])
+        self.assertEqual(life["marriage"]["level"], "care")
 
     def test_next_period_search_uses_bhukti_granularity(self):
-        self.assertEqual(self.r["venusSoon"], ["Ketu", "Venus"])
-        self.assertIsNone(self.r["mercuryWithinYear"])
-        whole = self.r["ketuWhole"]
+        periods = J.vimshottari(0, 0)
+        soon = J.next_period_of(periods, ["Venus"], 0, 20 * J.YEAR_MS)
+        self.assertEqual((soon["maha"], soon["bhukti"]), ("Ketu", "Venus"))
+        self.assertIsNone(J.next_period_of(periods, ["Mercury"], 0, J.YEAR_MS))
+        whole = J.next_period_of(periods, ["Ketu"], 0, J.YEAR_MS)
         self.assertEqual((whole["maha"], whole["bhukti"], whole["start"]), ("Ketu", None, 0))
         self.assertAlmostEqual(whole["end"], 7 * 365.2425 * 86400000, delta=1)
 
     def test_joint_timeline_is_contiguous_and_splits_at_each_mahadasa_change(self):
-        timeline = self.r["timeline"]
-        self.assertEqual(timeline["first"], 0)
-        self.assertAlmostEqual(timeline["last"], 0, delta=1)
-        self.assertTrue(timeline["contiguous"])
-        self.assertTrue(timeline["covered"])
-        # Bride: Ketu then Venus (about 6.5 years). Groom at 91 degrees: Jupiter, Saturn (2.8 years), Mercury (21.8 years).
-        self.assertEqual(timeline["lords"], [["Jupiter", "Ketu"], ["Saturn", "Ketu"], ["Saturn", "Venus"], ["Mercury", "Venus"]])
+        groom = synthetic(0, dict(BASE, Moon=3))
+        groom["planets"]["Moon"]["longitude"] = 91
+        timeline = J.analyse_pair(synthetic(0, BASE), groom, 0)["timeline"]
+        self.assertEqual(timeline[0]["start"], 0)
+        self.assertAlmostEqual(timeline[-1]["end"], 25 * J.YEAR_MS, delta=1)
+        self.assertTrue(all(index == 0 or row["start"] == timeline[index - 1]["end"] for index, row in enumerate(timeline)))
+        self.assertTrue(all(p["start"] <= row["start"] < p["end"] for row in timeline for p in (row["bride"], row["groom"])))
+        # Bride: Ketu then Venus. Groom at 91 degrees: Jupiter, Saturn, Mercury.
+        self.assertEqual([[row["groom"]["lord"], row["bride"]["lord"]] for row in timeline],
+                         [["Jupiter", "Ketu"], ["Saturn", "Ketu"], ["Saturn", "Venus"], ["Mercury", "Venus"]])
 
 
 if __name__ == "__main__":

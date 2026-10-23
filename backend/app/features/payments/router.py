@@ -1,7 +1,6 @@
 """Razorpay Standard Checkout and legacy Payment Links for 30-day passes."""
 import hashlib
 import hmac
-import re
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Literal
@@ -23,9 +22,6 @@ from app.security.dependencies import get_current_auth_user_id
 
 router = APIRouter()
 ACCESS_DAYS = 30
-KATTAM_PRODUCT = "kattam_report"
-ORDER_ID = re.compile(r"order_[A-Za-z0-9]{1,40}")
-PAYMENT_ID = re.compile(r"pay_[A-Za-z0-9]{1,40}")
 
 
 def plan_prices(settings: Settings) -> dict[str, int]:
@@ -178,64 +174,6 @@ async def verify_payment(
     if captured["status"] != "captured":
         return {"status": "pending", "detail": "Payment authorized; awaiting capture. Do not pay again."}
     return await activate_payment(payment, payment_id, session)
-
-
-def kattam_report_ready(settings: Settings) -> bool:
-    return bool(settings.razorpay_key_id and settings.razorpay_key_secret) \
-        and settings.razorpay_kattam_report_amount_paise >= 100
-
-
-@router.get("/kattam-report")
-async def kattam_report_price(settings: Settings = Depends(get_settings)) -> dict:
-    return {"amount_paise": settings.razorpay_kattam_report_amount_paise, "available": kattam_report_ready(settings)}
-
-
-# One-time guest purchase: the report is computed in the browser, so no birth details reach the server.
-@router.post("/kattam-report/order")
-async def create_kattam_report_order(settings: Settings = Depends(get_settings)) -> dict:
-    if not kattam_report_ready(settings):
-        raise HTTPException(status_code=503, detail="Report checkout is not available yet")
-    amount = settings.razorpay_kattam_report_amount_paise
-    order = await razorpay_api(settings, "POST", "orders", {
-        "amount": amount, "currency": "INR", "receipt": f"kattam-{uuid.uuid4().hex[:24]}",
-        "notes": {"rightconnect_product": KATTAM_PRODUCT, "rightconnect_origin": settings.app_base_url.rstrip("/")},
-    })
-    order_id = order.get("id")
-    if not isinstance(order_id, str) or not ORDER_ID.fullmatch(order_id) \
-            or order.get("amount") != amount or order.get("currency") != "INR":
-        raise HTTPException(status_code=500, detail="Invalid order returned by provider")
-    return {"order_id": order_id, "amount": amount, "currency": "INR", "key_id": settings.razorpay_key_id,
-            "description": "Kattam porutham report (PDF)"}
-
-
-@router.post("/kattam-report/verify")
-async def verify_kattam_report_payment(
-    body: dict | None = Body(default=None),
-    settings: Settings = Depends(get_settings),
-) -> dict:
-    fields = ("razorpay_order_id", "razorpay_payment_id", "razorpay_signature")
-    if not body or any(not isinstance(body.get(field), str) or not body[field] for field in fields):
-        raise HTTPException(status_code=400, detail="Missing payment verification fields")
-    order_id, payment_id = body["razorpay_order_id"], body["razorpay_payment_id"]
-    if not ORDER_ID.fullmatch(order_id) or not PAYMENT_ID.fullmatch(payment_id):
-        raise HTTPException(status_code=400, detail="Invalid payment reference")
-    if not settings.razorpay_key_id or not settings.razorpay_key_secret:
-        raise HTTPException(status_code=503, detail="Payment verification is unavailable")
-    if not valid_payment_signature(order_id, payment_id, body["razorpay_signature"], settings.razorpay_key_secret):
-        raise HTTPException(status_code=400, detail="Invalid payment signature")
-    order = await razorpay_api(settings, "GET", f"orders/{order_id}")
-    notes = order.get("notes")
-    amount = order.get("amount")
-    if order.get("id") != order_id or not isinstance(notes, dict) \
-            or notes.get("rightconnect_product") != KATTAM_PRODUCT or foreign_origin(order, settings.app_base_url) \
-            or order.get("currency") != "INR" or not isinstance(amount, int) or amount < 100:
-        raise HTTPException(status_code=400, detail="Payment details do not match")
-    captured = await razorpay_api(settings, "GET", f"payments/{payment_id}")
-    if not matching_payment(captured, order_id, amount, payment_id):
-        raise HTTPException(status_code=400, detail="Payment details do not match")
-    if captured["status"] != "captured":
-        return {"status": "pending", "detail": "Payment authorized; awaiting capture. Do not pay again."}
-    return {"status": "paid", "payment_id": payment_id}
 
 
 @router.post("/checkout")
