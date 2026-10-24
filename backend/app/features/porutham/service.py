@@ -1,4 +1,4 @@
-"""Kattam report preview, one-time Razorpay purchase and paid unlock, free of FastAPI and database code."""
+"""Report preview, one-time Razorpay purchase and paid unlock for Kattam porutham and Jathagam, free of FastAPI and DB code."""
 from __future__ import annotations
 
 import hashlib
@@ -12,7 +12,9 @@ from app.features.payments.verification import foreign_origin, matching_payment,
 
 from . import report
 
-PRODUCT = "kattam_report"
+PRODUCTS = {"kattam": "kattam_report", "jathagam": "jathagam_report"}
+DESCRIPTIONS = {"kattam": "Thirumana porutham report (PDF)", "jathagam": "Jathagam report (PDF)"}
+ROLES = {"kattam": ("bride", "groom"), "jathagam": ("person",)}
 Razorpay = Callable[[str, str, dict | None], Awaitable[dict]]
 
 
@@ -23,15 +25,18 @@ class ServiceError(Exception):
         self.detail = detail
 
 
-def people(data: dict) -> dict:
+def people(data: dict, kind: str = "kattam") -> dict:
     return {role: dict(data[role], birth_date=str(data[role]["birth_date"]), birth_time=str(data[role]["birth_time"])[:8])
-            for role in ("bride", "groom")}
+            for role in ROLES[kind]}
 
 
-def build(data: dict, now_ms: float | None = None) -> dict:
+def build(data: dict, now_ms: float | None = None, kind: str = "kattam") -> dict:
+    now_ms = time.time() * 1000 if now_ms is None else now_ms
+    language = data.get("language", "ta")
     try:
-        return report.kattam_report(people(data), data.get("language", "ta"),
-                                    time.time() * 1000 if now_ms is None else now_ms, data.get("selected"))
+        if kind == "jathagam":
+            return report.jathagam_report(people(data, kind)["person"], language, now_ms)
+        return report.kattam_report(people(data), language, now_ms, data.get("selected"))
     except ValueError as exc:
         if str(exc) in ("nonexistent-time", "ambiguous-time"):
             raise ServiceError(422, str(exc)) from exc
@@ -47,27 +52,29 @@ def ready(settings) -> bool:
     return bool(settings.razorpay_key_id and settings.razorpay_key_secret) and settings.razorpay_kattam_report_amount_paise >= 100
 
 
-# Binds a payment to one couple's birth data without sending that data to Razorpay.
-def report_key(data: dict, secret: str) -> str:
-    return hmac.new(secret.encode(), f"kattam-report|{canonical_births(data)}".encode(), hashlib.sha256).hexdigest()[:48]
+# Binds a payment to one couple's (or person's) birth data without sending that data to Razorpay.
+def report_key(data: dict, secret: str, kind: str = "kattam") -> str:
+    return hmac.new(secret.encode(), f"{kind}-report|{canonical_births(data, kind)}".encode(), hashlib.sha256).hexdigest()[:48]
 
 
-def canonical_births(data: dict) -> str:
-    births = people(data)
+def canonical_births(data: dict, kind: str = "kattam") -> str:
+    births = people(data, kind)
     return json.dumps([[births[role]["birth_date"], births[role]["birth_time"], round(float(births[role]["latitude"]), 4),
-                        round(float(births[role]["longitude"]), 4), births[role]["timezone"]] for role in ("bride", "groom")])
+                        round(float(births[role]["longitude"]), 4), births[role]["timezone"]] for role in ROLES[kind]])
 
 
-def couple_key(data: dict) -> str:
-    return hashlib.sha256(f"kattam-couple|{canonical_births(data)}".encode()).hexdigest()[:48]
+def couple_key(data: dict, kind: str = "kattam") -> str:
+    return hashlib.sha256(f"{kind}-couple|{canonical_births(data, kind)}".encode()).hexdigest()[:48]
 
 
-def stored_inputs(data: dict) -> dict:
+def stored_inputs(data: dict, kind: str = "kattam") -> dict:
+    if kind == "jathagam":
+        return {"person": data["person"]}
     return {"bride": data["bride"], "groom": data["groom"], "selected": data.get("selected")}
 
 
 def history_summary(entry) -> dict:
-    return {"id": str(entry.id), "bride": entry.bride_name, "groom": entry.groom_name, "level": entry.level,
+    return {"id": str(entry.id), "kind": entry.kind, "bride": entry.bride_name, "groom": entry.groom_name, "level": entry.level,
             "stars": entry.stars_matched, "kattam": entry.kattam_matched, "unlocked": entry.unlocked,
             "updated_at": entry.updated_at.isoformat()}
 
@@ -84,24 +91,24 @@ def pack_offer(settings) -> dict:
             and settings.porutham_pack_reports > 0 and settings.porutham_pack_days > 0}
 
 
-async def create_order(data: dict, settings, razorpay: Razorpay) -> dict:
+async def create_order(data: dict, settings, razorpay: Razorpay, kind: str = "kattam") -> dict:
     if not ready(settings):
         raise ServiceError(503, "Report checkout is not available yet")
-    build(data)
+    build(data, kind=kind)
     amount = settings.razorpay_kattam_report_amount_paise
     order = await razorpay("POST", "orders", {
-        "amount": amount, "currency": "INR", "receipt": f"kattam-{uuid.uuid4().hex[:24]}",
-        "notes": {"rightconnect_product": PRODUCT, "rightconnect_origin": settings.app_base_url.rstrip("/"),
-                  "report_key": report_key(data, settings.razorpay_key_secret)},
+        "amount": amount, "currency": "INR", "receipt": f"{kind}-{uuid.uuid4().hex[:24]}",
+        "notes": {"rightconnect_product": PRODUCTS[kind], "rightconnect_origin": settings.app_base_url.rstrip("/"),
+                  "report_key": report_key(data, settings.razorpay_key_secret, kind)},
     })
     order_id = order.get("id")
     if not isinstance(order_id, str) or not order_id.startswith("order_") or order.get("amount") != amount or order.get("currency") != "INR":
         raise ServiceError(500, "Invalid order returned by provider")
     return {"order_id": order_id, "amount": amount, "currency": "INR", "key_id": settings.razorpay_key_id,
-            "description": "Thirumana porutham report (PDF)"}
+            "description": DESCRIPTIONS[kind]}
 
 
-async def unlock(data: dict, settings, razorpay: Razorpay, now_ms: float | None = None) -> dict:
+async def unlock(data: dict, settings, razorpay: Razorpay, now_ms: float | None = None, kind: str = "kattam") -> dict:
     proof = data["payment"]
     order_id, payment_id = proof["razorpay_order_id"], proof["razorpay_payment_id"]
     if not settings.razorpay_key_id or not settings.razorpay_key_secret:
@@ -111,14 +118,14 @@ async def unlock(data: dict, settings, razorpay: Razorpay, now_ms: float | None 
     order = await razorpay("GET", f"orders/{order_id}", None)
     notes = order.get("notes")
     amount = order.get("amount")
-    if order.get("id") != order_id or not isinstance(notes, dict) or notes.get("rightconnect_product") != PRODUCT \
+    if order.get("id") != order_id or not isinstance(notes, dict) or notes.get("rightconnect_product") != PRODUCTS[kind] \
             or foreign_origin(order, settings.app_base_url) or order.get("currency") != "INR" \
             or not isinstance(amount, int) or amount < 100 \
-            or not hmac.compare_digest(str(notes.get("report_key", "")), report_key(data, settings.razorpay_key_secret)):
+            or not hmac.compare_digest(str(notes.get("report_key", "")), report_key(data, settings.razorpay_key_secret, kind)):
         raise ServiceError(400, "This payment is not for these birth details")
     captured = await razorpay("GET", f"payments/{payment_id}", None)
     if not matching_payment(captured, order_id, amount, payment_id):
         raise ServiceError(400, "Payment details do not match")
     if captured["status"] != "captured":
         return {"status": "pending", "detail": "Payment authorized; awaiting capture. Do not pay again."}
-    return {"status": "paid", "report": build(data, now_ms)}
+    return {"status": "paid", "report": build(data, now_ms, kind)}

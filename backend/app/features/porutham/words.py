@@ -1,8 +1,72 @@
-"""Tamil and English wording for the compatibility reports."""
+"""Tamil and English wording for the compatibility and horoscope reports."""
 
 
 def ordinal(n: int) -> str:
     return f"{n}{'st' if n == 1 else 'nd' if n == 2 else 'rd' if n == 3 else 'th'}"
+
+
+JATHAGAM = {
+    "ta": {
+        "title": "ஜாதக அறிக்கை", "default_name": "ஜாதகர்",
+        "parts": {"chart": "ஜாதகக் கட்டம் — அடிப்படை விவரங்கள்", "palan": "ஜாதகப் பலன் — விரிவான ஆய்வு"},
+        "sections": {"charts": "ராசி, நவாம்சக் கட்டங்கள்", "dosha": "1. தோஷம் இருக்கிறதா?", "planets": "2. கிரக நிலைகள்",
+                     "dasa": "3. இப்போது நடக்கும் தசை, அடுத்து வரும் தசை", "timeline": "4. அடுத்த 25 ஆண்டுகள் — தசை பலன்",
+                     "life": "5. எதிர்கால வாழ்க்கை", "bhukti": "6. நடப்பு தசையின் புத்திகள்", "summary": "7. சுருக்கமாக",
+                     "expert": "ஜோதிடர்களுக்கான கூடுதல் விவரம் — களத்திரம், தசா இருப்பு, கணக்கு"},
+        "headline": lambda lagna, rasi, star: f"லக்னம் {lagna} · ராசி {rasi} · நட்சத்திரம் {star}",
+        "timeline_intro": "அடுத்த 25 ஆண்டுகளில் வரும் ஒவ்வொரு மகா தசையும் பொதுவாகத் தருவது:",
+        "tl_head": ["காலம்", "தசை", "பலன்", "என்ன அர்த்தம்"],
+        "bhukti_intro": lambda maha: f"{maha} தசைக்குள் வரும் ஒன்பது புத்திகள்:",
+        "bhukti_head": ["காலம்", "புத்தி", "பலன்"], "now": " (இப்போது)",
+        "summary_chart": lambda lagna, rasi, star: f"லக்னம் {lagna}, ராசி {rasi}, நட்சத்திரம் {star}.",
+        "summary_dosha": lambda chevvai, naga: f"செவ்வாய் தோஷம்: {chevvai}; நாக தோஷம்: {naga}.",
+        "summary_now": lambda dasa, quality, end: f"இப்போது {dasa} — {quality}; {end} வரை.",
+        "summary_next": lambda dasa, start, quality: f"அடுத்து {dasa} — {start} முதல் ({quality}).",
+        "summary_strong": lambda areas: f"பலமான அம்சங்கள்: {areas}.", "summary_care": lambda areas: f"கவனம் தேவை: {areas}.",
+        "final": {"good": "இப்போதைய காலம் பொதுவாகச் சாதகமானது; நல்ல முயற்சிகளைத் தொடங்கலாம்.",
+                  "mixed": "கலவையான காலம்; திட்டமிட்ட உழைப்புக்கு ஏற்ற பலன் கிடைக்கும்.",
+                  "challenging": "சவாலான காலம்; பெரிய முடிவுகளில் நிதானமும் பொறுமையும் தேவை. முழு ஆய்வுக்கு அனுபவமிக்க ஜோதிடரை அணுகலாம்."},
+        "teaser": {"dosha": "தோஷம் ஏன், எந்த வீட்டில் — முழு விளக்கம் கட்டண அறிக்கையில்.",
+                   "planets": "ஒவ்வொரு கிரகமும் எந்த ராசி, பாகை, நட்சத்திரம், நவாம்சத்தில்?",
+                   "dasa": "எந்தத் தேதி வரை, என்ன பலன் — முழு விவரம் கட்டண அறிக்கையில்.",
+                   "timeline": "அடுத்த 25 ஆண்டுகளில் எந்தக் காலம் நல்லது, எது கவனம் தேவை?",
+                   "life": "எப்போது முன்னேற்றம், எந்தத் துறை, ஏன் — முழு விவரம் கட்டண அறிக்கையில்.",
+                   "bhukti": "இப்போதைய தசைக்குள் எந்த ஆண்டுகள் சாதகம்?",
+                   "summary": "உங்கள் ஜாதகம் சொல்லும் இறுதிச் சுருக்கம்.",
+                   "expert": "களத்திர ஸ்தானம், தசா இருப்பு, கணக்கீட்டு முறை — ஜோதிடரிடம் காட்ட."},
+        "disclaimer": "இது பாரம்பரிய ஜோதிட விதிகளின் அடிப்படையிலான கணக்கீடு; அறிவியல் கணிப்போ உறுதிமொழியோ அல்ல. மருத்துவம், நிதி போன்ற முக்கிய முடிவுகளுக்கு நிபுணர் ஆலோசனை பெறவும்.",
+    },
+    "en": {
+        "title": "Horoscope report", "default_name": "Native",
+        "parts": {"chart": "Birth chart — basic details", "palan": "Horoscope reading — detailed analysis"},
+        "sections": {"charts": "Rasi and Navamsa charts", "dosha": "1. Is there a dosha?", "planets": "2. Planetary positions",
+                     "dasa": "3. Current and next dasa", "timeline": "4. The next 25 years — dasa results",
+                     "life": "5. Future life", "bhukti": "6. Bhuktis of the current dasa", "summary": "7. In short",
+                     "expert": "More for astrologers — 7th house, dasa balance, method"},
+        "headline": lambda lagna, rasi, star: f"Lagna {lagna} · Rasi {rasi} · Nakshatra {star}",
+        "timeline_intro": "What each mahadasa in the next 25 years generally brings:",
+        "tl_head": ["Period", "Dasa", "Quality", "What it means"],
+        "bhukti_intro": lambda maha: f"The nine bhuktis within the {maha} dasa:",
+        "bhukti_head": ["Period", "Bhukti", "Quality"], "now": " (now)",
+        "summary_chart": lambda lagna, rasi, star: f"Lagna {lagna}, Rasi {rasi}, Nakshatra {star}.",
+        "summary_dosha": lambda chevvai, naga: f"Chevvai dosha: {chevvai}; Naga dosha: {naga}.",
+        "summary_now": lambda dasa, quality, end: f"Now: {dasa} — {quality}, until {end}.",
+        "summary_next": lambda dasa, start, quality: f"Next: {dasa} from {start} ({quality}).",
+        "summary_strong": lambda areas: f"Strengths: {areas}.", "summary_care": lambda areas: f"Needs care: {areas}.",
+        "final": {"good": "The current period is generally favourable; a good time to begin worthwhile efforts.",
+                  "mixed": "A mixed period; planned effort brings matching results.",
+                  "challenging": "A challenging period; be patient and careful with big decisions. Consult an experienced astrologer for a full review."},
+        "teaser": {"dosha": "Why, and from which house — the full explanation is in the paid report.",
+                   "planets": "Which sign, degree, Nakshatra and Navamsa is each planet in?",
+                   "dasa": "Until which date, and what it brings — full details in the paid report.",
+                   "timeline": "Which of the next 25 years are good, and which need care?",
+                   "life": "When progress comes, which field suits, and why — full details in the paid report.",
+                   "bhukti": "Which years within the current dasa are favourable?",
+                   "summary": "The final summary of your horoscope.",
+                   "expert": "7th house, dasa balance and method — to show your astrologer."},
+        "disclaimer": "This is a calculation based on traditional astrological rules, not a scientific prediction or a guarantee. Consult qualified professionals for medical, financial or other important decisions.",
+    },
+}
 
 
 RASIS = {

@@ -38,7 +38,7 @@ Users are in India, so Singapore is also the closest region to them (~50 ms vs ~
    - **OAuth consent screen**: status **In production** (not Testing), app name/logo/privacy URL filled in, or only test users can sign in.
 5. **Authentication → URL Configuration**:
    - Site URL: `https://rightconnect.app` (your production domain).
-   - Redirect URLs: `https://rightconnect.app/pages/auth.html`, `https://rightconnect.app/pages/marketplace.html`, `https://rightconnect.app/pages/plans.html` (add the `*.onrender.com` URL too while testing).
+   - Redirect URLs: one wildcard per origin so every page can return to itself after Google sign-in: `https://rightconnect.app/**` (dev: `https://whatsapp-agent-x3u6.onrender.com/**`; local: `http://127.0.0.1:8000/**`).
 6. **Authentication → Sessions**: leave **Time-box user sessions** and **Inactivity timeout** off (otherwise users must sign in with Google again).
 7. **Project Settings → API**: copy the **Project URL** and the **publishable (anon) key** for Render.
 
@@ -67,7 +67,7 @@ Users are in India, so Singapore is also the closest region to them (~50 ms vs ~
 | `RAZORPAY_WEBHOOK_SECRET` | secret of the live webhook (section 3), different from dev |
 | `RAZORPAY_PRO_AMOUNT_PAISE` / `RAZORPAY_ENTERPRISE_AMOUNT_PAISE` | prices in paise, e.g. `49900` = ₹499 |
 | `RAZORPAY_KATTAM_REPORT_AMOUNT_PAISE` | optional, one-time Kattam porutham PDF price; default `9900` = ₹99 |
-| `RAZORPAY_PORUTHAM_PACK_AMOUNT_PAISE` / `PORUTHAM_PACK_REPORTS` / `PORUTHAM_PACK_DAYS` | optional porutham pack; defaults `29900` (₹299), `20` reports, `30` days |
+| `RAZORPAY_PORUTHAM_PACK_AMOUNT_PAISE` / `PORUTHAM_PACK_REPORTS` / `PORUTHAM_PACK_DAYS` | optional porutham/jathagam pack; defaults `29900` (₹299), `20` reports, `90` days |
 | `PORUTHAM_HISTORY_LIMIT` / `PORUTHAM_ADMIN_HISTORY_LIMIT` | optional saved results per account; defaults `30` / `200` |
 | `ADMIN_PATH` | long random path, e.g. `/ops-8f2k9q` |
 | `ADMIN_BASIC_USER` / `ADMIN_BASIC_PASSWORD` | strong, unique credentials |

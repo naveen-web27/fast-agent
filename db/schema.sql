@@ -361,6 +361,7 @@ GRANT ALL ON ai_reports, ai_report_family_members, ai_report_usage TO service_ro
 CREATE TABLE porutham_history (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     auth_user_id uuid NOT NULL,
+    kind varchar(10) NOT NULL DEFAULT 'kattam' CHECK (kind IN ('kattam', 'jathagam')),
     couple_key char(48) NOT NULL,
     bride_name varchar(100) NOT NULL DEFAULT '',
     groom_name varchar(100) NOT NULL DEFAULT '',

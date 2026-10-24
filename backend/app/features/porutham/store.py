@@ -31,15 +31,16 @@ async def find_history(session: AsyncSession, auth_user_id: UUID, key: str) -> P
 
 
 async def save_history(session: AsyncSession, auth_user_id: UUID, data: dict, full: dict, report_at: datetime,
-                       unlocked: bool, limit: int) -> PoruthamHistory:
-    key = service.couple_key(data)
+                       unlocked: bool, limit: int, kind: str = "kattam") -> PoruthamHistory:
+    key = service.couple_key(data, kind)
     entry = await find_history(session, auth_user_id, key)
     if entry is None:
-        entry = PoruthamHistory(auth_user_id=auth_user_id, couple_key=key)
+        entry = PoruthamHistory(auth_user_id=auth_user_id, couple_key=key, kind=kind)
         session.add(entry)
-    entry.bride_name = full["names"]["bride"][:100]
-    entry.groom_name = full["names"]["groom"][:100]
-    entry.inputs = service.stored_inputs(data)
+    names = full["names"]
+    entry.bride_name = names.get("bride", names.get("person", ""))[:100]
+    entry.groom_name = names.get("groom", "")[:100]
+    entry.inputs = service.stored_inputs(data, kind)
     entry.level = full["verdict"]["level"]
     entry.stars_matched = full["score"]["stars"]
     entry.kattam_matched = full["score"]["kattam"]

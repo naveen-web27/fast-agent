@@ -36,12 +36,22 @@ Signed-in accounts (Google, no marketplace onboarding needed; rows keyed by Supa
   `PORUTHAM_HISTORY_LIMIT` (30) are kept; older rows, including unlocked ones, are removed automatically. Users can delete rows.
   The side panel lists groom · bride, a coloured one-word result (high green, medium yellow, low red), scores and a lock icon;
   clicking reopens the report built from the stored inputs and original report time. The last inputs prefill the Kattam form.
-- Packs: `RAZORPAY_PORUTHAM_PACK_AMOUNT_PAISE` (29900) buys `PORUTHAM_PACK_REPORTS` (20) unlocks valid for `PORUTHAM_PACK_DAYS` (30).
+- Packs: `RAZORPAY_PORUTHAM_PACK_AMOUNT_PAISE` (29900) buys `PORUTHAM_PACK_REPORTS` (20) unlocks valid for `PORUTHAM_PACK_DAYS` (90).
+  One pack and one history are shared by Kattam porutham and Jathagam.
   Opening an already-unlocked couple never uses a credit. Packs activate on `/pack/verify` or the `order.paid` webhook.
 - Admins (`platform_admin`, plus `ADMIN_EMAILS` when set) get every report free, for WhatsApp customers, with a
   `PORUTHAM_ADMIN_HISTORY_LIMIT` (200) history.
 
 API additions: `GET /me`, `GET|DELETE /history/{id}`, `POST /kattam/credit`, `POST /pack/order`, `POST /pack/verify`.
+
+### Jathagam (individual horoscope, same page)
+
+Third option on the porutham page (and the Horoscope card links to `thirumana-porutham.html?service=jathagam`).
+Same birth input for one person. Free: basic details and Rasi/Navamsa charts. Paid (same ₹99, pack credit or admin):
+1 dosha (titles), 2 planet table (two rows), 3 current/next dasa (titles), 4 25-year dasa results (two rows + last three periods),
+5 future life (heading + one line), 6 bhuktis of the current dasa (two rows), 7 summary and astrologer details (locked).
+Endpoints `POST /jathagam`, `/jathagam/order`, `/jathagam/full`, `/jathagam/credit`; orders use product `jathagam_report`,
+so a Kattam payment cannot unlock a horoscope. History rows carry `kind` (migration 021); the chip shows the current dasa period.
 
 ## User Flow
 

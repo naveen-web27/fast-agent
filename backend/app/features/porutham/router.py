@@ -1,4 +1,4 @@
-"""Server-side Thirumana porutham: free Rasi check, Kattam preview, paid reports, history and report packs."""
+"""Server-side astrology reports: free Rasi check, Kattam porutham and Jathagam previews, paid reports, history and packs."""
 import time
 from datetime import datetime, timezone
 from functools import partial
@@ -18,7 +18,7 @@ from app.models.porutham import PoruthamPack
 from app.security.dependencies import bearer_scheme, get_current_auth_user_id
 
 from . import report, service, store
-from .contracts import KattamRequest, PaymentProof, RasiRequest, UnlockRequest
+from .contracts import JathagamRequest, JathagamUnlockRequest, KattamRequest, PaymentProof, RasiRequest, UnlockRequest
 
 router = APIRouter()
 
@@ -35,9 +35,9 @@ async def optional_user(
     return None if credentials is None else await get_current_auth_user_id(credentials, settings, session)
 
 
-def build(data: dict, now_ms: float) -> dict:
+def build(data: dict, now_ms: float, kind: str = "kattam") -> dict:
     try:
-        return service.build(data, now_ms)
+        return service.build(data, now_ms, kind)
     except service.ServiceError as exc:
         raise failure(exc) from exc
 
@@ -47,14 +47,52 @@ def moment(now_ms: float) -> datetime:
 
 
 async def remember(session: AsyncSession, user: UUID | None, data: dict, full: dict, now_ms: float,
-                   unlocked: bool, settings: Settings) -> dict:
+                   unlocked: bool, settings: Settings, kind: str) -> dict:
     """Saves a signed-in check to history and reports whether the full report may be shown."""
     if user is None:
         return {"unlocked": unlocked, "history_id": None}
     admin = await store.is_admin(session, user, settings)
-    entry = await store.save_history(session, user, data, full, moment(now_ms), unlocked or admin, store.history_limit(settings, admin))
+    entry = await store.save_history(session, user, data, full, moment(now_ms), unlocked or admin,
+                                     store.history_limit(settings, admin), kind)
     await session.commit()
     return {"unlocked": entry.unlocked, "history_id": str(entry.id)}
+
+
+async def preview_report(kind: str, body, user, session, settings) -> dict:
+    data, now_ms = body.model_dump(mode="json"), time.time() * 1000
+    full = build(data, now_ms, kind)
+    saved = await remember(session, user, data, full, now_ms, False, settings, kind)
+    return {"report": full if saved["unlocked"] else report.preview(full, body.language),
+            "unlock": service.unlock_offer(settings), "history_id": saved["history_id"]}
+
+
+async def order_report(kind: str, body, settings) -> dict:
+    try:
+        return await service.create_order(body.model_dump(mode="json"), settings, partial(razorpay_api, settings), kind)
+    except service.ServiceError as exc:
+        raise failure(exc) from exc
+
+
+async def full_report(kind: str, body, user, session, settings) -> dict:
+    data, now_ms = body.model_dump(mode="json"), time.time() * 1000
+    try:
+        result = await service.unlock(data, settings, partial(razorpay_api, settings), now_ms, kind)
+    except service.ServiceError as exc:
+        raise failure(exc) from exc
+    if result["status"] == "paid":
+        await remember(session, user, data, result["report"], now_ms, True, settings, kind)
+    return result
+
+
+async def credit_report(kind: str, body, user, session, settings) -> dict:
+    data, now_ms = body.model_dump(mode="json"), time.time() * 1000
+    full = build(data, now_ms, kind)
+    existing = await store.find_history(session, user, service.couple_key(data, kind))
+    already = (existing is not None and existing.unlocked) or await store.is_admin(session, user, settings)
+    if not already and not await store.use_credit(session, user, moment(now_ms)):
+        raise HTTPException(status_code=402, detail="No reports left in your pack")
+    await remember(session, user, data, full, now_ms, True, settings, kind)
+    return {"status": "paid", "report": full}
 
 
 @router.post("/rasi")
@@ -66,45 +104,47 @@ def rasi_porutham(body: RasiRequest) -> dict:
 @router.post("/kattam")
 async def kattam_preview(body: KattamRequest, user: UUID | None = Depends(optional_user),
                          session: AsyncSession = Depends(get_db), settings: Settings = Depends(get_settings)) -> dict:
-    data, now_ms = body.model_dump(mode="json"), time.time() * 1000
-    full = build(data, now_ms)
-    saved = await remember(session, user, data, full, now_ms, False, settings)
-    return {"report": full if saved["unlocked"] else report.preview(full, body.language),
-            "unlock": service.unlock_offer(settings), "history_id": saved["history_id"]}
+    return await preview_report("kattam", body, user, session, settings)
 
 
 @router.post("/kattam/order")
 async def kattam_order(body: KattamRequest, settings: Settings = Depends(get_settings)) -> dict:
-    try:
-        return await service.create_order(body.model_dump(mode="json"), settings, partial(razorpay_api, settings))
-    except service.ServiceError as exc:
-        raise failure(exc) from exc
+    return await order_report("kattam", body, settings)
 
 
 @router.post("/kattam/full")
 async def kattam_full(body: UnlockRequest, user: UUID | None = Depends(optional_user),
                       session: AsyncSession = Depends(get_db), settings: Settings = Depends(get_settings)) -> dict:
-    data, now_ms = body.model_dump(mode="json"), time.time() * 1000
-    try:
-        result = await service.unlock(data, settings, partial(razorpay_api, settings), now_ms)
-    except service.ServiceError as exc:
-        raise failure(exc) from exc
-    if result["status"] == "paid":
-        await remember(session, user, data, result["report"], now_ms, True, settings)
-    return result
+    return await full_report("kattam", body, user, session, settings)
 
 
 @router.post("/kattam/credit")
 async def kattam_credit(body: KattamRequest, user: UUID = Depends(get_current_auth_user_id),
                         session: AsyncSession = Depends(get_db), settings: Settings = Depends(get_settings)) -> dict:
-    data, now_ms = body.model_dump(mode="json"), time.time() * 1000
-    full = build(data, now_ms)
-    existing = await store.find_history(session, user, service.couple_key(data))
-    already = (existing is not None and existing.unlocked) or await store.is_admin(session, user, settings)
-    if not already and not await store.use_credit(session, user, moment(now_ms)):
-        raise HTTPException(status_code=402, detail="No reports left in your pack")
-    await remember(session, user, data, full, now_ms, True, settings)
-    return {"status": "paid", "report": full}
+    return await credit_report("kattam", body, user, session, settings)
+
+
+@router.post("/jathagam")
+async def jathagam_preview(body: JathagamRequest, user: UUID | None = Depends(optional_user),
+                           session: AsyncSession = Depends(get_db), settings: Settings = Depends(get_settings)) -> dict:
+    return await preview_report("jathagam", body, user, session, settings)
+
+
+@router.post("/jathagam/order")
+async def jathagam_order(body: JathagamRequest, settings: Settings = Depends(get_settings)) -> dict:
+    return await order_report("jathagam", body, settings)
+
+
+@router.post("/jathagam/full")
+async def jathagam_full(body: JathagamUnlockRequest, user: UUID | None = Depends(optional_user),
+                        session: AsyncSession = Depends(get_db), settings: Settings = Depends(get_settings)) -> dict:
+    return await full_report("jathagam", body, user, session, settings)
+
+
+@router.post("/jathagam/credit")
+async def jathagam_credit(body: JathagamRequest, user: UUID = Depends(get_current_auth_user_id),
+                          session: AsyncSession = Depends(get_db), settings: Settings = Depends(get_settings)) -> dict:
+    return await credit_report("jathagam", body, user, session, settings)
 
 
 @router.get("/me")
@@ -115,10 +155,11 @@ async def account(user: UUID = Depends(get_current_auth_user_id), session: Async
     now = datetime.now(timezone.utc)
     packs = await store.active_packs(session, user, now)
     entries = await store.history(session, user, limit)
+    last = {kind: next((entry.inputs for entry in entries if entry.kind == kind), None) for kind in service.ROLES}
     return {"admin": admin, "credits": service.credits_left(packs, now),
             "pack_expires_at": max((pack.expires_at for pack in packs), default=None),
             "history_limit": limit, "history": [service.history_summary(entry) for entry in entries],
-            "last_inputs": entries[0].inputs if entries else None, "pack": service.pack_offer(settings)}
+            "last_inputs": last, "pack": service.pack_offer(settings)}
 
 
 @router.get("/history/{entry_id}")
@@ -127,9 +168,9 @@ async def history_report(entry_id: UUID, language: Literal["ta", "en"] = "ta", u
     entry = await store.history_entry(session, user, entry_id)
     if entry is None:
         raise HTTPException(status_code=404, detail="History entry not found")
-    full = build(dict(entry.inputs, language=language), entry.report_at.timestamp() * 1000)
+    full = build(dict(entry.inputs, language=language), entry.report_at.timestamp() * 1000, entry.kind)
     unlocked = entry.unlocked or await store.is_admin(session, user, settings)
-    return {"id": str(entry.id), "inputs": entry.inputs, "report": full if unlocked else report.preview(full, language),
+    return {"id": str(entry.id), "kind": entry.kind, "inputs": entry.inputs, "report": full if unlocked else report.preview(full, language),
             "unlock": service.unlock_offer(settings)}
 
 

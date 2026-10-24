@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from app.features.ai_reports import rules as R
 
 from . import engine as E
-from .words import MONTHS, PLAIN, PORUTHAM, RASIS, STARS, WORDS
+from .words import JATHAGAM, MONTHS, PLAIN, PORUTHAM, RASIS, STARS, WORDS
 
 IST = timezone(timedelta(hours=5, minutes=30))
 TONES = {"good": "good", "strong": "good", "no": "good", "mixed": "mixed", "moderate": "mixed", "cancelled": "mixed",
@@ -177,6 +177,89 @@ def chart_cells(chart: dict, kind: str, w: dict, language: str) -> list[dict]:
              "lagna": any(key == "Lagna" for key, _ in occupants)} for sign, occupants in enumerate(cells)]
 
 
+def star_label(place: dict, language: str) -> str:
+    return f"{STARS[language][place['star']]} ({place['pada']})"
+
+
+def chart_block(w: dict, language: str, owners: list[tuple[dict, str]]) -> dict:
+    return {"type": "charts", "charts": [
+        {"title": f"{name} — {w['rasi_chart'] if kind == 'rasi' else w['navamsa_chart']}", "owner": name,
+         "kind": w["rasi_chart"] if kind == "rasi" else w["navamsa_chart"], "cells": chart_cells(chart, kind, w, language)}
+        for chart, name in owners for kind in ("rasi", "navamsa")]}
+
+
+def planet_rows(w: dict, language: str, chart: dict) -> list[list[str]]:
+    lagna = chart["lagna"]
+    rows = [[w["lagna"], RASIS[language][lagna["sign"]], degree(lagna["degree"]), star_label(lagna, language), RASIS[language][lagna["navamsa"]], ""]]
+    for key in E.PLANET_ORDER:
+        place = chart["planets"][key]
+        status = ", ".join(filter(None, [E.dignity(key, place["sign"]) and w["dignity"][E.dignity(key, place["sign"])],
+                                         w["retro"] if place["retrograde"] and key not in ("Rahu", "Ketu") else ""]))
+        rows.append([w["planets"][key], RASIS[language][place["sign"]], degree(place["degree"]), star_label(place, language),
+                     RASIS[language][place["navamsa"]], status])
+    return rows
+
+
+def dosha_entries(p: dict, w: dict, person: dict) -> tuple[dict, list[dict]]:
+    c, rahu_ketu = person["chevvai"], person["rahu_ketu"]
+    spots = p["and"].join(p["spot"](house, ref) for ref, house in (("lagna", c["from_lagna"]), ("moon", c["from_moon"])) if house in E.CHEVVAI_HOUSES)
+    chevvai = (("no", p["chevvai_no"](c)) if not c["raw"] else
+               ("cancelled", p["chevvai_cancelled"](spots, ", ".join(w["cancel"][r] for r in c["cancellations"]))) if c["cancellations"] else
+               ("yes", p["chevvai_yes"](spots)))
+    naga = ("yes", p["naga_yes"](rahu_ketu)) if rahu_ketu["dosha"] else ("no", p["naga_no"](rahu_ketu))
+    return {"chevvai": chevvai[0], "naga": naga[0]}, [
+        item(p["chevvai_label"], TONES[chevvai[0]], p["state"][chevvai[0]], [chevvai[1]]),
+        item(p["naga_label"], TONES[naga[0]], p["state"][naga[0]], [naga[1]])]
+
+
+def dasa_entries(p: dict, planet, span, language: str, dasa: dict) -> list[dict]:
+    entries = []
+    if dasa["current"]:
+        lord = planet(dasa["current"]["lord"])
+        quality = dasa["current"]["quality"]
+        entries.append(item(p["now_title"](lord), TONES[quality], p["quality"][quality], [
+            p["when"](span(dasa["current"])),
+            p["bhukti_now"](planet(dasa["current_bhukti"]["lord"]), month(dasa["current_bhukti"]["end"], language)) if dasa["current_bhukti"] else "",
+            p["means"](lord, p["meaning"][dasa["current"]["lord"]]), p["quality_note"][quality](lord)]))
+    if dasa["next"]:
+        lord = planet(dasa["next"]["lord"])
+        quality = dasa["next"]["quality"]
+        entries.append(item(p["next_title"](lord), TONES[quality], p["quality"][quality], [
+            p["when"](span(dasa["next"])), p["means"](lord, p["meaning"][dasa["next"]["lord"]]), p["quality_note"][quality](lord)]))
+    return entries
+
+
+def life_entries(p: dict, w: dict, planet, span, life: dict) -> list[dict]:
+    entries = []
+    for area in ("career", "health", "children", "marriage"):
+        info = life[area]
+        parts = [p["area_level"][area][info["level"]],
+                 p["lord_at"](p["area_house"][area], planet(info["lord"]), info["lord_house"], info["lord_dignity"] and w["dignity"][info["lord_dignity"]])]
+        if area == "career":
+            parts.append(p["fields"](p["career_fields"][info["lord"]]))
+        if area == "children":
+            parts.append(p["jupiter_at"](info["jupiter_house"], info["jupiter_dignity"] and w["dignity"][info["jupiter_dignity"]]))
+        parts.append(life_reasons(p, planet, area, info))
+        if info.get("period"):
+            period = info["period"]
+            parts.append(p["period"][area](p["dasa_bhukti"](planet(period["maha"]), period["bhukti"] and planet(period["bhukti"])), span(period)))
+        entries.append(item(p["area"][area], TONES[info["level"]], p["levels"][info["level"]], parts))
+    return entries
+
+
+def dasa_row(w: dict, language: str, dasa: dict, key: str) -> str:
+    planet = w["planets"]
+    if key == "birth":
+        total = round(dasa["balance_ms"] / (E.YEAR_MS / 12))
+        return f"{w['dasa_name'](planet[dasa['birth_lord']])} ({w['balance'](total // 12, total % 12)})"
+    if key == "current":
+        if not dasa["current"]:
+            return w["none"]
+        sub = dasa["current_bhukti"]
+        return f"{w['dasa_name'](planet[dasa['current']['lord']])} / {w['bhukti'](planet[sub['lord']])} ({day(sub['start'], language)} – {day(sub['end'], language)})"
+    return f"{w['dasa_name'](planet[dasa['next']['lord']])} — {day(dasa['next']['start'], language)}" if dasa["next"] else w["none"]
+
+
 def kattam_report(people: dict, language: str, now_ms: float, selected: dict | None = None) -> dict:
     w, p = WORDS[language], PLAIN[language]
     charts = {role: E.chart(people[role]) for role in ("bride", "groom")}
@@ -189,7 +272,7 @@ def kattam_report(people: dict, language: str, now_ms: float, selected: dict | N
     porutham = porutham_result(moon["bride"]["star"], moon["groom"]["star"], moon["bride"]["sign"], moon["groom"]["sign"])
     ranks = {"low": 0, "medium": 1, "high": 2}
     final_level = ("low", "medium", "high")[min(ranks[porutham["level"]], ranks[analysis["level"]])]
-    star_name = lambda place: f"{STARS[language][place['star']]} ({place['pada']})"  # noqa: E731
+    star_name = lambda place: star_label(place, language)  # noqa: E731
 
     alerts, star_notes = [], []
     for role, name in roles:
@@ -218,7 +301,7 @@ def kattam_report(people: dict, language: str, now_ms: float, selected: dict | N
     sections = []
 
     def section(key: str, part: str, blocks: list[dict], title: str | None = None) -> None:
-        sections.append({"key": key, "part": part, "title": title or p["sections"][key], "blocks": blocks})
+        sections.append({"key": key, "part": part, "title": title or p["sections"][key], "blocks": blocks, "banner": key == "rasi"})
 
     rasi_people = {role: {"name": names[role], "rasi": moon[role]["sign"], "nakshatra": moon[role]["star"]} for role in ("bride", "groom")}
     section("rasi", "rasi", [note(PORUTHAM[language]["from_birth"], "help")] + rasi_blocks(rasi_people["bride"], rasi_people["groom"], porutham, language),
@@ -227,15 +310,8 @@ def kattam_report(people: dict, language: str, now_ms: float, selected: dict | N
     blocks = [note(p["chevvai_what"]), note(p["naga_what"])]
     states = {}
     for role, name in roles:
-        c, rahu_ketu = analysis[role]["chevvai"], analysis[role]["rahu_ketu"]
-        spots = p["and"].join(p["spot"](house, ref) for ref, house in (("lagna", c["from_lagna"]), ("moon", c["from_moon"])) if house in E.CHEVVAI_HOUSES)
-        chevvai = (("no", p["chevvai_no"](c)) if not c["raw"] else
-                   ("cancelled", p["chevvai_cancelled"](spots, ", ".join(w["cancel"][r] for r in c["cancellations"]))) if c["cancellations"] else
-                   ("yes", p["chevvai_yes"](spots)))
-        naga = ("yes", p["naga_yes"](rahu_ketu)) if rahu_ketu["dosha"] else ("no", p["naga_no"](rahu_ketu))
-        states[role] = {"chevvai": chevvai[0], "naga": naga[0]}
-        blocks += [note(name, "person"), items([item(p["chevvai_label"], TONES[chevvai[0]], p["state"][chevvai[0]], [chevvai[1]]),
-                                                item(p["naga_label"], TONES[naga[0]], p["state"][naga[0]], [naga[1]])])]
+        states[role], entries = dosha_entries(p, w, analysis[role])
+        blocks += [note(name, "person"), items(entries)]
     section("dosha", "kattam", blocks)
 
     together = []
@@ -259,21 +335,7 @@ def kattam_report(people: dict, language: str, now_ms: float, selected: dict | N
 
     blocks = []
     for role, name in roles:
-        dasa = analysis[role]["dasa"]
-        entries = []
-        if dasa["current"]:
-            lord = planet(dasa["current"]["lord"])
-            quality = dasa["current"]["quality"]
-            entries.append(item(p["now_title"](lord), TONES[quality], p["quality"][quality], [
-                p["when"](span(dasa["current"])),
-                p["bhukti_now"](planet(dasa["current_bhukti"]["lord"]), month(dasa["current_bhukti"]["end"], language)) if dasa["current_bhukti"] else "",
-                p["means"](lord, p["meaning"][dasa["current"]["lord"]]), p["quality_note"][quality](lord)]))
-        if dasa["next"]:
-            lord = planet(dasa["next"]["lord"])
-            quality = dasa["next"]["quality"]
-            entries.append(item(p["next_title"](lord), TONES[quality], p["quality"][quality], [
-                p["when"](span(dasa["next"])), p["means"](lord, p["meaning"][dasa["next"]["lord"]]), p["quality_note"][quality](lord)]))
-        blocks += [note(name, "person"), items(entries)]
+        blocks += [note(name, "person"), items(dasa_entries(p, planet, span, language, analysis[role]["dasa"]))]
     section("dasa", "kattam", blocks)
 
     def dasa_cell(period: dict | None) -> dict:
@@ -284,22 +346,7 @@ def kattam_report(people: dict, language: str, now_ms: float, selected: dict | N
 
     blocks = []
     for role, name in roles:
-        life = analysis[role]["life"]
-        entries = []
-        for area in ("career", "health", "children", "marriage"):
-            info = life[area]
-            parts = [p["area_level"][area][info["level"]],
-                     p["lord_at"](p["area_house"][area], planet(info["lord"]), info["lord_house"], info["lord_dignity"] and w["dignity"][info["lord_dignity"]])]
-            if area == "career":
-                parts.append(p["fields"](p["career_fields"][info["lord"]]))
-            if area == "children":
-                parts.append(p["jupiter_at"](info["jupiter_house"], info["jupiter_dignity"] and w["dignity"][info["jupiter_dignity"]]))
-            parts.append(life_reasons(p, planet, area, info))
-            if info.get("period"):
-                period = info["period"]
-                parts.append(p["period"][area](p["dasa_bhukti"](planet(period["maha"]), period["bhukti"] and planet(period["bhukti"])), span(period)))
-            entries.append(item(p["area"][area], TONES[info["level"]], p["levels"][info["level"]], parts))
-        blocks += [note(name, "person"), items(entries)]
+        blocks += [note(name, "person"), items(life_entries(p, w, planet, span, analysis[role]["life"]))]
     blocks.append(note(p["care_note"], "help"))
     section("life", "kattam", blocks)
 
@@ -351,49 +398,112 @@ def kattam_report(people: dict, language: str, now_ms: float, selected: dict | N
     ]
     blocks.append(table(["", names["groom"], names["bride"]], birth_rows))
     blocks.append(note(w["sections"]["charts"], "subheading"))
-    blocks.append({"type": "charts", "charts": [
-        {"title": f"{name} — {w['rasi_chart'] if kind == 'rasi' else w['navamsa_chart']}", "owner": name,
-         "kind": w["rasi_chart"] if kind == "rasi" else w["navamsa_chart"], "cells": chart_cells(charts[role], kind, w, language)}
-        for role, name in roles for kind in ("rasi", "navamsa")]})
+    blocks.append(chart_block(w, language, [(charts[role], name) for role, name in roles]))
     blocks.append(note(w["sections"]["planets"], "subheading"))
     for role, name in roles:
-        chart = charts[role]
-        rows = [[w["lagna"], RASIS[language][chart["lagna"]["sign"]], degree(chart["lagna"]["degree"]), star_name(chart["lagna"]), RASIS[language][chart["lagna"]["navamsa"]], ""]]
-        for key in E.PLANET_ORDER:
-            place = chart["planets"][key]
-            status = ", ".join(filter(None, [E.dignity(key, place["sign"]) and w["dignity"][E.dignity(key, place["sign"])],
-                                             w["retro"] if place["retrograde"] and key not in ("Rahu", "Ketu") else ""]))
-            rows.append([planet(key), RASIS[language][place["sign"]], degree(place["degree"]), star_name(place), RASIS[language][place["navamsa"]], status])
-        blocks.append(table(list(w["planet_head"]), rows, caption=name))
+        blocks.append(table(list(w["planet_head"]), planet_rows(w, language, charts[role]), caption=name))
     blocks.append(note(w["sections"]["seventh"], "subheading"))
     blocks += [note(f"{name}: {w['seventh'](analysis[role]['seventh'], w, RASIS[language])}") for role, name in roles]
     blocks.append(note(w["sections"]["dasa"], "subheading"))
-
-    def dasa_row(key: str, role: str) -> str:
-        dasa = analysis[role]["dasa"]
-        if key == "birth":
-            total = months(dasa["balance_ms"])
-            return f"{w['dasa_name'](planet(dasa['birth_lord']))} ({w['balance'](total // 12, total % 12)})"
-        if key == "current":
-            if not dasa["current"]:
-                return w["none"]
-            sub = dasa["current_bhukti"]
-            return f"{w['dasa_name'](planet(dasa['current']['lord']))} / {w['bhukti'](planet(sub['lord']))} ({day(sub['start'], language)} – {day(sub['end'], language)})"
-        return f"{w['dasa_name'](planet(dasa['next']['lord']))} — {day(dasa['next']['start'], language)}" if dasa["next"] else w["none"]
-
-    blocks.append(table(["", names["groom"], names["bride"]], [[label, *[dasa_row(key, role) for role, _ in roles]] for key, label in w["dasa_rows"].items()]))
+    blocks.append(table(["", names["groom"], names["bride"]],
+                        [[label, *[dasa_row(w, language, analysis[role]["dasa"], key) for role, _ in roles]] for key, label in w["dasa_rows"].items()]))
     blocks.append(note(w["sections"]["star"], "subheading"))
     blocks += [note(text) for text in star_notes]
     blocks += [note(w["sections"]["method"], "subheading"), note(w["method"], "help")]
     section("expert", "expert", blocks)
 
     return {
-        "title": w["title"], "names": names, "parts": w["parts"],
+        "kind": "kattam", "title": w["title"], "names": names, "parts": w["parts"],
+        "subtitle": f"{names['groom']} · {names['bride']}",
         "score": {"stars": porutham["matched"], "kattam": 4 - analysis["failures"]},
         "verdict": {"level": final_level, "headline": p["verdict"][final_level],
                     "detail": f"{p['verdict_detail'](porutham['matched'], 4 - analysis['failures'])} · {names['groom']} · {names['bride']}"},
         "alerts": {"title": p["star_alert"], "lines": alerts} if alerts else None,
         "sections": sections, "disclaimer": w["disclaimer"], "locked": False,
+    }
+
+
+# ---- Individual Jathagam ----
+
+QUALITY_LEVEL = {"good": "high", "mixed": "medium", "challenging": "low"}
+
+
+def jathagam_report(person: dict, language: str, now_ms: float) -> dict:
+    w, p, j = WORDS[language], PLAIN[language], JATHAGAM[language]
+    chart = E.chart(person)
+    analysis = E.analyse_person(chart, now_ms)
+    name = person.get("name") or j["default_name"]
+    planet = lambda key: w["planets"][key]  # noqa: E731
+    span = lambda period: f"{month(period['start'], language)} – {month(period['end'], language)}"  # noqa: E731
+    moon, lagna = chart["planets"]["Moon"], chart["lagna"]
+    names = (RASIS[language][lagna["sign"]], RASIS[language][moon["sign"]], star_label(moon, language))
+    dasa = analysis["dasa"]
+    current_quality = dasa["current"]["quality"] if dasa["current"] else "mixed"
+    sections = []
+
+    def section(key: str, part: str, blocks: list[dict], banner: bool = False) -> None:
+        sections.append({"key": key, "part": part, "title": j["parts"][part] if banner else j["sections"][key], "blocks": blocks, "banner": banner})
+
+    alerts = []
+    fraction = (moon["longitude"] * 27 / 360) % 1
+    if fraction < 0.02 or fraction > 0.98:
+        alerts.append(w["edge_moon"](name))
+    if lagna["degree"] < 1 or lagna["degree"] > 29:
+        alerts.append(w["edge_lagna"](name))
+
+    section("basic", "chart", [table(["", name], [
+        [w["rows"]["date"], person["birth_date"]], [w["rows"]["time"], person["birth_time"]], [w["rows"]["place"], person.get("place") or "—"],
+        [w["rows"]["lagna"], f"{names[0]} {degree(lagna['degree'])}"], [w["rows"]["rasi"], names[1]], [w["rows"]["star"], names[2]],
+        [w["rows"]["ayanamsa"], degree(chart["ayanamsa"])]])], banner=True)
+    section("charts", "chart", [chart_block(w, language, [(chart, name)])])
+    states, entries = dosha_entries(p, w, analysis)
+    section("dosha", "palan", [note(p["chevvai_what"]), note(p["naga_what"]), items(entries)])
+    section("planets", "palan", [table(list(w["planet_head"]), planet_rows(w, language, chart))])
+    section("dasa", "palan", [items(dasa_entries(p, planet, span, language, dasa))])
+
+    horizon = now_ms + 25 * E.YEAR_MS
+    rows = [[span({"start": max(period["start"], now_ms), "end": min(period["end"], horizon)}), w["dasa_name"](planet(period["lord"])),
+             cell(p["quality"][period["quality"]], TONES[period["quality"]]), p["meaning"][period["lord"]]]
+            for period in dasa["periods"] if period["end"] > now_ms and period["start"] < horizon]
+    section("timeline", "palan", [note(j["timeline_intro"]), table(j["tl_head"], rows, kind="timeline")])
+    section("life", "palan", [items(life_entries(p, w, planet, span, analysis["life"])), note(p["care_note"], "help")])
+
+    if dasa["current"]:
+        bhukti_rows = []
+        for sub in E.bhuktis(dasa["current"]):
+            quality = E.dasa_quality(chart, sub["lord"])["level"]
+            now = j["now"] if sub["start"] <= now_ms < sub["end"] else ""
+            bhukti_rows.append([span(sub), f"{w['bhukti'](planet(sub['lord']))}{now}", cell(p["quality"][quality], TONES[quality])])
+        section("bhukti", "palan", [note(j["bhukti_intro"](planet(dasa["current"]["lord"]))), table(j["bhukti_head"], bhukti_rows, kind="timeline")])
+
+    area_names = p["area"]
+    strong = [area_names[area] for area, info in analysis["life"].items() if info["level"] == "strong"]
+    care = [area_names[area] for area, info in analysis["life"].items() if info["level"] == "care"]
+    summary = [j["summary_chart"](*names), j["summary_dosha"](p["state"][states["chevvai"]], p["state"][states["naga"]])]
+    if dasa["current"]:
+        summary.append(j["summary_now"](w["dasa_name"](planet(dasa["current"]["lord"])), p["quality"][current_quality], month(dasa["current"]["end"], language)))
+    if dasa["next"]:
+        summary.append(j["summary_next"](w["dasa_name"](planet(dasa["next"]["lord"])), month(dasa["next"]["start"], language), p["quality"][dasa["next"]["quality"]]))
+    if strong:
+        summary.append(j["summary_strong"](", ".join(strong)))
+    if care:
+        summary.append(j["summary_care"](", ".join(care)))
+    summary.append(j["final"][current_quality])
+    section("summary", "palan", [{"type": "summary", "level": QUALITY_LEVEL[current_quality], "lines": summary}])
+
+    section("expert", "palan", [
+        note(w["sections"]["seventh"], "subheading"), note(w["seventh"](analysis["seventh"], w, RASIS[language])),
+        note(w["sections"]["dasa"], "subheading"),
+        table(["", name], [[label, dasa_row(w, language, dasa, key)] for key, label in w["dasa_rows"].items()]),
+        note(w["sections"]["method"], "subheading"), note(w["method"], "help")])
+
+    return {
+        "kind": "jathagam", "title": j["title"], "names": {"person": name}, "parts": j["parts"], "subtitle": name,
+        "score": {"stars": 0, "kattam": 0, "period": current_quality},
+        "verdict": {"level": QUALITY_LEVEL[current_quality], "headline": j["headline"](*names),
+                    "detail": f"{name} · {person['birth_date']} {person['birth_time'][:5]} · {person.get('place') or '—'}"},
+        "alerts": {"title": p["star_alert"], "lines": alerts} if alerts else None,
+        "sections": sections, "disclaimer": j["disclaimer"], "locked": False,
     }
 
 
@@ -425,38 +535,47 @@ def hide_block(block: dict) -> dict:
     return block
 
 
+# What a reader sees before paying, per section: free, titles (headings + badges), rows (two rows, then only
+# the period of the last three), one_line (heading + first sentence), first_two (two rows open), hidden.
+POLICIES = {
+    "kattam": {"rasi": "free", "dosha": "free", "together": "titles", "dasa": "titles", "timeline": "rows",
+               "life": "one_line", "checks": "first_two", "summary": "hidden", "expert": "hidden"},
+    "jathagam": {"basic": "free", "charts": "free", "dosha": "titles", "planets": "rows", "dasa": "titles", "timeline": "rows",
+                 "life": "one_line", "bhukti": "rows", "summary": "hidden", "expert": "hidden"},
+}
+
+
+def redact(block: dict, policy: str) -> dict:
+    kind = block["type"]
+    if kind in ("person", "subheading") or (kind in ("note", "help") and policy != "hidden"):
+        return block
+    if kind == "items" and policy == "titles":
+        return dict(block, items=[hide_item(entry) for entry in block["items"]])
+    if kind == "items" and policy == "one_line":
+        return dict(block, items=[hide_item(entry, keep_lines=1) for entry in block["items"]])
+    if kind == "items" and policy == "first_two":
+        return dict(block, items=block["items"][:2] + [hide_item(entry, keep_title=False) for entry in block["items"][2:]])
+    if kind == "table" and policy == "rows":
+        rows = block["rows"]
+        tail = max(2, len(rows) - 3)
+        return dict(block, rows=rows[:2] + [[value if index == 0 and position >= tail else {"hidden": hidden(value["text"])}
+                                              for index, value in enumerate(row)] for position, row in enumerate(rows[2:], start=2)])
+    if kind == "table":
+        return dict(hide_block(block), caption=block["caption"])
+    return hide_block(block)
+
+
 def preview(report: dict, language: str) -> dict:
     result = copy.deepcopy(report)
-    teaser = PLAIN[language]["teaser"]
+    kind = result.get("kind", "kattam")
+    policies = POLICIES[kind]
+    teaser = JATHAGAM[language]["teaser"] if kind == "jathagam" else PLAIN[language]["teaser"]
     for section in result["sections"]:
-        key = section["key"]
-        if key in ("rasi", "dosha"):
+        policy = policies[section["key"]]
+        if policy == "free":
+            result["paywall_after"] = section["key"]
             continue
-        section["teaser"] = teaser.get(key)
-        blocks = []
-        for block in section["blocks"]:
-            kind = block["type"]
-            if kind in ("person", "subheading"):
-                blocks.append(block)
-            elif key in ("together", "dasa") and kind == "items":
-                blocks.append(dict(block, items=[hide_item(entry) for entry in block["items"]]))
-            elif key == "life" and kind == "items":
-                blocks.append(dict(block, items=[hide_item(entry, keep_lines=1) for entry in block["items"]]))
-            elif key == "life" and kind == "help":
-                blocks.append(block)
-            elif key == "checks" and kind == "items":
-                blocks.append(dict(block, items=block["items"][:2] + [hide_item(entry, keep_title=False) for entry in block["items"][2:]]))
-            elif key == "timeline" and kind == "note":
-                blocks.append(block)
-            elif key == "timeline" and kind == "table":
-                rows = block["rows"]
-                tail = max(2, len(rows) - 3)
-                blocks.append(dict(block, rows=rows[:2] + [[value if index == 0 and position >= tail else {"hidden": hidden(value["text"])}
-                                                            for index, value in enumerate(row)] for position, row in enumerate(rows[2:], start=2)]))
-            elif key == "expert" and kind == "table":
-                blocks.append(dict(hide_block(block), caption=block["caption"]))
-            else:
-                blocks.append(hide_block(block))
-        section["blocks"] = blocks
+        section["teaser"] = teaser.get(section["key"])
+        section["blocks"] = [redact(block, policy) for block in section["blocks"]]
     result["locked"] = True
     return result

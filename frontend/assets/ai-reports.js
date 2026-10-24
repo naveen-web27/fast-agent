@@ -12,7 +12,7 @@
       servicesHubTitle: 'சேவைகள்', servicesHubEyebrow: 'RightConnect சேவைகள்',
       astrologyHubTitle: 'ஜோதிடம் மற்றும் தொடர்புடைய சேவைகள்', astrologyHubEyebrow: 'பாரம்பரியக் கலைகள்',
       allServiceCategories: 'அனைத்து சேவை வகைகளும்',
-      compatibilityPageTitle: 'திருமணப் பொருத்தம்', compatibilityNav: 'திருமணப் பொருத்தம்',
+      compatibilityPageTitle: 'திருமணப் பொருத்தம் & ஜாதகம்', compatibilityNav: 'பொருத்தம் & ஜாதகம்',
       compatibilityDisclaimer: 'பன்னிரண்டு பாரம்பரிய விதிகள் ஒப்பிடப்படுகின்றன. இவை அறிவியல் கணிப்போ திருமண வெற்றியின் சதவீதமோ அல்ல. வர்ணம் ஒரு வரலாற்று, சாதி சார்ந்த வகைப்பாடு; இது யாருடைய மதிப்பையும் தீர்மானிக்காது.',
       backToRasi: 'ராசி முடிவுகளுக்குத் திரும்பு',
       rasiStepTitle: 'ராசி பொருத்தம்', rasiStepHelp: 'மணமகள், மணமகனின் ராசி மற்றும் நட்சத்திரத்தைத் தேர்ந்தெடுத்து 12 பொருத்தங்களைப் பார்க்கவும்.',
@@ -31,6 +31,12 @@
       historyWarning: 'கடைசி {n} முடிவுகள் மட்டும் சேமிக்கப்படும். புதியது சேரும்போது பழையது தானாக நீக்கப்படும் (திறந்த அறிக்கைகளும்). தேவையானதை PDF ஆகச் சேமிக்கவும்.',
       deleteHistory: 'நீக்கு', deleteHistoryConfirm: 'இந்த முடிவை வரலாற்றிலிருந்து நீக்கவா?', lockedEntry: 'பூட்டப்பட்டது',
       level_high: 'உத்தமம்', level_medium: 'மத்திமம்', level_low: 'அதமம்',
+      period_high: 'நல்ல காலம்', period_medium: 'கலவை', period_low: 'சவால்', historyJathagam: 'ஜாதகம்',
+      chooseJathagamTitle: 'ஜாதகம் (ஒருவருக்கு)',
+      chooseJathagamHelp: 'ஒருவரின் பிறந்த விவரம் — ராசி, நவாம்சக் கட்டம், தசை புத்தி, எதிர்காலப் பலன். முன்னோட்டம் இலவசம்; முழு அறிக்கை PDF {price}.',
+      jathagamStepTitle: 'ஜாதகம் — பிறந்த விவரங்கள்', jathagamPerson: 'ஜாதகரின் பிறந்த விவரங்கள்', jathagamGenerate: 'ஜாதகம் கணி',
+      lockedTitleJathagam: 'முழு ஜாதக அறிக்கை',
+      lockedItemsJathagam: ['செவ்வாய், நாக தோஷம் — ஏன், எந்த வீட்டில்', 'ஒன்பது கிரகங்களின் ராசி, பாகை, நட்சத்திரம், நவாம்சம்', 'இப்போதைய, அடுத்த தசை — எந்தத் தேதி வரை, என்ன பலன்', 'அடுத்த 25 ஆண்டுகளின் தசை பலன்', 'வேலை, உடல்நலம், குழந்தை, இல்லறம் — எப்போது முன்னேற்றம்', 'நடப்பு தசையின் ஒன்பது புத்திகள், இறுதிச் சுருக்கம்', 'உங்கள் சாதனத்தில் PDF ஆகப் பதிவிறக்கம்'],
       printReport: 'PDF / அச்சிடு', editBirth: 'பிறப்பு விவரங்களை மாற்று', kattamTimeError: 'இந்த நேர மண்டலத்தில் அந்தப் பிறந்த நேரம் இல்லை அல்லது இருமுறை வருகிறது (பகல் ஒளி சேமிப்பு மாற்றம்). நேரத்தைச் சரிபார்க்கவும்.',
       brideName: 'பெண் பெயர் (விருப்பம்)', groomName: 'பையன் பெயர் (விருப்பம்)',
       brideRasi: 'பெண் ராசி', groomRasi: 'பையன் ராசி',
@@ -77,7 +83,7 @@
       kattamPlaceHelp: 'ஊர்ப் பெயரைத் தட்டச்சு செய்யவும். காலியாக விட்டால் அல்லது ஊர் அடையாளம் காணப்படாவிட்டால் சென்னை அடிப்படையில் கணக்கிடப்படும்.',
       placeUnknown: '{name}: “{place}” ஊர் அடையாளம் காணப்படவில்லை; சென்னை (இந்திய நேரம்) அடிப்படையில் கணக்கிடப்பட்டது. லக்னம் சிறிது மாறலாம்.',
       placeMissing: '{name}: பிறந்த ஊர் கொடுக்கப்படவில்லை; சென்னை அடிப்படையில் கணக்கிடப்பட்டது. லக்னம் சிறிது மாறலாம்.',
-      chooseTitle: 'எந்தப் பொருத்தம் பார்க்க வேண்டும்?', chooseRasiTitle: 'ராசி பொருத்தம்', chooseKattamTitle: 'கட்டப் பொருத்தம்',
+      chooseTitle: 'என்ன பார்க்க வேண்டும்?', chooseRasiTitle: 'ராசி பொருத்தம்', chooseKattamTitle: 'கட்டப் பொருத்தம்',
       chooseRasiHelp: 'ராசி, நட்சத்திரம் மட்டும் தெரிந்தால் — 12 பொருத்தங்கள். பிறகு கட்டப் பொருத்தமும் பார்க்கலாம்.',
       chooseKattamHelp: 'பிறந்த தேதி, நேரம் தெரிந்தால் — நேரடியாக முழு ஜாதகப் பொருத்தம்: தோஷம், தசை, எதிர்காலம். முன்னோட்டம் இலவசம்; முழு அறிக்கை PDF {price}.',
       freePreview: 'இலவச முன்னோட்டம்', lockedTitle: 'முழு கட்டப் பொருத்த அறிக்கை',
@@ -128,7 +134,7 @@
       appTitle: 'Tamil Astrology & Arts AI Reports', eyebrow: 'Traditional arts',
       servicesHubTitle: 'Services', servicesHubEyebrow: 'RightConnect services', skip: 'Skip to content', language: 'Language', views: 'Views', services: 'Services',
       astrologyHubTitle: 'Astrology & related services', astrologyHubEyebrow: 'Traditional arts', allServiceCategories: 'All service categories',
-      compatibilityPageTitle: 'Marriage Compatibility', compatibilityNav: 'Marriage compatibility',
+      compatibilityPageTitle: 'Marriage Compatibility & Horoscope', compatibilityNav: 'Matching & horoscope',
       compatibilityDisclaimer: 'This compares twelve traditional rules. They are not scientific predictions or a marriage-success percentage. Varna is a historical caste-coded classification; it does not determine anyone’s worth.',
       backToRasi: 'Back to Rasi results',
       rasiStepTitle: 'Rasi matching', rasiStepHelp: 'Choose both Rasis and Nakshatras to see the twelve traditional checks.',
@@ -147,6 +153,12 @@
       historyWarning: 'Only the last {n} results are kept. A new one removes the oldest automatically (unlocked reports too). Save the ones you need as PDF.',
       deleteHistory: 'Delete', deleteHistoryConfirm: 'Remove this result from your history?', lockedEntry: 'Locked',
       level_high: 'Good', level_medium: 'Average', level_low: 'Weak',
+      period_high: 'Good period', period_medium: 'Mixed', period_low: 'Challenging', historyJathagam: 'Horoscope',
+      chooseJathagamTitle: 'Horoscope (one person)',
+      chooseJathagamHelp: 'One person’s birth details — Rasi and Navamsa charts, dasa–bhukti and future reading. Free preview; full report PDF {price}.',
+      jathagamStepTitle: 'Horoscope — birth details', jathagamPerson: 'Birth details', jathagamGenerate: 'Create horoscope',
+      lockedTitleJathagam: 'Full horoscope report',
+      lockedItemsJathagam: ['Chevvai and Naga dosha — why, and from which house', 'All nine planets — sign, degree, Nakshatra and Navamsa', 'Current and next dasa — until which date and what it brings', 'Dasa results for the next 25 years', 'Career, health, children, married life — when progress comes', 'The nine bhuktis of the current dasa and a final summary', 'Downloaded to your device as a PDF'],
       printReport: 'PDF / Print', editBirth: 'Change birth details', kattamTimeError: 'This birth time does not exist or occurs twice in that timezone (daylight-saving change). Please check the time.',
       brideName: 'Bride name (optional)', groomName: 'Groom name (optional)',
       brideRasi: 'Bride Rasi', groomRasi: 'Groom Rasi',
@@ -188,7 +200,7 @@
       kattamPlaceHelp: 'Type the birth city. If it is left blank or not recognised, Chennai is used for the calculation.',
       placeUnknown: '{name}: “{place}” was not recognised, so Chennai (Indian time) was used. The Lagna may shift slightly.',
       placeMissing: '{name}: no birth city was given, so Chennai was used. The Lagna may shift slightly.',
-      chooseTitle: 'Which matching would you like?', chooseRasiTitle: 'Rasi matching', chooseKattamTitle: 'Kattam matching',
+      chooseTitle: 'What would you like to check?', chooseRasiTitle: 'Rasi matching', chooseKattamTitle: 'Kattam matching',
       chooseRasiHelp: 'If you only know the Rasi and Nakshatra — the 12 checks. You can continue to Kattam matching afterwards.',
       chooseKattamHelp: 'If you know the birth date and time — go straight to full chart matching: dosha, dasa and future. Free preview; full report PDF {price}.',
       freePreview: 'Free preview', lockedTitle: 'Full Kattam porutham report',
@@ -233,7 +245,7 @@
     }
   };
   const descriptors = [
-    { key: 'horoscope', page: 'jathaka-palan.html', icon: 'orbit', ta: ['ஜாதகம்', 'பிறந்த நேரம் மற்றும் இடத்தின் அடிப்படையில் பாரம்பரிய ஜாதக விளக்கம்.'], en: ['Horoscope', 'A traditional interpretation based on birth time and place.'] },
+    { key: 'horoscope', page: 'thirumana-porutham.html?service=jathagam', icon: 'orbit', ta: ['ஜாதகம்', 'பிறந்த நேரம் மற்றும் இடத்தின் அடிப்படையில் பாரம்பரிய ஜாதக விளக்கம்.'], en: ['Horoscope', 'A traditional interpretation based on birth time and place.'] },
     { key: 'compatibility', page: 'thirumana-porutham.html', icon: 'heart-handshake', ta: ['திருமணப் பொருத்தம்', 'பன்னிரண்டு பாரம்பரியப் பொருத்தங்களை ஒப்பிடும் தனிப்பட்ட அறிக்கை.'], en: ['Compatibility', 'A dedicated report comparing twelve traditional checks.'] },
     { key: 'numerology', page: 'numerology.html', icon: 'binary', ta: ['எண் கணிதம்', 'ஆங்கிலப் பெயர் மற்றும் பிறந்த தேதியின் எண் கணித விளக்கம்.'], en: ['Numerology', 'Traditional number interpretations of an English name and birth date.'] },
     { key: 'vastu', page: 'vastu.html', icon: 'house', ta: ['வாஸ்து', 'வீடு மற்றும் அறைகளின் திசைகள் பற்றிய பாரம்பரியக் கருத்துகள்.'], en: ['Vastu', 'Traditional perspectives on home and room directions.'] },
@@ -277,7 +289,7 @@
     compatibilityStep: 'choose', kattamFrom: null, quickMatch: null,
     authVersion: 0, reportVersion: 0, storageWarning: false, catalogueError: null,
     kattamPrice: 9900, kattamProofs: {}, kattamPaying: false, kattamPending: null, kattamPayMessage: '', pdfBusy: false,
-    account: null, packOffer: { amount_paise: 29900, reports: 20, days: 30, available: true }, packConfirming: false
+    account: null, packOffer: { amount_paise: 29900, reports: 20, days: 90, available: true }, packConfirming: false
   };
   const $ = selector => document.querySelector(selector);
   const t = key => words[state.language][key] || words.ta[key] || key;
@@ -447,7 +459,8 @@
     for (const [index, descriptor] of descriptors.entries()) {
       const service = state.services.find(item => item.key === descriptor.key);
       // Compatibility is calculated in the browser and does not need the AI report API.
-      const available = descriptor.key === 'compatibility' || Boolean(state.aiAvailable && service && service.available === true);
+      // Marriage matching and horoscope are calculated by /api/v1/porutham, not the AI report API.
+      const available = ['compatibility', 'horoscope'].includes(descriptor.key) || Boolean(state.aiAvailable && service && service.available === true);
       const card = text('a', undefined, 'service-card');
       card.href = `/pages/${descriptor.page}`;
       const symbol = text('span', undefined, 'service-icon');
@@ -510,7 +523,8 @@
   }
   function birthGroup(parent, prefix, heading, details = {}, allowSaved = true) {
     const compatibility = state.selected && state.selected.key === 'compatibility';
-    const detailedKattam = compatibility && state.compatibilityStep === 'kattam' && (prefix === 'bride' || prefix === 'groom');
+    const detailedKattam = compatibility && ((state.compatibilityStep === 'kattam' && (prefix === 'bride' || prefix === 'groom'))
+      || (state.compatibilityStep === 'jathagam' && prefix === 'person'));
     const group = document.createElement('fieldset');
     group.dataset.birth = prefix;
     group.append(text('legend', t(heading)));
@@ -630,6 +644,9 @@
     return form.reportValidity();
   }
   function readInputs(form, descriptor) {
+    if (descriptor.key === 'compatibility' && state.compatibilityStep === 'jathagam') return {
+      person: getKattamBirth(form, 'person', state.language === 'ta' ? 'ஜாதகர்' : 'Native')
+    };
     if (descriptor.key === 'compatibility') return {
       bride: getKattamBirth(form, 'bride', 'பெண்'),
       groom: getKattamBirth(form, 'groom', 'பையன்')
@@ -762,13 +779,8 @@
         renderQuickMatchForm(state.quickInputs || {});
         focusHeading('#form-title');
       }],
-      ['chooseKattamTitle', 'chooseKattamHelp', 'layout-grid', () => {
-        state.compatibilityStep = 'kattam';
-        state.kattamFrom = 'choose';
-        state.inputs = state.kattam ? state.kattam.inputs : state.account && state.account.last_inputs ? state.account.last_inputs : {};
-        renderInput(state.inputs);
-        focusHeading('#form-title');
-      }]
+      ['chooseKattamTitle', 'chooseKattamHelp', 'layout-grid', () => openReportForm('kattam')],
+      ['chooseJathagamTitle', 'chooseJathagamHelp', 'sun', () => openReportForm('jathagam')]
     ];
     options.forEach(([title, help, iconName, action], index) => {
       const card = text('button', undefined, 'service-card');
@@ -785,6 +797,16 @@
     panel.append(grid);
     icons();
   }
+
+  function openReportForm(kind) {
+    state.compatibilityStep = kind;
+    state.kattamFrom = 'choose';
+    const last = state.account && state.account.last_inputs ? state.account.last_inputs[kind] : null;
+    state.inputs = state.kattam && state.kattam.kind === kind ? state.kattam.inputs : last || {};
+    renderInput(state.inputs);
+    focusHeading('#form-title');
+  }
+  const lockedKey = key => (state.kattam && state.kattam.kind === 'jathagam' ? `${key}Jathagam` : key);
 
   function renderQuickMatchForm(values = {}) {
     const panel = $('#input-panel');
@@ -1023,17 +1045,20 @@
     panel.replaceChildren();
     panel.hidden = false;
     const top = text('div', undefined, 'panel-top');
-    const heading = text('h2', descriptor.key === 'compatibility' ? t('kattamStepTitle') : titleFor(descriptor));
+    const jathagam = descriptor.key === 'compatibility' && state.compatibilityStep === 'jathagam';
+    const heading = text('h2', descriptor.key === 'compatibility' ? t(jathagam ? 'jathagamStepTitle' : 'kattamStepTitle') : titleFor(descriptor));
     heading.id = 'form-title';
     top.append(heading, descriptor.key === 'compatibility'
-      ? button(t(state.kattamFrom === 'rasi' && state.quickMatch ? 'backToRasi' : 'backToChoice'), backFromKattam, 'quiet', 'arrow-left')
+      ? button(t(!jathagam && state.kattamFrom === 'rasi' && state.quickMatch ? 'backToRasi' : 'backToChoice'), backFromKattam, 'quiet', 'arrow-left')
       : button(t('back'), showCatalogue, 'quiet', 'arrow-left'));
     panel.append(top);
     const form = document.createElement('form');
     form.noValidate = true;
     const editable = document.createElement('fieldset');
     editable.dataset.lock = '';
-    if (descriptor.key === 'compatibility') {
+    if (jathagam) {
+      birthGroup(editable, 'person', 'jathagamPerson', inputs.person || {});
+    } else if (descriptor.key === 'compatibility') {
       birthGroup(editable, 'bride', 'bride', inputs.bride || {});
       birthGroup(editable, 'groom', 'groom', inputs.groom || {});
     } else if (['horoscope', 'gemstone', 'baby-names'].includes(descriptor.key)) {
@@ -1055,7 +1080,7 @@
     }
     if (descriptor.key === 'compatibility') editable.append(text('p', t('kattamPrivacy'), 'form-help'));
     else check(editable, 'report-consent', 'reportConsent');
-    const submit = text('button', t(descriptor.key === 'compatibility' ? 'kattamGenerate' : 'generate'), 'button');
+    const submit = text('button', t(jathagam ? 'jathagamGenerate' : descriptor.key === 'compatibility' ? 'kattamGenerate' : 'generate'), 'button');
     submit.type = 'submit';
     submit.dataset.lock = '';
     const actions = text('div', undefined, 'form-actions');
@@ -1071,8 +1096,9 @@
       const inputs = readInputs(form, descriptor);
       if (descriptor.key === 'compatibility') {
         state.inputs = inputs;
-        const selected = state.kattamFrom === 'rasi' && state.quickInputs ? { bride: state.quickInputs.bride, groom: state.quickInputs.groom } : null;
-        const kattam = { inputs, selected, hash: await kattamHash(inputs), report: null };
+        const kind = jathagam ? 'jathagam' : 'kattam';
+        const selected = !jathagam && state.kattamFrom === 'rasi' && state.quickInputs ? { bride: state.quickInputs.bride, groom: state.quickInputs.groom } : null;
+        const kattam = { kind, inputs, selected, hash: await kattamHash(kind, inputs), report: null };
         perform(async () => {
           await loadKattam(kattam);
           state.kattam = kattam;
@@ -1204,17 +1230,18 @@
       name: person.name, birth_date: person.birth_date, birth_time: person.birth_time, place: person.place || chennai,
       latitude: person.latitude, longitude: person.longitude, timezone: person.timezone
     });
+    if (kattam.kind === 'jathagam') return { language: state.language, person: birth(kattam.inputs.person) };
     return { language: state.language, bride: birth(kattam.inputs.bride), groom: birth(kattam.inputs.groom), selected: kattam.selected };
   }
   async function loadKattam(kattam) {
     const proof = kattam.hash && state.kattamProofs[kattam.hash];
     if (proof) {
       try {
-        const result = await porutham('/kattam/full', { ...kattamBody(kattam), payment: proof });
+        const result = await porutham(`/${kattam.kind}/full`, { ...kattamBody(kattam), payment: proof });
         if (result.status === 'paid' && result.report) { kattam.report = result.report; return; }
       } catch (_) { /* Fall back to the preview; the buyer can pay again only if the proof is truly invalid. */ }
     }
-    const result = await porutham('/kattam', kattamBody(kattam));
+    const result = await porutham(`/${kattam.kind}`, kattamBody(kattam));
     if (!result.report || !Array.isArray(result.report.sections)) throw error('invalidResponse');
     applyOffer(result.unlock);
     kattam.report = result.report;
@@ -1234,7 +1261,7 @@
     if (report.alerts) article.append(renderBlock({ type: 'notice', ...report.alerts }));
     let part = null;
     for (const section of report.sections) {
-      if (section.part === 'kattam' && part !== 'kattam') article.append(text('h2', report.parts.kattam, 'kattam-part'));
+      if (!section.banner && section.part !== part && report.parts[section.part]) article.append(text('h2', report.parts[section.part], 'kattam-part'));
       part = section.part;
       let target;
       if (section.key === 'expert' && !report.locked) {
@@ -1244,12 +1271,12 @@
         article.append(details);
       } else {
         target = text('section', undefined, `kattam-section${section.teaser ? ' is-locked' : ''}`);
-        target.append(text(section.part === 'rasi' ? 'h2' : 'h3', section.title, section.part === 'rasi' ? 'kattam-part' : 'kattam-heading'));
+        target.append(text(section.banner ? 'h2' : 'h3', section.title, section.banner ? 'kattam-part' : 'kattam-heading'));
         if (section.teaser) target.append(teaserLine(section.teaser));
         article.append(target);
       }
       section.blocks.forEach(block => target.append(renderBlock(block)));
-      if (section.key === 'dosha' && report.locked) article.append(paywallCard());
+      if (report.locked && section.key === report.paywall_after) article.append(paywallCard());
     }
     article.append(text('p', report.disclaimer, 'form-help kattam-disclaimer'));
     return article;
@@ -1259,8 +1286,8 @@
     if (!kattam || !kattam.report) return;
     const report = kattam.report;
     const paid = !report.locked;
-    kattam.placeNotes = [kattam.inputs.groom, kattam.inputs.bride]
-      .filter(person => person.place_status && person.place_status !== 'ok')
+    kattam.placeNotes = Object.values(kattam.inputs)
+      .filter(person => person && person.place_status && person.place_status !== 'ok')
       .map(person => t(person.place_status === 'unknown' ? 'placeUnknown' : 'placeMissing').replace('{name}', person.name).replace('{place}', person.place));
     $('#input-panel').hidden = true;
     $('#catalogue').hidden = true;
@@ -1274,7 +1301,7 @@
     const editBirth = button(t('editBirth'), () => {
       if (state.kattamPaying || state.pdfBusy) return;
       panel.hidden = true;
-      state.compatibilityStep = 'kattam';
+      state.compatibilityStep = kattam.kind;
       renderInput(kattam.inputs);
       focusHeading('#form-title');
     }, 'quiet', 'pencil');
@@ -1338,10 +1365,10 @@
     lock.dataset.lucide = 'lock';
     lock.setAttribute('aria-hidden', 'true');
     badge.append(lock);
-    const title = text('h3', t('lockedTitle'));
+    const title = text('h3', t(lockedKey('lockedTitle')));
     title.id = 'kattam-paywall-title';
     const list = text('ul', undefined, 'kattam-paywall-list');
-    for (const item of t('lockedItems')) list.append(text('li', item));
+    for (const item of t(lockedKey('lockedItems'))) list.append(text('li', item));
     paywall.append(badge, title, text('strong', hasCredits() ? t('creditsLeft').replace('{n}', state.account.credits) : priceLabel(), 'kattam-paywall-price'),
       text('p', t('lockedLead')), list, payButton(), text('small', t('payNote'), 'kattam-paywall-note'), payStatus());
     if (!hasCredits()) paywall.append(text('p', t('orPack'), 'kattam-paywall-or'), packBox());
@@ -1374,10 +1401,11 @@
     state.kattamPaying = value;
     document.querySelectorAll('[data-pay]').forEach(control => { control.disabled = value; });
   }
-  async function kattamHash(inputs) {
+  async function kattamHash(kind, inputs) {
     const pick = person => [person.birth_date, person.birth_time, Number(person.latitude), Number(person.longitude), person.timezone];
+    const roles = kind === 'jathagam' ? ['person'] : ['bride', 'groom'];
     try {
-      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`rightconnect-kattam|${JSON.stringify([pick(inputs.bride), pick(inputs.groom)])}`));
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`rightconnect-${kind}|${JSON.stringify(roles.map(role => pick(inputs[role])))}`));
       return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
     } catch (_) { return null; }
   }
@@ -1418,12 +1446,12 @@
     try {
       await loadScript(RAZORPAY_CHECKOUT);
       if (!window.Razorpay) throw error('payUnavailable');
-      const order = await porutham('/kattam/order', kattamBody(kattam));
+      const order = await porutham(`/${kattam.kind}/order`, kattamBody(kattam));
       if (!order || typeof order.order_id !== 'string' || typeof order.key_id !== 'string' || !Number.isInteger(order.amount)) throw error('invalidResponse');
       const email = state.session && state.session.user && state.session.user.email;
       const checkout = new window.Razorpay({
         key: order.key_id, order_id: order.order_id, amount: order.amount, currency: order.currency || 'INR',
-        name: 'RightConnect', description: t('lockedTitle'), theme: { color: '#7d1410' },
+        name: 'RightConnect', description: t(lockedKey('lockedTitle')), theme: { color: '#7d1410' },
         prefill: email ? { email } : {},
         handler: response => { confirmKattamPayment(kattam, response); },
         modal: { ondismiss: () => { if (state.kattamPaying && !state.kattamPending) { setPaying(false); setPayStatus(t('payCancelled')); } } }
@@ -1444,7 +1472,7 @@
     setPayStatus(t('payVerifying'));
     let paid = false;
     try {
-      const result = await porutham('/kattam/full', { ...kattamBody(kattam), payment: proof });
+      const result = await porutham(`/${kattam.kind}/full`, { ...kattamBody(kattam), payment: proof });
       paid = Boolean(result && result.status === 'paid' && result.report);
       if (paid) {
         kattam.report = result.report;
@@ -1537,20 +1565,23 @@
       const row = text('li', undefined, `history-item${current ? ' is-current' : ''}`);
       const open = text('button', undefined, 'history-open');
       open.type = 'button';
+      const jathagamEntry = entry.kind === 'jathagam';
+      const label = jathagamEntry ? entry.bride : `${entry.groom} · ${entry.bride}`;
       const meta = text('span', undefined, 'history-meta');
-      meta.append(text('span', t(`level_${entry.level}`), `level-chip level-${entry.level}`), text('small', `${entry.stars}/12 · ${entry.kattam}/4`));
+      meta.append(text('span', t(`${jathagamEntry ? 'period' : 'level'}_${entry.level}`), `level-chip level-${entry.level}`),
+        text('small', jathagamEntry ? t('historyJathagam') : `${entry.stars}/12 · ${entry.kattam}/4`));
       if (!entry.unlocked) {
         const lock = text('i');
         lock.dataset.lucide = 'lock';
         lock.setAttribute('aria-label', t('lockedEntry'));
         meta.append(lock);
       }
-      open.append(text('span', `${entry.groom} · ${entry.bride}`, 'history-names'), meta);
+      open.append(text('span', label, 'history-names'), meta);
       open.addEventListener('click', () => openHistory(entry.id));
       const remove = text('button', undefined, 'history-delete');
       remove.type = 'button';
       remove.title = t('deleteHistory');
-      remove.setAttribute('aria-label', `${t('deleteHistory')}: ${entry.groom} · ${entry.bride}`);
+      remove.setAttribute('aria-label', `${t('deleteHistory')}: ${label}`);
       const bin = text('i');
       bin.dataset.lucide = 'trash-2';
       bin.setAttribute('aria-hidden', 'true');
@@ -1566,13 +1597,14 @@
     if (state.kattamPaying) return;
     await perform(async () => {
       const result = await porutham(`/history/${encodeURIComponent(id)}?language=${state.language}`, undefined, 'GET');
-      const inputs = { bride: result.inputs.bride, groom: result.inputs.groom };
+      const kind = result.kind === 'jathagam' ? 'jathagam' : 'kattam';
+      const inputs = kind === 'jathagam' ? { person: result.inputs.person } : { bride: result.inputs.bride, groom: result.inputs.groom };
       applyOffer(result.unlock);
-      state.kattam = { inputs, selected: result.inputs.selected || null, hash: await kattamHash(inputs), report: result.report, historyId: result.id };
+      state.kattam = { kind, inputs, selected: result.inputs.selected || null, hash: await kattamHash(kind, inputs), report: result.report, historyId: result.id };
       state.kattamPending = null;
       state.kattamPayMessage = '';
       state.selected = descriptorFor('compatibility');
-      state.compatibilityStep = 'kattam';
+      state.compatibilityStep = kind;
       state.kattamFrom = 'choose';
       state.inputs = inputs;
       renderKattamReport();
@@ -1594,7 +1626,7 @@
     setPaying(true);
     setPayStatus(t('loading'));
     try {
-      const result = await porutham('/kattam/credit', kattamBody(kattam));
+      const result = await porutham(`/${kattam.kind}/credit`, kattamBody(kattam));
       kattam.report = result.report;
       state.kattamPayMessage = '';
     } catch (failure) {
@@ -1683,7 +1715,7 @@
     holder.lang = state.language;
     const head = text('header', undefined, 'kattam-pdf-head');
     head.append(text('strong', 'RightConnect', 'kattam-pdf-brand'), text('h2', kattam.report.title),
-      text('p', `${kattam.report.names.groom} · ${kattam.report.names.bride}`),
+      text('p', kattam.report.subtitle),
       text('small', `${t('pdfGenerated')}: ${dateLabel(new Date().toISOString())}`));
     holder.append(head);
     if (kattam.placeNotes.length) {
@@ -1740,7 +1772,7 @@
       const url = URL.createObjectURL(pdf.output('blob'));
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'rightconnect-kattam-porutham.pdf';
+      link.download = kattam.kind === 'jathagam' ? 'rightconnect-jathagam.pdf' : 'rightconnect-kattam-porutham.pdf';
       document.body.append(link);
       link.click();
       link.remove();
@@ -2092,6 +2124,7 @@
   renderRecovery();
   if (document.body.dataset.servicePage === 'compatibility') {
     selectService(descriptorFor('compatibility'));
+    if (new URLSearchParams(location.search).get('service') === 'jathagam') openReportForm('jathagam');
     renderSide();
   } else loadServices();
   initAuth();

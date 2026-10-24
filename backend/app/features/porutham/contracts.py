@@ -81,3 +81,12 @@ class PaymentProof(StrictInput):
 
 class UnlockRequest(KattamRequest):
     payment: PaymentProof
+
+
+class JathagamRequest(StrictInput):
+    language: Literal["ta", "en"] = "ta"
+    person: Birth
+
+
+class JathagamUnlockRequest(JathagamRequest):
+    payment: PaymentProof

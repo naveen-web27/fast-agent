@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     razorpay_kattam_report_amount_paise: int = 9900
     razorpay_porutham_pack_amount_paise: int = 29900
     porutham_pack_reports: int = 20
-    porutham_pack_days: int = 30
+    porutham_pack_days: int = 90
     porutham_history_limit: int = 30
     porutham_admin_history_limit: int = 200
     app_base_url: str = "http://127.0.0.1:8000"

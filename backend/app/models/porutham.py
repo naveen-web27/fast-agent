@@ -18,12 +18,14 @@ class PoruthamHistory(Base):
     __table_args__ = (
         UniqueConstraint("auth_user_id", "couple_key"),
         CheckConstraint("level IN ('high', 'medium', 'low')"),
+        CheckConstraint("kind IN ('kattam', 'jathagam')"),
         Index("ix_porutham_history_owner", "auth_user_id", "updated_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()"))
     # Supabase auth id, so Google sign-in is enough without marketplace onboarding.
     auth_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    kind: Mapped[str] = mapped_column(String(10), nullable=False, default="kattam", server_default="kattam")
     couple_key: Mapped[str] = mapped_column(CHAR(48), nullable=False)
     bride_name: Mapped[str] = mapped_column(String(100), nullable=False, default="", server_default="")
     groom_name: Mapped[str] = mapped_column(String(100), nullable=False, default="", server_default="")

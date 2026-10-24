@@ -172,6 +172,50 @@ class UnlockTests(unittest.TestCase):
 
 
 @unittest.skipUnless(ASTRONOMY, "astronomy-engine is not installed")
+class JathagamTests(unittest.TestCase):
+    PERSON = {"language": "ta", "person": COUPLE["bride"]}
+
+    @classmethod
+    def setUpClass(cls):
+        cls.full = service.build(cls.PERSON, NOW, "jathagam")
+        cls.preview = report.preview(cls.full, "ta")
+
+    def test_sections_show_kattam_first_then_reading(self):
+        self.assertEqual([s["key"] for s in self.full["sections"]],
+                         ["basic", "charts", "dosha", "planets", "dasa", "timeline", "life", "bhukti", "summary", "expert"])
+        self.assertEqual(self.preview["paywall_after"], "charts")
+        self.assertEqual(self.full["subtitle"], "Priya")
+
+    def test_charts_are_free_and_paid_text_stays_on_server(self):
+        sections = {s["key"]: s for s in self.preview["sections"]}
+        full = {s["key"]: s for s in self.full["sections"]}
+        self.assertEqual(sections["charts"]["blocks"], full["charts"]["blocks"])
+        self.assertTrue(all(cell["planets"] is not None for cell in sections["charts"]["blocks"][0]["charts"][0]["cells"]))
+        visible = set(strings(self.preview))
+        self.assertFalse(set(full["summary"]["blocks"][0]["lines"]) & visible)
+        life = {p for entry in full["life"]["blocks"][0]["items"] for p in entry["paragraphs"][1:]}
+        self.assertFalse(life & visible)
+
+    def test_payment_for_a_couple_cannot_unlock_a_horoscope(self):
+        self.assertNotEqual(service.report_key(self.PERSON, "s", "jathagam"), service.report_key(COUPLE, "s"))
+        self.assertNotEqual(service.couple_key(self.PERSON, "jathagam"), service.couple_key(COUPLE))
+        order = {"id": "order_test", "amount": 9900, "currency": "INR",
+                 "notes": {"rightconnect_product": "kattam_report", "rightconnect_origin": "https://dev.example",
+                           "report_key": service.report_key(self.PERSON, "unit-secret", "jathagam")}}
+        proof = {"razorpay_order_id": "order_test", "razorpay_payment_id": "pay_test",
+                 "razorpay_signature": hmac.new(b"unit-secret", b"order_test|pay_test", hashlib.sha256).hexdigest()}
+        with self.assertRaises(service.ServiceError):
+            asyncio.run(service.unlock(dict(self.PERSON, payment=proof), SETTINGS, AsyncMock(side_effect=[order]), NOW, "jathagam"))
+        order["notes"]["rightconnect_product"] = "jathagam_report"
+        entity = {"id": "pay_test", "order_id": "order_test", "amount": 9900, "currency": "INR", "status": "captured"}
+        result = asyncio.run(service.unlock(dict(self.PERSON, payment=proof), SETTINGS, AsyncMock(side_effect=[order, entity]), NOW, "jathagam"))
+        self.assertEqual(result["report"]["kind"], "jathagam")
+
+    def test_stored_inputs_keep_only_the_person(self):
+        self.assertEqual(service.stored_inputs(self.PERSON, "jathagam"), {"person": COUPLE["bride"]})
+
+
+@unittest.skipUnless(ASTRONOMY, "astronomy-engine is not installed")
 class AccountHelperTests(unittest.TestCase):
     def test_couple_key_ignores_names_language_and_selection(self):
         renamed = dict(COUPLE, language="en", selected={"bride": {"rasi": 0, "nakshatra": 0}},
