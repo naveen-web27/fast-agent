@@ -54,6 +54,14 @@ def degree(value: float) -> str:
     return f"{math.floor(value)}°{math.floor((value % 1) * 60):02d}′"
 
 
+def year_span(start: float, end: float, ages: bool = False) -> str:
+    if ages:
+        first, last = math.floor(start / E.YEAR_MS), math.floor((end - 1) / E.YEAR_MS)
+        return str(first) if first == last else f"{first}–{last}"
+    first, last = (datetime.fromtimestamp(ms / 1000, IST).year for ms in (start, end - 1))
+    return str(first) if first == last else f"{first} – {last}"
+
+
 # ---- Rasi / Nakshatra porutham (12 checks) ----
 
 def stars_for_rasi(rasi: int) -> list[int]:
@@ -461,6 +469,38 @@ def jathagam_report(person: dict, language: str, now_ms: float) -> dict:
     section("planets", "palan", [table(list(w["planet_head"]), planet_rows(w, language, chart))])
     section("dasa", "palan", [items(dasa_entries(p, planet, span, language, dasa))])
 
+    marriage = E.marriage_windows(chart, dasa["periods"], now_ms)
+    windows = marriage["windows"]
+    best = next((window for window in windows if window["level"] == "best"), None)
+    shown = windows[:3] + ([best] if best and best not in windows[:3] else [])
+    marriage_years = None
+    blocks = []
+    if windows:
+        marriage_years = year_span(windows[0]["start"], windows[0]["end"])
+        blocks.append(note(j["marriage_lead"](marriage_years, year_span(best["start"], best["end"]) if best is not windows[0] else None), "lead"))
+    else:
+        blocks.append(note(j["marriage_none"](month(marriage["to"], language)), "lead"))
+    blocks.append(note(j["marriage_intro"], "help"))
+    entries = []
+    for index, window in enumerate(shown):
+        age = year_span(window["start"] - chart["utc_ms"], window["end"] - chart["utc_ms"], ages=True)
+        parts = [j["marriage_when"](year_span(window["start"], window["end"]), span(window), age)]
+        for maha, sub in window["combos"]:
+            why = "; ".join(f"{planet(lord)} — {', '.join(j['marriage_roles'][role] for role in marriage['lords'][lord]['roles'])}"
+                            for lord in dict.fromkeys((maha, sub)) if lord in marriage["lords"])
+            parts.append(j["marriage_dasa"](f"{w['dasa_name'](planet(maha))} / {w['bhukti'](planet(sub))}", why))
+        if window["guru_house"]:
+            parts.append(j["marriage_guru"](window["guru_house"]))
+        if window["on_seventh"]:
+            parts.append(j["marriage_seventh"])
+        if window["now"]:
+            parts.append(j["marriage_now"])
+        entries.append(item(j["marriage_title"][min(index, 3)], "good", j["marriage_level"][window["level"]], parts))
+    if entries:
+        blocks.append(items(entries))
+    blocks.append(note(j["marriage_note"], "help"))
+    section("marriage", "palan", blocks)
+
     horizon = now_ms + 25 * E.YEAR_MS
     rows = [[span({"start": max(period["start"], now_ms), "end": min(period["end"], horizon)}), w["dasa_name"](planet(period["lord"])),
              cell(p["quality"][period["quality"]], TONES[period["quality"]]), p["meaning"][period["lord"]]]
@@ -484,6 +524,8 @@ def jathagam_report(person: dict, language: str, now_ms: float) -> dict:
         summary.append(j["summary_now"](w["dasa_name"](planet(dasa["current"]["lord"])), p["quality"][current_quality], month(dasa["current"]["end"], language)))
     if dasa["next"]:
         summary.append(j["summary_next"](w["dasa_name"](planet(dasa["next"]["lord"])), month(dasa["next"]["start"], language), p["quality"][dasa["next"]["quality"]]))
+    if marriage_years:
+        summary.append(j["summary_marriage"](marriage_years))
     if strong:
         summary.append(j["summary_strong"](", ".join(strong)))
     if care:
@@ -540,8 +582,8 @@ def hide_block(block: dict) -> dict:
 POLICIES = {
     "kattam": {"rasi": "free", "dosha": "free", "together": "titles", "dasa": "titles", "timeline": "rows",
                "life": "one_line", "checks": "first_two", "summary": "hidden", "expert": "hidden"},
-    "jathagam": {"basic": "free", "charts": "free", "dosha": "titles", "planets": "rows", "dasa": "titles", "timeline": "rows",
-                 "life": "one_line", "bhukti": "rows", "summary": "hidden", "expert": "hidden"},
+    "jathagam": {"basic": "free", "charts": "free", "dosha": "titles", "planets": "rows", "dasa": "titles", "marriage": "titles",
+                 "timeline": "rows", "life": "one_line", "bhukti": "rows", "summary": "hidden", "expert": "hidden"},
 }
 
 

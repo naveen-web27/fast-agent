@@ -182,9 +182,30 @@ class JathagamTests(unittest.TestCase):
 
     def test_sections_show_kattam_first_then_reading(self):
         self.assertEqual([s["key"] for s in self.full["sections"]],
-                         ["basic", "charts", "dosha", "planets", "dasa", "timeline", "life", "bhukti", "summary", "expert"])
+                         ["basic", "charts", "dosha", "planets", "dasa", "marriage", "timeline", "life", "bhukti", "summary", "expert"])
         self.assertEqual(self.preview["paywall_after"], "charts")
         self.assertEqual(self.full["subtitle"], "Priya")
+
+    def test_marriage_windows_fall_in_the_search_range_and_stay_paid(self):
+        from app.features.porutham import engine as E
+        chart = E.chart(COUPLE["bride"])
+        periods = E.vimshottari(chart["planets"]["Moon"]["longitude"], chart["utc_ms"])
+        found = E.marriage_windows(chart, periods, NOW)
+        self.assertTrue(found["windows"])
+        self.assertEqual(sum(window["level"] == "best" for window in found["windows"]), 1)
+        for window in found["windows"]:
+            self.assertTrue(NOW <= window["start"] < window["end"] <= found["to"])
+            self.assertTrue(any(found["lords"].get(sub, {}).get("weight") for _, sub in window["combos"]))
+        full = {s["key"]: s for s in self.full["sections"]}["marriage"]["blocks"]
+        locked = {s["key"]: s for s in self.preview["sections"]}["marriage"]
+        self.assertTrue(full[0]["text"].startswith("நல்ல கல்யாண காலம்: 20"))
+        self.assertEqual(locked["blocks"][0], {"type": "lead", "hidden": [len(full[0]["text"])]})
+        self.assertTrue(locked["teaser"])
+        visible = set(strings(self.preview))
+        paid = {p for block in full if block["type"] == "items" for entry in block["items"] for p in entry["paragraphs"]}
+        self.assertFalse(paid & visible)
+        summary = {s["key"]: s for s in self.full["sections"]}["summary"]["blocks"][0]["lines"]
+        self.assertTrue(any(line.startswith("நல்ல கல்யாண காலம்") for line in summary))
 
     def test_charts_are_free_and_paid_text_stays_on_server(self):
         sections = {s["key"]: s for s in self.preview["sections"]}

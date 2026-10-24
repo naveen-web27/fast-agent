@@ -48,8 +48,13 @@ API additions: `GET /me`, `GET|DELETE /history/{id}`, `POST /kattam/credit`, `PO
 
 Third option on the porutham page (and the Horoscope card links to `thirumana-porutham.html?service=jathagam`).
 Same birth input for one person. Free: basic details and Rasi/Navamsa charts. Paid (same ₹99, pack credit or admin):
-1 dosha (titles), 2 planet table (two rows), 3 current/next dasa (titles), 4 25-year dasa results (two rows + last three periods),
-5 future life (heading + one line), 6 bhuktis of the current dasa (two rows), 7 summary and astrologer details (locked).
+1 dosha (titles), 2 planet table (two rows), 3 current/next dasa (titles),
+4 good marriage period (window headings and badges; the years stay blurred), 5 25-year dasa results (two rows + last three periods),
+6 future life (heading + one line), 7 bhuktis of the current dasa (two rows), 8 summary and astrologer details (locked).
+Marriage windows (`engine.marriage_windows`): months from age 21 (or today) to age 36 (at least 8 years) where the bhukti lord is a
+significator (7th lord, Venus, 7th occupants = 2; 2nd lord, 11th lord, Jupiter = 1; Rahu/Ketu in a weight-2 lord's sign = 1),
+maha + bhukti weight is at least 2, and transit Jupiter is 2/5/7/9/11 from the Moon or on/aspecting the 7th. Gaps up to 4 months
+are merged, windows under 3 months dropped; the first three are shown and the one with most Guru-balam months is marked best.
 Endpoints `POST /jathagam`, `/jathagam/order`, `/jathagam/full`, `/jathagam/credit`; orders use product `jathagam_report`,
 so a Kattam payment cannot unlock a horoscope. History rows carry `kind` (migration 021); the chip shows the current dasa period.
 

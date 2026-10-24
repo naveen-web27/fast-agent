@@ -274,6 +274,98 @@ def life_areas(chart_data: dict, periods: list[dict], now_ms: float) -> dict:
     return {"career": career, "health": health, "children": children, "marriage": marriage}
 
 
+def sidereal_sign(body: str, utc_ms: float) -> int:
+    time = astro_time(utc_ms)
+    t = time.tt / 36525
+    return math.floor(norm(tropical_longitude(body, time) - ayanamsa(t) - nutation(t)[0]) / 30) % 12
+
+
+# Marriage significators: 7th lord, Venus and 7th-house occupants (weight 2); 2nd lord, 11th lord and Jupiter (1).
+def marriage_lords(chart_data: dict) -> dict[str, dict]:
+    lagna, planets = chart_data["lagna"]["sign"], chart_data["planets"]
+    seventh = sign_of_house(lagna, 7)
+    lords: dict[str, dict] = {}
+
+    def add(planet: str, weight: int, role: str) -> None:
+        entry = lords.setdefault(planet, {"weight": 0, "roles": []})
+        entry["weight"] = max(entry["weight"], weight)
+        if role not in entry["roles"]:
+            entry["roles"].append(role)
+
+    add(SIGN_LORDS[seventh], 2, "seventh_lord")
+    add("Venus", 2, "venus")
+    for planet, place in planets.items():
+        if place["sign"] == seventh:
+            add(planet, 2, "in_seventh")
+    add(SIGN_LORDS[sign_of_house(lagna, 2)], 1, "second_lord")
+    add(SIGN_LORDS[sign_of_house(lagna, 11)], 1, "eleventh_lord")
+    add("Jupiter", 1, "jupiter")
+    for node in ("Rahu", "Ketu"):
+        if node not in lords and lords.get(SIGN_LORDS[planets[node]["sign"]], {}).get("weight") == 2:
+            add(node, 1, "node")
+    return lords
+
+
+def marriage_windows(chart_data: dict, periods: list[dict], now_ms: float) -> dict:
+    """Months where a significator's dasa/bhukti meets Guru balam (Jupiter 2/5/7/9/11 from Moon) or Jupiter on the 7th."""
+    birth = chart_data["utc_ms"]
+    start = max(now_ms, birth + 21 * YEAR_MS)
+    end = max(birth + 36 * YEAR_MS, start + 8 * YEAR_MS)
+    lords = marriage_lords(chart_data)
+    moon_sign = chart_data["planets"]["Moon"]["sign"]
+    seventh = sign_of_house(chart_data["lagna"]["sign"], 7)
+    subs = [dict(sub, maha=maha["lord"]) for maha in periods if maha["end"] > start and maha["start"] < end for sub in bhuktis(maha)]
+    step = YEAR_MS / 12
+    months = []
+    at = start
+    while at < end:
+        sub = next((s for s in subs if s["start"] <= at < s["end"]), None)
+        if sub is None:
+            break
+        jupiter = sidereal_sign("Jupiter", at)
+        guru_house = house_from(moon_sign, jupiter)
+        guru = guru_house in (2, 5, 7, 9, 11)
+        on_seventh = (seventh - jupiter) % 12 in (0, 4, 6, 8)
+        maha_weight = lords.get(sub["maha"], {}).get("weight", 0)
+        bhukti_weight = lords.get(sub["lord"], {}).get("weight", 0)
+        dasa = maha_weight + bhukti_weight
+        good = bhukti_weight >= 1 and dasa >= 2 and (guru or on_seventh)
+        months.append({"start": at, "end": min(at + step, end), "good": good, "strong": good and dasa >= 3 and guru,
+                       "score": dasa + guru + on_seventh, "maha": sub["maha"], "bhukti": sub["lord"],
+                       "guru_house": guru_house, "guru": guru, "on_seventh": on_seventh})
+        at += step
+
+    windows, current, gap = [], None, 0
+    for month in months:
+        if month["good"]:
+            if current is None:
+                current = {"start": month["start"], "months": []}
+            current["months"].append(month)
+            current["end"] = month["end"]
+            gap = 0
+        elif current is not None:
+            gap += 1
+            if gap > 4:
+                windows.append(current)
+                current, gap = None, 0
+    if current is not None:
+        windows.append(current)
+
+    result = []
+    for window in windows:
+        good = window["months"]
+        if len(good) < 3:
+            continue
+        peak = max(good, key=lambda m: m["score"])
+        combos = list(dict.fromkeys((m["maha"], m["bhukti"]) for m in good))
+        result.append({"start": window["start"], "end": window["end"], "length": len(good), "strong": sum(m["strong"] for m in good),
+                       "level": "good", "combos": combos[:2], "guru_house": peak["guru_house"] if peak["guru"] else None,
+                       "on_seventh": any(m["on_seventh"] for m in good), "now": window["start"] <= now_ms < window["end"]})
+    if result:
+        max(result, key=lambda w: (w["strong"], w["length"], -w["start"]))["level"] = "best"
+    return {"windows": result, "lords": lords, "from": start, "to": end}
+
+
 def joint_timeline(bride: dict, groom: dict, now_ms: float, years: int) -> list[dict]:
     horizon = now_ms + years * YEAR_MS
     boundaries = {now_ms, horizon}
