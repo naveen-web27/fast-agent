@@ -6,6 +6,7 @@ Marketing materials for RightConnect (trust marketplace for verified experts & c
 | --- | --- |
 | `poster/` | Ready-to-use social/sales poster (SVG, editable) + AI image-generation prompts for photo-realistic variants |
 | `video/` | Ad video script (15s reel, 30s, 60s cuts) with shot list, voiceover, on-screen captions, and a text-to-video prompt |
+| `astrology/` | Tamil Thirumana porutham & Jathagam ads: vector poster, image prompts (ChatGPT), video prompts (Gemini/Veo) |
 
 ## Brand quick reference
 

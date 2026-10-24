@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6b1324"/>
+      <stop offset="0.55" stop-color="#4a0c18"/>
+      <stop offset="1" stop-color="#22060c"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f2c14e" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#f2c14e" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      text { font-family: "Noto Sans Tamil", "Tamil Sangam MN", "Mukta Malar", "Latha", sans-serif; }
+      .gold { fill: #f2c14e; }
+      .cream { fill: #fff4e0; }
+      .head { font-size: 64px; font-weight: 800; }
+      .sub { font-size: 26px; }
+      .ctitle { font-size: 30px; font-weight: 800; }
+      .cline { font-size: 22px; }
+      .price { font-size: 24px; font-weight: 800; }
+      .planet { font-size: 22px; font-weight: 700; fill: #fff4e0; }
+      .grid { fill: none; stroke: #f2c14e; stroke-width: 3; }
+    </style>
+  </defs>
+
+  <rect width="1080" height="1350" fill="url(#bg)"/>
+  <g fill="#f2c14e" opacity="0.5">
+    <circle cx="90" cy="380" r="2"/><circle cx="170" cy="520" r="1.5"/><circle cx="120" cy="690" r="2.5"/>
+    <circle cx="960" cy="400" r="2"/><circle cx="1000" cy="580" r="1.5"/><circle cx="920" cy="720" r="2.5"/>
+    <circle cx="240" cy="420" r="1.5"/><circle cx="850" cy="470" r="1.5"/><circle cx="260" cy="740" r="2"/>
+  </g>
+  <rect x="24" y="24" width="1032" height="1302" rx="28" fill="none" stroke="#f2c14e" stroke-opacity="0.45" stroke-width="2"/>
+
+  <!-- brand -->
+  <rect x="60" y="48" width="44" height="44" rx="11" fill="#088a82"/>
+  <text x="82" y="80" text-anchor="middle" font-size="28" font-weight="800" fill="#fff" font-family="-apple-system, Inter, Segoe UI, sans-serif">R</text>
+  <text x="116" y="80" font-size="28" font-weight="700" class="cream" font-family="-apple-system, Inter, Segoe UI, sans-serif">RightConnect</text>
+  <text x="1020" y="80" text-anchor="end" class="gold" font-size="24">ஜோதிட சேவைகள்</text>
+
+  <!-- headline -->
+  <text x="540" y="180" text-anchor="middle" class="gold head">திருமணத்துக்கு முன்</text>
+  <text x="540" y="260" text-anchor="middle" class="gold head">பொருத்தம் பாருங்க!</text>
+  <text x="540" y="312" text-anchor="middle" class="cream sub">ஜாதகம் &amp; திருமணப் பொருத்தம் — உங்கள் மொபைலில்</text>
+
+  <!-- South Indian rasi kattam -->
+  <circle cx="540" cy="555" r="260" fill="url(#glow)"/>
+  <rect x="340" y="355" width="400" height="400" fill="#2a0710" fill-opacity="0.6"/>
+  <g class="grid">
+    <rect x="340" y="355" width="400" height="400"/>
+    <line x1="440" y1="355" x2="440" y2="755"/>
+    <line x1="640" y1="355" x2="640" y2="755"/>
+    <line x1="540" y1="355" x2="540" y2="455"/>
+    <line x1="540" y1="655" x2="540" y2="755"/>
+    <line x1="340" y1="455" x2="740" y2="455"/>
+    <line x1="340" y1="655" x2="740" y2="655"/>
+    <line x1="340" y1="555" x2="440" y2="555"/>
+    <line x1="640" y1="555" x2="740" y2="555"/>
+  </g>
+  <text x="390" y="413" text-anchor="middle" class="planet">கு</text>
+  <text x="490" y="413" text-anchor="middle" class="planet">ல</text>
+  <text x="590" y="413" text-anchor="middle" class="planet">சூ</text>
+  <text x="690" y="413" text-anchor="middle" class="planet">பு</text>
+  <text x="690" y="513" text-anchor="middle" class="planet">சு</text>
+  <text x="690" y="613" text-anchor="middle" class="planet">கே</text>
+  <text x="590" y="713" text-anchor="middle" class="planet">சந்</text>
+  <text x="490" y="713" text-anchor="middle" class="planet">சனி</text>
+  <text x="390" y="613" text-anchor="middle" class="planet">ரா</text>
+  <text x="390" y="513" text-anchor="middle" class="planet">செ</text>
+  <!-- rings -->
+  <g fill="none" stroke="#f2c14e" stroke-width="7">
+    <circle cx="518" cy="540" r="30"/>
+    <circle cx="562" cy="540" r="30"/>
+  </g>
+  <circle cx="540" cy="505" r="6" fill="#fff4e0"/>
+  <text x="540" y="612" text-anchor="middle" class="cream" font-size="24" font-weight="700">12 பொருத்தம்</text>
+
+  <!-- service cards -->
+  <rect x="60" y="800" width="465" height="215" rx="22" fill="#fff4e0" fill-opacity="0.08" stroke="#f2c14e" stroke-opacity="0.7" stroke-width="2"/>
+  <text x="90" y="852" class="gold ctitle">திருமணப் பொருத்தம்</text>
+  <text x="90" y="896" class="cream cline">✓ 12 பொருத்தம் இலவசம்</text>
+  <text x="90" y="934" class="cream cline">✓ இருவரின் தசா, தோஷ ஆய்வு</text>
+  <text x="90" y="984" class="gold price">முழு அறிக்கை ₹99 + PDF</text>
+
+  <rect x="555" y="800" width="465" height="215" rx="22" fill="#fff4e0" fill-opacity="0.08" stroke="#f2c14e" stroke-opacity="0.7" stroke-width="2"/>
+  <text x="585" y="852" class="gold ctitle">ஜாதகம்</text>
+  <text x="585" y="896" class="cream cline">✓ ராசி, நவாம்ச கட்டம் இலவசம்</text>
+  <text x="585" y="934" class="cream cline">✓ அடுத்த 25 வருட தசா பலன்</text>
+  <text x="585" y="984" class="gold price">முழு அறிக்கை ₹99 + PDF</text>
+
+  <!-- pack strip -->
+  <rect x="60" y="1040" width="960" height="70" rx="35" fill="#f2c14e"/>
+  <text x="540" y="1085" text-anchor="middle" font-size="26" font-weight="800" fill="#4a0c18">தரகர்களுக்கு: ₹299 = 20 அறிக்கைகள் • 90 நாட்கள்</text>
+
+  <!-- CTA -->
+  <rect x="190" y="1140" width="700" height="84" rx="42" fill="#088a82"/>
+  <text x="540" y="1194" text-anchor="middle" font-size="30" font-weight="800" fill="#ffffff">இப்போதே பாருங்க → rightconnect.app</text>
+
+  <text x="540" y="1280" text-anchor="middle" class="cream" font-size="22" opacity="0.85">WhatsApp: +91 63825 95243</text>
+</svg>
