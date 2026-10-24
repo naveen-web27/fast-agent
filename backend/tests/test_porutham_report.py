@@ -171,5 +171,36 @@ class UnlockTests(unittest.TestCase):
         self.assertNotIn("report", result)
 
 
+@unittest.skipUnless(ASTRONOMY, "astronomy-engine is not installed")
+class AccountHelperTests(unittest.TestCase):
+    def test_couple_key_ignores_names_language_and_selection(self):
+        renamed = dict(COUPLE, language="en", selected={"bride": {"rasi": 0, "nakshatra": 0}},
+                       bride=dict(COUPLE["bride"], name="Other"))
+        self.assertEqual(service.couple_key(COUPLE), service.couple_key(renamed))
+        moved = dict(COUPLE, bride=dict(COUPLE["bride"], birth_time="06:31:00"))
+        self.assertNotEqual(service.couple_key(COUPLE), service.couple_key(moved))
+        self.assertEqual(len(service.couple_key(COUPLE)), 48)
+
+    def test_stored_inputs_drop_language(self):
+        self.assertEqual(set(service.stored_inputs(COUPLE)), {"bride", "groom", "selected"})
+
+    def test_report_score_feeds_history_summary(self):
+        full = service.build(COUPLE, NOW)
+        self.assertEqual(full["score"], {"stars": 5, "kattam": 3})
+
+    def test_credits_count_only_paid_unexpired_unused_packs(self):
+        from datetime import datetime, timedelta, timezone
+        now = datetime(2026, 10, 23, tzinfo=timezone.utc)
+        pack = lambda **kw: SimpleNamespace(**{"status": "paid", "expires_at": now + timedelta(days=5), "reports_total": 20, "reports_used": 3, **kw})
+        packs = [pack(), pack(status="pending"), pack(expires_at=now - timedelta(seconds=1)), pack(reports_used=20), pack(reports_used=18)]
+        self.assertEqual(service.credits_left(packs, now), 17 + 2)
+
+    def test_pack_offer_needs_keys_and_positive_terms(self):
+        settings = SimpleNamespace(**vars(SETTINGS), razorpay_porutham_pack_amount_paise=29900, porutham_pack_reports=20, porutham_pack_days=30)
+        self.assertEqual(service.pack_offer(settings), {"amount_paise": 29900, "reports": 20, "days": 30, "available": True})
+        self.assertFalse(service.pack_offer(SimpleNamespace(**{**vars(settings), "porutham_pack_reports": 0}))["available"])
+        self.assertFalse(service.pack_offer(SimpleNamespace(**{**vars(settings), "razorpay_key_secret": ""}))["available"])
+
+
 if __name__ == "__main__":
     unittest.main()

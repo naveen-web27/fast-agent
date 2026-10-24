@@ -31,6 +31,18 @@ Orders carry `rightconnect_product=kattam_report`; the plan webhook ignores them
 details) in sessionStorage to reopen or re-translate a paid report. The PDF is rendered client-side (vendored html2canvas 1.4.1 +
 jsPDF 2.5.2) from the paid report so Tamil text shapes correctly. Birth details are sent to the server for calculation only and are not stored.
 
+Signed-in accounts (Google, no marketplace onboarding needed; rows keyed by Supabase auth id, migration 020):
+- History: every Kattam check is saved per couple (same birth data updates one row). Only the newest
+  `PORUTHAM_HISTORY_LIMIT` (30) are kept; older rows, including unlocked ones, are removed automatically. Users can delete rows.
+  The side panel lists groom · bride, a coloured one-word result (high green, medium yellow, low red), scores and a lock icon;
+  clicking reopens the report built from the stored inputs and original report time. The last inputs prefill the Kattam form.
+- Packs: `RAZORPAY_PORUTHAM_PACK_AMOUNT_PAISE` (29900) buys `PORUTHAM_PACK_REPORTS` (20) unlocks valid for `PORUTHAM_PACK_DAYS` (30).
+  Opening an already-unlocked couple never uses a credit. Packs activate on `/pack/verify` or the `order.paid` webhook.
+- Admins (`platform_admin`, plus `ADMIN_EMAILS` when set) get every report free, for WhatsApp customers, with a
+  `PORUTHAM_ADMIN_HISTORY_LIMIT` (200) history.
+
+API additions: `GET /me`, `GET|DELETE /history/{id}`, `POST /kattam/credit`, `POST /pack/order`, `POST /pack/verify`.
+
 ## User Flow
 
 ```mermaid

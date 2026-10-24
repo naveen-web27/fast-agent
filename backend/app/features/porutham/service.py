@@ -40,7 +40,7 @@ def build(data: dict, now_ms: float | None = None) -> dict:
 
 def unlock_offer(settings) -> dict:
     amount = settings.razorpay_kattam_report_amount_paise
-    return {"amount_paise": amount, "available": ready(settings)}
+    return {"amount_paise": amount, "available": ready(settings), "pack": pack_offer(settings)}
 
 
 def ready(settings) -> bool:
@@ -49,10 +49,39 @@ def ready(settings) -> bool:
 
 # Binds a payment to one couple's birth data without sending that data to Razorpay.
 def report_key(data: dict, secret: str) -> str:
+    return hmac.new(secret.encode(), f"kattam-report|{canonical_births(data)}".encode(), hashlib.sha256).hexdigest()[:48]
+
+
+def canonical_births(data: dict) -> str:
     births = people(data)
-    canonical = json.dumps([[births[role]["birth_date"], births[role]["birth_time"], round(float(births[role]["latitude"]), 4),
-                             round(float(births[role]["longitude"]), 4), births[role]["timezone"]] for role in ("bride", "groom")])
-    return hmac.new(secret.encode(), f"kattam-report|{canonical}".encode(), hashlib.sha256).hexdigest()[:48]
+    return json.dumps([[births[role]["birth_date"], births[role]["birth_time"], round(float(births[role]["latitude"]), 4),
+                        round(float(births[role]["longitude"]), 4), births[role]["timezone"]] for role in ("bride", "groom")])
+
+
+def couple_key(data: dict) -> str:
+    return hashlib.sha256(f"kattam-couple|{canonical_births(data)}".encode()).hexdigest()[:48]
+
+
+def stored_inputs(data: dict) -> dict:
+    return {"bride": data["bride"], "groom": data["groom"], "selected": data.get("selected")}
+
+
+def history_summary(entry) -> dict:
+    return {"id": str(entry.id), "bride": entry.bride_name, "groom": entry.groom_name, "level": entry.level,
+            "stars": entry.stars_matched, "kattam": entry.kattam_matched, "unlocked": entry.unlocked,
+            "updated_at": entry.updated_at.isoformat()}
+
+
+def credits_left(packs, now) -> int:
+    return sum(pack.reports_total - pack.reports_used for pack in packs
+               if pack.status == "paid" and pack.expires_at and pack.expires_at > now and pack.reports_used < pack.reports_total)
+
+
+def pack_offer(settings) -> dict:
+    amount = settings.razorpay_porutham_pack_amount_paise
+    return {"amount_paise": amount, "reports": settings.porutham_pack_reports, "days": settings.porutham_pack_days,
+            "available": bool(settings.razorpay_key_id and settings.razorpay_key_secret) and amount >= 100
+            and settings.porutham_pack_reports > 0 and settings.porutham_pack_days > 0}
 
 
 async def create_order(data: dict, settings, razorpay: Razorpay) -> dict:

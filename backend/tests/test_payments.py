@@ -274,6 +274,34 @@ class ReportOrderWebhookTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await scope["razorpay_webhook"](request, session, settings), {"status": "ignored"})
         session.get.assert_not_awaited()
 
+    async def pack_webhook(self, amount_paid):
+        scope = route_scope()
+        pack = SimpleNamespace(id=uuid4(), razorpay_order_id="order_pack", amount_paise=29900, status="pending")
+        scope["PoruthamPack"] = object
+        scope["activate_pack"] = lambda target, payment_id: setattr(target, "status", "paid")
+        session = SimpleNamespace(get=AsyncMock(return_value=pack), commit=AsyncMock())
+        settings = SimpleNamespace(app_base_url="https://dev.example", razorpay_webhook_secret="webhook-unit")
+        order = {"id": "order_pack", "amount": 29900, "amount_paid": amount_paid, "currency": "INR", "status": "paid",
+                 "notes": {"rightconnect_product": "porutham_pack", "rightconnect_pack_id": str(pack.id), "rightconnect_origin": "https://dev.example"}}
+        entity = {"id": "pay_pack", "order_id": "order_pack", "amount": 29900, "currency": "INR", "status": "captured"}
+        event = {"event": "order.paid", "payload": {"order": {"entity": order}, "payment": {"entity": entity}}}
+        import json
+        body = json.dumps(event).encode()
+        request = SimpleNamespace(body=AsyncMock(return_value=body), json=AsyncMock(return_value=event),
+                                  headers={"x-razorpay-signature": hmac.new(b"webhook-unit", body, hashlib.sha256).hexdigest()})
+        return await scope["razorpay_webhook"](request, session, settings), pack, session
+
+    async def test_pack_order_webhook_activates_pack(self):
+        result, pack, session = await self.pack_webhook(29900)
+        self.assertEqual(result, {"status": "ok"})
+        self.assertEqual(pack.status, "paid")
+        session.commit.assert_awaited_once()
+
+    async def test_pack_webhook_with_wrong_amount_is_rejected(self):
+        with self.assertRaises(HTTPException) as raised:
+            await self.pack_webhook(100)
+        self.assertEqual(raised.exception.status_code, 400)
+
 
 if __name__ == "__main__":
     unittest.main()

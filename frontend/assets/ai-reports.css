@@ -222,6 +222,34 @@ legend { font-size: 16px; font-weight: 600; padding: 0 12px 0 0; color: var(--ku
 .kattam-unlock-bar svg { width: 20px; height: 20px; color: var(--kumkum); flex-shrink: 0; }
 .kattam-unlock-bar span { flex: 1; font-size: 13px; font-weight: 600; color: var(--kumkum-dark); }
 .kattam-unlock-bar .button { min-height: 42px; white-space: nowrap; }
+.porutham-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 28px; align-items: start; }
+.porutham-side { position: sticky; top: 16px; display: grid; gap: 16px; padding-top: 24px; }
+.porutham-side:empty { display: none; }
+.side-card { padding: 14px; border: 1px solid var(--line); border-top: 4px solid var(--gold); border-radius: 8px; background: var(--paper); }
+.side-card h2 { margin: 0 0 8px; font-size: 15px; color: var(--kumkum-dark); }
+.side-card .button { width: 100%; }
+.side-admin { margin: 0; padding: 8px 10px; border-radius: 6px; background: #e5f0d8; color: #25561f; font-size: 13px; font-weight: 600; }
+.side-credits { margin: 0 0 10px; font-weight: 600; }
+.side-pack { display: grid; gap: 6px; margin-top: 12px; padding: 10px; border: 1px dashed var(--gold); border-radius: 8px; background: var(--wash); text-align: left; }
+.side-pack strong { color: var(--kumkum-dark); font-size: 14px; }
+.side-pack small { color: var(--muted); font-size: 12px; }
+.side-warning { margin: 0 0 8px; padding: 6px 8px; border-left: 3px solid #e0a800; background: #fff8dc; color: #7a5600; font-size: 11px; line-height: 1.6; }
+.history-list { list-style: none; max-height: 60vh; margin: 0; padding: 0; overflow-y: auto; }
+.history-item { display: flex; align-items: center; gap: 4px; border-bottom: 1px solid var(--line); }
+.history-item.is-current { background: var(--wash); }
+.history-open { flex: 1; display: grid; gap: 2px; min-width: 0; padding: 8px 4px; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.history-names { overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.history-meta { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; }
+.history-meta svg { width: 13px; height: 13px; }
+.history-delete { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; }
+.history-delete:hover { background: #fde8e3; color: #8f241c; }
+.history-delete svg { width: 16px; height: 16px; }
+.level-chip { padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.level-chip.level-high { background: #d9ecc9; color: #25561f; }
+.level-chip.level-medium { background: #fff0b3; color: #7a5600; }
+.level-chip.level-low { background: #fbd9d2; color: #8f241c; }
+.kattam-paywall-or { margin-top: 18px !important; font-weight: 600; color: var(--kumkum-dark) !important; }
+.kattam-paywall .side-pack { max-width: 420px; margin: 8px auto 0; }
 .kattam-pdf { position: absolute; left: -12000px; top: 0; width: 760px; padding: 0 4px 12px; background: #fff; color: var(--ink); font-size: 14px; line-height: 1.8; }
 .kattam-pdf-head { margin-bottom: 16px; padding-bottom: 10px; border-bottom: 3px solid var(--gold); }
 .kattam-pdf-brand { color: var(--kumkum); font-size: 13px; letter-spacing: .04em; }
@@ -240,6 +268,9 @@ legend { font-size: 16px; font-weight: 600; padding: 0 12px 0 0; color: var(--ku
 .site-footer a { color: #ffe9a8; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 850px) {
+  .porutham-layout { grid-template-columns: minmax(0, 1fr); }
+  .porutham-side { position: static; order: -1; padding-top: 16px; }
+  .history-list { max-height: 240px; }
   .exam-tool-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .service-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .guest-label { display: none; }
@@ -276,8 +307,9 @@ legend { font-size: 16px; font-weight: 600; padding: 0 12px 0 0; color: var(--ku
 }
 @media print {
   body { background: white; color: black; }
-  .site-header, .view-nav, .tradition-note, .page-heading, .site-footer, #global-status, #catalogue, #input-panel, #recovery-panel, .report-actions, .report-panel .panel-top .button, .kattam-paywall, .kattam-teaser, .kattam-unlock-bar, .kattam-preview-label, .kattam-pay-status, .kattam-pdf { display: none !important; }
+  .site-header, .view-nav, .tradition-note, .page-heading, .site-footer, #global-status, #catalogue, #input-panel, #recovery-panel, .report-actions, .report-panel .panel-top .button, .kattam-paywall, .kattam-teaser, .kattam-unlock-bar, .kattam-preview-label, .kattam-pay-status, .kattam-pdf, .porutham-side { display: none !important; }
   .workspace { padding: 0; max-width: none; }
+  .porutham-layout { display: block; }
   .report-panel { max-width: none; padding: 0; }
   .report-section { break-inside: avoid; }
   .kattam-figure, .kattam-table, .match-result, .kattam-summary { break-inside: avoid; }

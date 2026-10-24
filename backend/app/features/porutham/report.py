@@ -389,6 +389,7 @@ def kattam_report(people: dict, language: str, now_ms: float, selected: dict | N
 
     return {
         "title": w["title"], "names": names, "parts": w["parts"],
+        "score": {"stars": porutham["matched"], "kattam": 4 - analysis["failures"]},
         "verdict": {"level": final_level, "headline": p["verdict"][final_level],
                     "detail": f"{p['verdict_detail'](porutham['matched'], 4 - analysis['failures'])} · {names['groom']} · {names['bride']}"},
         "alerts": {"title": p["star_alert"], "lines": alerts} if alerts else None,

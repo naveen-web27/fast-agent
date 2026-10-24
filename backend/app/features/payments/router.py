@@ -14,8 +14,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, get_settings
 from app.db.session import get_db
 from app.features.payments.verification import foreign_origin, matching_payment, valid_payment_signature
+from app.features.porutham.store import activate_pack
 from app.models.organization_member import MemberRole, OrganizationMember
 from app.models.payment import Payment
+from app.models.porutham import PoruthamPack
 from app.models.profile import Organization, Profile, ProfileKind
 from app.models.user import SubscriptionTier, User, active_user_by_auth_id
 from app.security.dependencies import get_current_auth_user_id
@@ -216,6 +218,24 @@ async def create_checkout_session(
     return {"checkout_url": checkout_url}
 
 
+async def activate_pack_from_webhook(pack_id: str, order: dict, captured: dict, session: AsyncSession) -> dict[str, str]:
+    try:
+        pack = await session.get(PoruthamPack, UUID(pack_id), with_for_update=True)
+    except (ValueError, TypeError):
+        return {"status": "ignored"}
+    if pack is None or pack.razorpay_order_id != order.get("id"):
+        raise HTTPException(status_code=503, detail="Pack record not ready")
+    provider_payment_id = captured.get("id")
+    if not isinstance(provider_payment_id, str) or not provider_payment_id or order.get("status") != "paid" \
+            or order.get("currency") != "INR" or order.get("amount_paid") != pack.amount_paise \
+            or not matching_payment(captured, pack.razorpay_order_id, pack.amount_paise, provider_payment_id) \
+            or captured.get("status") != "captured":
+        raise HTTPException(status_code=400, detail="Payment details do not match")
+    activate_pack(pack, provider_payment_id)
+    await session.commit()
+    return {"status": "ok"}
+
+
 @router.post("/webhook", include_in_schema=False)
 async def razorpay_webhook(request: Request, session: AsyncSession = Depends(get_db),
                           settings: Settings = Depends(get_settings)) -> dict[str, str]:
@@ -232,6 +252,8 @@ async def razorpay_webhook(request: Request, session: AsyncSession = Depends(get
         if foreign_origin(order, settings.app_base_url):
             return {"status": "ignored"}
         notes = order.get("notes") or {}
+        if isinstance(notes, dict) and notes.get("rightconnect_pack_id"):
+            return await activate_pack_from_webhook(notes["rightconnect_pack_id"], order, captured, session)
         if not isinstance(notes, dict) or not notes.get("rightconnect_payment_id"):
             return {"status": "ignored"}
         try:

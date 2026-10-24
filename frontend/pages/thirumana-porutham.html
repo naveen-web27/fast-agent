@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/ai-reports.css?v=20261024">
+  <link rel="stylesheet" href="/assets/ai-reports.css?v=20261024b">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-  <script defer src="/assets/ai-reports.js?v=20261024"></script>
+  <script defer src="/assets/ai-reports.js?v=20261024b"></script>
 </head>
 <body data-service-page="compatibility">
   <a class="skip-link" href="#main" data-i18n="skip">உள்ளடக்கத்திற்குச் செல்ல</a>
@@ -30,16 +30,17 @@
     <p class="tradition-note" data-i18n="compatibilityDisclaimer">பன்னிரண்டு பாரம்பரிய விதிகள் ஒப்பிடப்படுகின்றன. இவை அறிவியல் கணிப்போ திருமண வெற்றியின் சதவீதமோ அல்ல. வர்ணம் ஒரு வரலாற்று, சாதி சார்ந்த வகைப்பாடு; அது மதிப்பீட்டில் சேர்க்கப்படாது.</p>
     <nav class="view-nav" aria-label="பகுதிகள்" data-i18n-aria="views">
       <button type="button" data-view="services" aria-current="page" data-i18n="compatibilityNav">திருமணப் பொருத்தம்</button>
-      <button type="button" data-view="history" hidden data-auth data-i18n="history">முந்தைய அறிக்கைகள்</button>
-      <button type="button" data-view="family" hidden data-auth data-i18n="family">குடும்ப விவரங்கள்</button>
     </nav>
     <p id="global-status" class="notice" role="status" aria-live="polite" hidden></p>
+    <div class="porutham-layout">
     <section id="services-view" aria-labelledby="catalogue-heading">
       <div id="catalogue" hidden><h2 id="catalogue-heading" data-i18n="chooseService">சேவையைத் தேர்ந்தெடுக்கவும்</h2><p id="catalogue-status" role="status" data-i18n="loadingServices">சேவைகள் ஏற்றப்படுகின்றன…</p><div id="service-grid" class="service-grid"></div><button id="reload-services" type="button" class="button secondary" hidden data-i18n="reload">மீண்டும் ஏற்று</button></div>
       <section id="input-panel" class="input-panel" hidden aria-labelledby="form-title"></section>
       <section id="report-panel" class="report-panel" hidden aria-labelledby="report-heading" aria-live="polite"></section>
       <section id="recovery-panel" class="recovery-panel" hidden aria-labelledby="recovery-title"></section>
     </section>
+    <aside id="porutham-side" class="porutham-side" aria-label="என் கணக்கு / My account"></aside>
+    </div>
     <section id="history-view" hidden aria-labelledby="history-heading"><h2 id="history-heading" data-i18n="history">முந்தைய அறிக்கைகள்</h2><div id="history-content"></div></section>
     <section id="family-view" hidden aria-labelledby="family-heading"><h2 id="family-heading" data-i18n="family">குடும்ப விவரங்கள்</h2><p class="muted" data-i18n="familyHelp">உங்கள் அனுமதியுடன் மட்டும் பிறந்த விவரங்கள் கணக்கில் சேமிக்கப்படும்.</p><div id="family-content"></div></section>
     <noscript><p class="notice">இந்தப் பக்கத்திற்கு JavaScript தேவை.</p></noscript>

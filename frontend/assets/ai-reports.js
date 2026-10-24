@@ -17,8 +17,20 @@
       backToRasi: 'ராசி முடிவுகளுக்குத் திரும்பு',
       rasiStepTitle: 'ராசி பொருத்தம்', rasiStepHelp: 'மணமகள், மணமகனின் ராசி மற்றும் நட்சத்திரத்தைத் தேர்ந்தெடுத்து 12 பொருத்தங்களைப் பார்க்கவும்.',
       kattamStepTitle: 'திருமணக் கட்டப் பொருத்தம்', kattamStepHelp: 'முழுமையான ஜாதகக் கணக்கிற்குப் பிறந்த தேதி, நேரம், இடம் தேவை.',
-      kattamPrivacy: 'பிறந்த விவரங்கள் கணக்கிட மட்டும் RightConnect சேவையகத்துக்கு அனுப்பப்படும்; சேமிக்கப்படுவதில்லை.', kattamGenerate: 'கட்ட அறிக்கையை உருவாக்கு',
+      kattamPrivacy: 'பிறந்த விவரங்கள் கணக்கிட RightConnect சேவையகத்துக்கு அனுப்பப்படும். விருந்தினர் விவரங்கள் சேமிக்கப்படுவதில்லை; உள்நுழைந்திருந்தால் உங்கள் வரலாற்றில் சேமிக்கப்படும்; எப்போது வேண்டுமானாலும் நீக்கலாம்.', kattamGenerate: 'கட்ட அறிக்கையை உருவாக்கு',
       calculating: 'கணக்கிடப்படுகிறது…', unlockShort: '{price}-ல் திற', unlockBar: 'மங்கலான பகுதிகளைப் படிக்க முழு அறிக்கையைத் திறக்கவும் + PDF',
+      accountTitle: 'என் கணக்கு', accountError: 'கணக்கு விவரங்களை ஏற்ற முடியவில்லை. பின்னர் முயற்சிக்கவும்.',
+      guestSide: 'உள்நுழைந்தால் கடைசி 30 பொருத்தங்கள் இங்கே சேமிக்கப்படும்; கடைசியாக உள்ளிட்ட விவரங்கள் தானாக நிரப்பப்படும்.',
+      adminBadge: 'நிர்வாகி — அனைத்து அறிக்கைகளும் இலவசம். WhatsApp வாடிக்கையாளர்களுக்கு PDF உருவாக்கலாம்.',
+      creditsLeft: 'மீதமுள்ள அறிக்கைகள்: {n}', creditsUntil: '{date} வரை', noCredits: 'செயலிலுள்ள பேக் இல்லை.',
+      packOffer: '{price}-க்கு {n} அறிக்கைகள் · {days} நாள்', packHelp: 'திருமண தகவல் மையங்கள், தரகர்கள், பல ஜாதகங்கள் பார்ப்பவர்களுக்கு.',
+      buyPack: 'பேக் வாங்கு', loginForPack: 'உள்நுழைந்து பேக் வாங்கு', orPack: 'அதிக ஜாதகங்கள் பார்க்கிறீர்களா?',
+      packBought: 'பேக் செயல்படுத்தப்பட்டது: {n} அறிக்கைகள்.', noCreditsError: 'பேக்கில் அறிக்கைகள் இல்லை.',
+      useCredit: 'பேகில் 1 அறிக்கை பயன்படுத்தித் திற ({n} மீதம்)', useCreditShort: 'பேகில் திற',
+      historyTitle: 'முந்தைய பொருத்தங்கள்', historyEmpty: 'இன்னும் பொருத்தம் பார்க்கவில்லை.',
+      historyWarning: 'கடைசி {n} முடிவுகள் மட்டும் சேமிக்கப்படும். புதியது சேரும்போது பழையது தானாக நீக்கப்படும் (திறந்த அறிக்கைகளும்). தேவையானதை PDF ஆகச் சேமிக்கவும்.',
+      deleteHistory: 'நீக்கு', deleteHistoryConfirm: 'இந்த முடிவை வரலாற்றிலிருந்து நீக்கவா?', lockedEntry: 'பூட்டப்பட்டது',
+      level_high: 'உத்தமம்', level_medium: 'மத்திமம்', level_low: 'அதமம்',
       printReport: 'PDF / அச்சிடு', editBirth: 'பிறப்பு விவரங்களை மாற்று', kattamTimeError: 'இந்த நேர மண்டலத்தில் அந்தப் பிறந்த நேரம் இல்லை அல்லது இருமுறை வருகிறது (பகல் ஒளி சேமிப்பு மாற்றம்). நேரத்தைச் சரிபார்க்கவும்.',
       brideName: 'பெண் பெயர் (விருப்பம்)', groomName: 'பையன் பெயர் (விருப்பம்)',
       brideRasi: 'பெண் ராசி', groomRasi: 'பையன் ராசி',
@@ -121,8 +133,20 @@
       backToRasi: 'Back to Rasi results',
       rasiStepTitle: 'Rasi matching', rasiStepHelp: 'Choose both Rasis and Nakshatras to see the twelve traditional checks.',
       kattamStepTitle: 'Detailed Jathaka Kattam matching', kattamStepHelp: 'A fuller chart calculation needs each person’s birth date, time and place.',
-      kattamPrivacy: 'Birth details are sent to the RightConnect server only to calculate the report; they are not stored.', kattamGenerate: 'Create Kattam report',
+      kattamPrivacy: 'Birth details are sent to the RightConnect server to calculate the report. Guest details are not stored; when signed in they are saved to your history, which you can delete any time.', kattamGenerate: 'Create Kattam report',
       calculating: 'Calculating…', unlockShort: 'Unlock for {price}', unlockBar: 'Unlock the blurred parts and get the PDF',
+      accountTitle: 'My account', accountError: 'Could not load your account. Please try again later.',
+      guestSide: 'Sign in to keep your last 30 matches here and have your last entered details filled in automatically.',
+      adminBadge: 'Admin — all reports are free. Create PDFs for WhatsApp customers.',
+      creditsLeft: 'Reports left: {n}', creditsUntil: 'until {date}', noCredits: 'No active pack.',
+      packOffer: '{n} reports for {price} · {days} days', packHelp: 'For matrimony centres, brokers and anyone checking many horoscopes.',
+      buyPack: 'Buy pack', loginForPack: 'Sign in to buy a pack', orPack: 'Checking many horoscopes?',
+      packBought: 'Pack activated: {n} reports.', noCreditsError: 'No reports left in your pack.',
+      useCredit: 'Open with 1 pack report ({n} left)', useCreditShort: 'Open with pack',
+      historyTitle: 'Previous matches', historyEmpty: 'No matches yet.',
+      historyWarning: 'Only the last {n} results are kept. A new one removes the oldest automatically (unlocked reports too). Save the ones you need as PDF.',
+      deleteHistory: 'Delete', deleteHistoryConfirm: 'Remove this result from your history?', lockedEntry: 'Locked',
+      level_high: 'Good', level_medium: 'Average', level_low: 'Weak',
       printReport: 'PDF / Print', editBirth: 'Change birth details', kattamTimeError: 'This birth time does not exist or occurs twice in that timezone (daylight-saving change). Please check the time.',
       brideName: 'Bride name (optional)', groomName: 'Groom name (optional)',
       brideRasi: 'Bride Rasi', groomRasi: 'Groom Rasi',
@@ -252,7 +276,8 @@
     busy: false, view: 'services', familyEditor: null, capabilities: new Map(),
     compatibilityStep: 'choose', kattamFrom: null, quickMatch: null,
     authVersion: 0, reportVersion: 0, storageWarning: false, catalogueError: null,
-    kattamPrice: 9900, kattamProofs: {}, kattamPaying: false, kattamPending: null, kattamPayMessage: '', pdfBusy: false
+    kattamPrice: 9900, kattamProofs: {}, kattamPaying: false, kattamPending: null, kattamPayMessage: '', pdfBusy: false,
+    account: null, packOffer: { amount_paise: 29900, reports: 20, days: 30, available: true }, packConfirming: false
   };
   const $ = selector => document.querySelector(selector);
   const t = key => words[state.language][key] || words.ta[key] || key;
@@ -490,7 +515,7 @@
     group.dataset.birth = prefix;
     group.append(text('legend', t(heading)));
     const controls = {};
-    if (state.session && allowSaved) {
+    if (state.session && allowSaved && !compatibility) {
       const pickerWrap = text('div', undefined, 'saved-picker');
       const picker = makeField(pickerWrap, {
         name: `${prefix}-member`, label: 'savedMember', required: false,
@@ -740,7 +765,7 @@
       ['chooseKattamTitle', 'chooseKattamHelp', 'layout-grid', () => {
         state.compatibilityStep = 'kattam';
         state.kattamFrom = 'choose';
-        state.inputs = state.kattam ? state.kattam.inputs : {};
+        state.inputs = state.kattam ? state.kattam.inputs : state.account && state.account.last_inputs ? state.account.last_inputs : {};
         renderInput(state.inputs);
         focusHeading('#form-title');
       }]
@@ -848,19 +873,23 @@
     icons();
   }
 
-  async function porutham(path, body) {
+  async function porutham(path, body, method = 'POST') {
+    const headers = { Accept: 'application/json' };
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    if (state.session) headers.Authorization = `Bearer ${state.session.access_token}`;
     let response;
     try {
       response = await fetch(`/api/v1/porutham${path}`, {
-        method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify(body), cache: 'no-store', credentials: 'omit'
+        method, headers, body: body === undefined ? undefined : JSON.stringify(body), cache: 'no-store', credentials: 'omit'
       });
     } catch (_) { throw error('networkError'); }
     if (!response.ok) {
       const problem = await response.json().catch(() => ({}));
       if (response.status === 422 && /time/.test(String(problem.detail))) throw error('kattamTimeError');
-      throw error({ 400: path.startsWith('/kattam/') ? 'payVerifyError' : 'invalidError', 422: 'invalidError', 429: 'rateError', 503: 'payUnavailable' }[response.status] || 'unavailableError');
+      throw error({ 400: /^\/(kattam|pack)\//.test(path) ? 'payVerifyError' : 'invalidError', 401: 'authError', 402: 'noCreditsError', 404: 'missingError',
+        422: 'invalidError', 429: 'rateError', 503: 'payUnavailable' }[response.status] || 'unavailableError');
     }
+    if (response.status === 204) return null;
     try { return await response.json(); } catch (_) { throw error('invalidResponse'); }
   }
 
@@ -1051,6 +1080,7 @@
           state.kattamPayMessage = '';
           renderKattamReport();
           focusHeading('#report-heading');
+          if (state.session) loadAccount();
         }, status, 'calculating');
         return;
       }
@@ -1186,8 +1216,14 @@
     }
     const result = await porutham('/kattam', kattamBody(kattam));
     if (!result.report || !Array.isArray(result.report.sections)) throw error('invalidResponse');
-    if (result.unlock && Number.isInteger(result.unlock.amount_paise) && result.unlock.amount_paise >= 100) state.kattamPrice = result.unlock.amount_paise;
+    applyOffer(result.unlock);
     kattam.report = result.report;
+    kattam.historyId = result.history_id || null;
+  }
+  function applyOffer(unlock) {
+    if (!unlock) return;
+    if (Number.isInteger(unlock.amount_paise) && unlock.amount_paise >= 100) state.kattamPrice = unlock.amount_paise;
+    if (unlock.pack && Number.isInteger(unlock.pack.amount_paise)) state.packOffer = unlock.pack;
   }
   function renderPorutham(report) {
     const article = text('article', undefined, 'kattam-report');
@@ -1263,16 +1299,19 @@
     if (!paid) panel.append(unlockBar());
     icons();
   }
-  const priceLabel = () => {
-    const rupees = state.kattamPrice / 100;
-    return `₹${Number.isInteger(rupees) ? rupees : rupees.toFixed(2)}`;
+  const rupees = paise => {
+    const value = paise / 100;
+    return `₹${Number.isInteger(value) ? value : value.toFixed(2)}`;
   };
+  const priceLabel = () => rupees(state.kattamPrice);
+  const hasCredits = () => Boolean(state.account && state.account.credits > 0);
   function unlockButton(className = 'kattam-teaser-unlock') {
-    const control = text('button', t('unlockShort').replace('{price}', priceLabel()), className);
+    const credits = hasCredits();
+    const control = text('button', credits ? t('useCreditShort') : t('unlockShort').replace('{price}', priceLabel()), className);
     control.type = 'button';
     control.dataset.pay = '';
     control.disabled = state.kattamPaying;
-    control.addEventListener('click', startKattamPayment);
+    control.addEventListener('click', credits ? useCredit : startKattamPayment);
     return control;
   }
   function teaserLine(value) {
@@ -1303,14 +1342,17 @@
     title.id = 'kattam-paywall-title';
     const list = text('ul', undefined, 'kattam-paywall-list');
     for (const item of t('lockedItems')) list.append(text('li', item));
-    paywall.append(badge, title, text('strong', priceLabel(), 'kattam-paywall-price'), text('p', t('lockedLead')), list, payButton(), text('small', t('payNote'), 'kattam-paywall-note'), payStatus());
+    paywall.append(badge, title, text('strong', hasCredits() ? t('creditsLeft').replace('{n}', state.account.credits) : priceLabel(), 'kattam-paywall-price'),
+      text('p', t('lockedLead')), list, payButton(), text('small', t('payNote'), 'kattam-paywall-note'), payStatus());
+    if (!hasCredits()) paywall.append(text('p', t('orPack'), 'kattam-paywall-or'), packBox());
     return paywall;
   }
   function payButton() {
     const pending = state.kattamPending && state.kattamPending.kattam === state.kattam;
     const control = pending
       ? button(t('refresh'), () => confirmKattamPayment(state.kattamPending.kattam, state.kattamPending.response), '', 'refresh-cw')
-      : button(t('payUnlock').replace('{price}', priceLabel()), startKattamPayment, '', 'lock-open');
+      : hasCredits() ? button(t('useCredit').replace('{n}', state.account.credits), useCredit, '', 'lock-open')
+        : button(t('payUnlock').replace('{price}', priceLabel()), startKattamPayment, '', 'lock-open');
     control.dataset.pay = '';
     control.disabled = state.kattamPaying;
     return control;
@@ -1414,6 +1456,7 @@
     }
     if (paid) state.kattamPending = null;
     state.kattamPaying = false;
+    if (paid && state.session) loadAccount();
     if (state.kattam === kattam) {
       renderKattamReport();
       if (paid) {
@@ -1421,6 +1464,192 @@
         downloadKattamPdf();
       }
     }
+  }
+  const poruthamPage = () => document.body.dataset.servicePage === 'compatibility';
+  async function loadAccount() {
+    if (!poruthamPage()) return;
+    if (!state.session) {
+      state.account = null;
+      renderSide();
+      return;
+    }
+    const version = state.authVersion;
+    try {
+      const account = await porutham('/me', undefined, 'GET');
+      if (version !== state.authVersion) return;
+      state.account = account;
+      if (account.pack) state.packOffer = account.pack;
+    } catch (_) {
+      if (version !== state.authVersion) return;
+      state.account = null;
+    }
+    renderSide();
+    if (state.kattam && state.kattam.report && state.kattam.report.locked && !$('#report-panel').hidden && !state.kattamPaying) renderKattamReport();
+  }
+  function shortDate(value) {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? '' : new Intl.DateTimeFormat(state.language === 'ta' ? 'ta-IN' : 'en-GB', { dateStyle: 'medium' }).format(parsed);
+  }
+  function packBox() {
+    const pack = state.packOffer;
+    const box = text('div', undefined, 'side-pack');
+    box.append(text('strong', t('packOffer').replace('{price}', rupees(pack.amount_paise)).replace('{n}', pack.reports).replace('{days}', pack.days)),
+      text('small', t('packHelp')));
+    const buy = button(t(state.session ? 'buyPack' : 'loginForPack'), buyPack, 'secondary', 'package');
+    buy.dataset.pay = '';
+    buy.disabled = state.kattamPaying || pack.available === false;
+    box.append(buy);
+    return box;
+  }
+  function renderSide() {
+    const side = $('#porutham-side');
+    if (!side) return;
+    const account = state.account;
+    const card = text('section', undefined, 'side-card');
+    card.append(text('h2', t('accountTitle')));
+    if (!state.session) {
+      card.append(text('p', t('guestSide'), 'form-help'), button(t('login'), () => $('#login').click(), 'secondary', 'log-in'));
+    } else if (!account) {
+      card.append(text('p', t('accountError'), 'form-help'));
+    } else if (account.admin) {
+      card.append(text('p', t('adminBadge'), 'side-admin'));
+    } else {
+      card.append(text('p', account.credits
+        ? `${t('creditsLeft').replace('{n}', account.credits)} · ${t('creditsUntil').replace('{date}', shortDate(account.pack_expires_at))}`
+        : t('noCredits'), 'side-credits'));
+    }
+    if (!account || !account.admin) card.append(packBox());
+    side.replaceChildren(card);
+    if (state.session && account) side.append(historyCard(account));
+    icons();
+  }
+  function historyCard(account) {
+    const card = text('section', undefined, 'side-card side-history');
+    card.append(text('h2', `${t('historyTitle')} (${account.history.length}/${account.history_limit})`),
+      text('p', t('historyWarning').replace('{n}', account.history_limit), 'side-warning'));
+    if (!account.history.length) {
+      card.append(text('p', t('historyEmpty'), 'muted'));
+      return card;
+    }
+    const list = text('ul', undefined, 'history-list');
+    for (const entry of account.history) {
+      const current = state.kattam && state.kattam.historyId === entry.id && !$('#report-panel').hidden;
+      const row = text('li', undefined, `history-item${current ? ' is-current' : ''}`);
+      const open = text('button', undefined, 'history-open');
+      open.type = 'button';
+      const meta = text('span', undefined, 'history-meta');
+      meta.append(text('span', t(`level_${entry.level}`), `level-chip level-${entry.level}`), text('small', `${entry.stars}/12 · ${entry.kattam}/4`));
+      if (!entry.unlocked) {
+        const lock = text('i');
+        lock.dataset.lucide = 'lock';
+        lock.setAttribute('aria-label', t('lockedEntry'));
+        meta.append(lock);
+      }
+      open.append(text('span', `${entry.groom} · ${entry.bride}`, 'history-names'), meta);
+      open.addEventListener('click', () => openHistory(entry.id));
+      const remove = text('button', undefined, 'history-delete');
+      remove.type = 'button';
+      remove.title = t('deleteHistory');
+      remove.setAttribute('aria-label', `${t('deleteHistory')}: ${entry.groom} · ${entry.bride}`);
+      const bin = text('i');
+      bin.dataset.lucide = 'trash-2';
+      bin.setAttribute('aria-hidden', 'true');
+      remove.append(bin);
+      remove.addEventListener('click', () => removeHistory(entry));
+      row.append(open, remove);
+      list.append(row);
+    }
+    card.append(list);
+    return card;
+  }
+  async function openHistory(id) {
+    if (state.kattamPaying) return;
+    await perform(async () => {
+      const result = await porutham(`/history/${encodeURIComponent(id)}?language=${state.language}`, undefined, 'GET');
+      const inputs = { bride: result.inputs.bride, groom: result.inputs.groom };
+      applyOffer(result.unlock);
+      state.kattam = { inputs, selected: result.inputs.selected || null, hash: await kattamHash(inputs), report: result.report, historyId: result.id };
+      state.kattamPending = null;
+      state.kattamPayMessage = '';
+      state.selected = descriptorFor('compatibility');
+      state.compatibilityStep = 'kattam';
+      state.kattamFrom = 'choose';
+      state.inputs = inputs;
+      renderKattamReport();
+      renderSide();
+      focusHeading('#report-heading');
+    });
+  }
+  async function removeHistory(entry) {
+    if (state.busy || !window.confirm(t('deleteHistoryConfirm'))) return;
+    await perform(async () => {
+      await porutham(`/history/${encodeURIComponent(entry.id)}`, undefined, 'DELETE');
+      if (state.kattam && state.kattam.historyId === entry.id) state.kattam.historyId = null;
+      await loadAccount();
+    });
+  }
+  async function useCredit() {
+    const kattam = state.kattam;
+    if (!kattam || !kattam.report || !kattam.report.locked || state.kattamPaying || state.busy) return;
+    setPaying(true);
+    setPayStatus(t('loading'));
+    try {
+      const result = await porutham('/kattam/credit', kattamBody(kattam));
+      kattam.report = result.report;
+      state.kattamPayMessage = '';
+    } catch (failure) {
+      state.kattamPayMessage = message(failure);
+    }
+    state.kattamPaying = false;
+    if (state.kattam === kattam) renderKattamReport();
+    await loadAccount();
+  }
+  async function buyPack() {
+    if (!state.session) {
+      $('#login').click();
+      return;
+    }
+    if (state.kattamPaying || state.busy) return;
+    setPaying(true);
+    setPayStatus(t('payOpening'));
+    try {
+      await loadScript(RAZORPAY_CHECKOUT);
+      if (!window.Razorpay) throw error('payUnavailable');
+      const order = await porutham('/pack/order');
+      if (!order || typeof order.order_id !== 'string' || typeof order.key_id !== 'string' || !Number.isInteger(order.amount)) throw error('invalidResponse');
+      const checkout = new window.Razorpay({
+        key: order.key_id, order_id: order.order_id, amount: order.amount, currency: order.currency || 'INR', name: 'RightConnect',
+        description: t('packOffer').replace('{price}', rupees(order.amount)).replace('{n}', order.reports).replace('{days}', order.days),
+        theme: { color: '#7d1410' }, prefill: state.session.user && state.session.user.email ? { email: state.session.user.email } : {},
+        handler: response => { confirmPack(response); },
+        modal: { ondismiss: () => { if (state.kattamPaying && !state.packConfirming) { setPaying(false); setPayStatus(t('payCancelled')); } } }
+      });
+      checkout.on('payment.failed', () => setPayStatus(t('payFailed')));
+      setPayStatus('');
+      checkout.open();
+    } catch (failure) {
+      setPaying(false);
+      setPayStatus(message(failure));
+      notice(message(failure));
+    }
+  }
+  async function confirmPack(response) {
+    state.packConfirming = true;
+    setPayStatus(t('payVerifying'));
+    let result = null;
+    let outcome = t('payVerifyError');
+    try {
+      result = await porutham('/pack/verify', {
+        razorpay_order_id: response.razorpay_order_id, razorpay_payment_id: response.razorpay_payment_id, razorpay_signature: response.razorpay_signature
+      });
+      outcome = result.status === 'paid' ? t('packBought').replace('{n}', result.credits) : t('payPending');
+    } catch (_) { result = null; }
+    state.packConfirming = false;
+    setPaying(false);
+    await loadAccount();
+    setPayStatus(outcome);
+    notice(outcome);
+    if (result && result.status === 'paid' && state.kattam && state.kattam.report && state.kattam.report.locked && !$('#report-panel').hidden) await useCredit();
   }
   function pdfPages(holder, pageHeight) {
     const origin = holder.getBoundingClientRect().top;
@@ -1751,6 +1980,17 @@
     state.familyEditor = null;
     $('#family-content').replaceChildren();
     $('#history-content').replaceChildren();
+    if (poruthamPage()) {
+      if (previousId) {
+        state.kattam = null;
+        state.kattamPending = null;
+        state.kattamPayMessage = '';
+        state.quickMatch = null;
+        selectService(descriptorFor('compatibility'));
+      }
+      await loadAccount();
+      return;
+    }
     if (previousId) {
       state.inputs = null;
       state.selected = null;
@@ -1808,6 +2048,7 @@
     updateLanguageText();
     renderCatalogue();
     renderRecovery();
+    renderSide();
     if (state.selected && !$('#input-panel').hidden) {
       if (state.selected.key === 'compatibility' && state.compatibilityStep === 'rasi' && state.quickMatch) {
         await perform(async () => {
@@ -1834,7 +2075,7 @@
   document.querySelectorAll('[data-view]').forEach(control => control.addEventListener('click', () => showView(control.dataset.view)));
   $('#login').addEventListener('click', () => perform(async () => {
     if (!state.client) throw error('loginUnavailable');
-    const { error: oauthError } = await state.client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${location.origin}/pages/services.html` } });
+    const { error: oauthError } = await state.client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${location.origin}${location.pathname}` } });
     if (oauthError) throw error('loginFailed');
   }));
   $('#logout').addEventListener('click', () => perform(async () => {
@@ -1849,7 +2090,9 @@
   loadProofs();
   updateLanguageText();
   renderRecovery();
-  if (document.body.dataset.servicePage === 'compatibility') selectService(descriptorFor('compatibility'));
-  else loadServices();
+  if (document.body.dataset.servicePage === 'compatibility') {
+    selectService(descriptorFor('compatibility'));
+    renderSide();
+  } else loadServices();
   initAuth();
 })();
