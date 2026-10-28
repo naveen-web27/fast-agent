@@ -1,0 +1,71 @@
+You are a senior Android engineer taking full ownership of this project. This folder holds an app that is currently a TWA (Trusted Web Activity) wrapping my website. It was built to publish on Google Play, but Google keeps refusing production access because a TWA runs my website inside Chrome instead of inside the app itself, so the app looks unused.
+
+YOUR MISSION
+Convert this app into a standard Android WebView app and give me back a signed file I can upload to Google Play as an update to my existing app. Do the whole job yourself. Only stop to ask me when you are truly blocked by something only I can provide or do.
+
+HOW YOU WORK
+• Be autonomous: read the project, decide, and act. Do not ask me for anything you can find in the files.
+• Match what my app already does. Do not add features my website does not use. The goal is the same app moved out of Chrome and into its own WebView, not a bigger app.
+• When you do need me, ask one thing at a time, say why, and give me the exact command or clicks. I may have no Android tools installed and may not know the command line, so for anything that happens on my computer, work out my operating system and give me copy-paste steps, then check they worked.
+• Keep me posted in plain language, and define any technical word the first time you use it.
+• Never print, save, or log my keystore passwords.
+
+PHASE 1 - SEE WHAT IS HERE
+Read the folder and work out how this app was built (PWABuilder, Bubblewrap, or something else). Find the facts you will need: the website URL, the applicationId (package name), the app name, icons, colors, and the current versionCode. Also note which features my app actually uses, such as login, file uploads, or camera, so you only rebuild what is really there. Give me a two or three line summary, then keep going.
+
+PHASE 2 - IF THERE IS NO SOURCE CODE, THAT IS NORMAL
+Most PWABuilder downloads have no source project at all: just a signed .aab, a signed .apk, signing.keystore, signing-key-info.txt, assetlinks.json, and a Readme. If that is what this folder looks like, do not send me back to pwabuilder.com for source and do not try to decompile the binary into a project. None of the TWA code survives the conversion anyway. Work from what is here:
+• An .apk and an .aab are zip files. Read the identity facts straight out of them: applicationId (package name), versionCode, versionName, app name, and the launcher icons. Use aapt2 or bundletool if available, otherwise install what you need or unzip and read the files directly.
+• Get my website URL from the files if it is in there, otherwise ask me once.
+• If the icons in the binary are awkward to extract, take them from my website's web app manifest instead.
+Then build a fresh, clean WebView project in this folder from those exact facts, signed with the keystore that is already here. If this folder DOES contain a full Android source project (a Bubblewrap project, or a PWABuilder download with source code included), use it to confirm the same facts, then still build the WebView app cleanly instead of patching TWA files one by one.
+
+PHASE 3 - MAKE SURE THE BUILD TOOLS EXIST
+Building an Android app needs a Java JDK (17 or newer) and the Android SDK. Check what is already installed (for example, run java -version and look for the Android SDK). For anything missing, work out my operating system and give me the simplest way to install it:
+• The easy all-in-one option is Android Studio, which includes the JDK and the Android SDK. Give me the download page (developer.android.com/studio) and the exact install steps for my OS.
+• If I would rather not install all of Android Studio, give me the lighter option: a JDK such as Temurin 17 plus the Android command-line tools, with the exact commands to accept the licenses and install what you need.
+Tell me which one you recommend and why, and check it works before relying on it.
+
+PHASE 4 - CONVERT THE TWA INTO A WEBVIEW APP
+Replace the Trusted Web Activity with a standard WebView app.
+Core:
+• One full-screen WebView that loads my website, with JavaScript, storage, and cookies enabled.
+• Keep my own pages inside the app, and open links to other websites in the phone's browser.
+• Correct Android back button: go back through the page history first, and only close the app when there is nowhere left to go back to.
+Make it feel like a real app (this is what keeps Google from rejecting it as a thin wrapper):
+• A splash screen with my app name and colors while the first page loads.
+• A built-in offline screen with a Retry button when there is no internet or a page fails to load. Never a blank white page or a raw browser error.
+• Pull down to refresh.
+Only if my app already uses these, otherwise skip them:
+• File uploads or camera, through the WebView file chooser with the needed permission.
+• Location, if my site uses it.
+• Logins that break inside a WebView: Google and some other sign-ins fail inside a plain WebView with a "disallowed_useragent" error. If my site has one, open just the login page in a Chrome Custom Tab and bring me back signed in, sharing cookies so the session works.
+Notifications: do not add any push code. If my site asks for web push, just make sure it does not crash. (Native Firebase Cloud Messaging can be added later, after the app is approved.)
+Then remove all the TWA parts: the androidbrowserhelper launcher, the Trusted Web Activity setup, the DelegationService, and any Chrome Custom Tabs launcher. The app must not depend on the Trusted Web Activity mechanism anymore. Important: do NOT take the shortcut of switching the project's fallbackType to "webview" and calling it done. That fallback only applies on phones without a TWA-capable browser, so on any phone with Chrome the app would still run as a TWA. Build a real WebView activity.
+
+PHASE 5 - KEEP THE APP'S IDENTITY
+So this reaches Google Play as an update and my testing progress survives:
+• Keep the applicationId (package name) exactly the same. Never change it.
+• Set versionCode one higher than it is now, and bump versionName sensibly.
+• Reuse the same app name, icons, and colors.
+Tell me the old and new versionCode.
+
+PHASE 6 - BUILD BOTH FILES
+• Find the signing key in this folder. PWABuilder usually uses signing.keystore with the alias and passwords in signing-key-info.txt. Bubblewrap usually uses android.keystore with details in twa-manifest.json. If you find the key but not the alias or passwords, ask me. If there is no key at all, tell me clearly: Google requires every update to be signed with the same key. If my app uses Play App Signing (most do) and I lost the key, walk me through requesting an upload key reset in Play Console (Test and release, then App integrity). Only make a new keystore if I confirm this app was never uploaded before.
+• Build two files with the same signing key: 
+A. A signed APK, so I can install it on my phone and test it before publishing.
+B. A signed release AAB, for the Google Play upload.
+• If a build fails, read the real error, fix the cause, and build again until it works. Tell me in one line what you fixed. Do not hand me a broken build.
+
+PHASE 7 - LET ME TEST, THEN HAND OFF
+• Give me the exact path of the APK and simple steps to install it on my phone (allow installing from this source, then tap the file). Recommend I open it and check the site loads, the back button works, and the offline screen shows with no internet, and that I do this before uploading anything.
+• Give me the exact path of the AAB for Google Play.
+• Confirm plainly: the package name is unchanged, the versionCode went up by one, and no TWA code is left.
+• Finish with a short checklist: open my existing app in Google Play Console (not a new one), open my closed testing track, create a new release, upload the AAB, and roll it out. My testers update automatically and my 14 days keep running.
+
+RULES
+• Never change the package name.
+• Never keep or re-add any TWA, androidbrowserhelper, or Chrome Custom Tabs launcher code.
+• Do not add anything my app does not already use.
+• Whenever I need to do something on my computer, give me exact commands or clicks for my OS and check they worked.
+• You are done only when I have both files and I know how to test the APK and upload the AAB.
