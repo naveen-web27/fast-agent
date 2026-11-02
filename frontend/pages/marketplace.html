@@ -299,6 +299,8 @@
       <nav class="navigation" aria-label="Primary navigation">
         <button class="nav-button active" data-view="discover"><span class="nav-icon">⌕</span><span>Discover</span></button>
         <button class="nav-button" data-view="showcases"><span class="nav-icon" aria-hidden="true">&#9654;</span><span>Video showcases</span></button>
+        <button class="nav-button" data-view="app-download" title="Download Android app"><span class="nav-icon" aria-hidden="true">&#8595;</span><span>Download app</span></button>
+        <button class="nav-button" data-view="app-tour" title="App tour"><span class="nav-icon" aria-hidden="true">?</span><span>App tour</span></button>
         <button class="nav-button" data-view="dashboard"><span class="nav-icon">▦</span><span>Dashboard</span></button>
         <button class="nav-button" data-view="requests"><span class="nav-icon">◫<b class="nav-badge" data-requests-badge hidden></b></span><span>My requests</span></button>
         <button class="nav-button" data-view="saved"><span class="nav-icon">♡</span><span>Saved</span></button>
@@ -325,6 +327,18 @@
           <div class="showcase-heading"><p class="muted">Provider-posted promotional content, not a verification or endorsement. Watching opens an external website.</p><button class="secondary" type="button" id="showcase-manage">Manage my showcases</button></div>
           <div class="showcase-grid" id="showcase-results" aria-live="polite"></div>
           <div class="pagination" id="showcase-pagination" hidden><button class="secondary" id="showcase-prev" type="button">Previous</button><span id="showcase-page"></span><button class="secondary" id="showcase-next" type="button">Next</button></div>
+        </section>
+        <section class="view" id="app-download">
+          <div class="page-title"><div><h1>Download RightConnect</h1><p>Keep using the website, or install our Android app. Installation is optional.</p></div></div>
+          <article class="content-card"><h2>Android app</h2><p>Download the RightConnect Trusted Web Activity (TWA) APK. It opens our live website using a compatible browser; an internet connection is required.</p><p><a class="primary" href="/downloads/rightconnect.apk" download="RightConnect.apk">Download Android TWA APK</a></p><p>Open the downloaded file on your Android phone. Android may ask you to allow installation from your browser. Only install files you trust.</p><p>This is a different app from the earlier Median WebView version; it will not update that app in place.</p></article>
+          <article class="content-card"><h2>iPhone or iPad</h2><p>APKs are Android-only. In Safari, use Share, then Add to Home Screen, or continue in your browser.</p><a class="secondary" href="/#iphone-install">View iPhone installation help</a></article>
+        </section>
+        <section class="view" id="app-tour">
+          <div class="page-title"><div><h1>Take an app tour</h1><p>Choose your role for a guided walkthrough highlighting the real controls. No data will be submitted or changed.</p></div></div>
+          <p class="muted">All three tours are available to everyone. A tour does not change your account or acting role. Sign in and select the appropriate workspace to use role-specific features.</p>
+          <article class="content-card"><h2>Customers</h2><p>Find experts and companies, save profiles, and track your requests.</p><button class="primary" type="button" data-start-tour="customer">Start customer tour</button></article>
+          <article class="content-card"><h2>Experts</h2><p>Learn about your expert workspace, profile, requests, and video showcases.</p><button class="primary" type="button" data-start-tour="expert">Start expert tour</button></article>
+          <article class="content-card"><h2>Companies</h2><p>Learn about company workspaces, service profiles, requests, and showcases. Management actions depend on your company permissions.</p><button class="primary" type="button" data-start-tour="company">Start company tour</button></article>
         </section>
         <section class="view" id="dashboard">
           <div class="page-title"><div><span class="section-tag" id="dash-tag">Dashboard</span><h1 id="dash-title">Your overview</h1><p id="dash-copy">Everything that needs your attention, in one place.</p></div><div class="top-actions" id="dash-actions"></div></div>
@@ -522,8 +536,8 @@
         if (url.searchParams.has('profile')) { url.searchParams.delete('profile'); window.history.replaceState({}, '', url); }
       }
       const sectionUrl = new URL(window.location.href);
-      if (viewId === 'showcases') sectionUrl.searchParams.set('view', 'showcases');
-      else if (viewId !== 'profile' && sectionUrl.searchParams.get('view') === 'showcases') sectionUrl.searchParams.delete('view');
+      if (['showcases', 'app-download', 'app-tour'].includes(viewId)) sectionUrl.searchParams.set('view', viewId);
+      else if (viewId !== 'profile' && ['showcases', 'app-download', 'app-tour'].includes(sectionUrl.searchParams.get('view'))) sectionUrl.searchParams.delete('view');
       window.history.replaceState({}, '', sectionUrl);
     }
     buttons.forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
@@ -866,7 +880,7 @@
       showView('profile');
       if (!options.skipHistory) {
         const url = new URL(window.location.href);
-        if (url.searchParams.get('view') === 'showcases') url.searchParams.delete('view');
+        if (['showcases', 'app-download', 'app-tour'].includes(url.searchParams.get('view'))) url.searchParams.delete('view');
         url.searchParams.set('profile', profileId);
         window.history.pushState({ profileId }, '', url);
       }
@@ -887,7 +901,10 @@
     window.addEventListener('popstate', () => {
       const profileId = new URLSearchParams(window.location.search).get('profile');
       if (profileId) { openProfile(profileId, { skipHistory: true }); }
-      else { showView(new URLSearchParams(window.location.search).get('view') === 'showcases' ? 'showcases' : 'discover'); }
+      else {
+        const view = new URLSearchParams(window.location.search).get('view');
+        showView(['showcases', 'app-download', 'app-tour'].includes(view) ? view : 'discover');
+      }
     });
 
     document.querySelector('#share-profile-button').addEventListener('click', () => {
@@ -2191,7 +2208,7 @@
     // Launch params come from manifest shortcuts (?view=) and the Android share sheet (?q=).
     const launchParams = new URLSearchParams(window.location.search);
     const sharedProfileId = launchParams.get('profile');
-    const launchView = ['requests', 'dashboard', 'saved', 'showcases'].includes(launchParams.get('view')) ? launchParams.get('view') : null;
+    const launchView = ['requests', 'dashboard', 'saved', 'showcases', 'app-download', 'app-tour'].includes(launchParams.get('view')) ? launchParams.get('view') : null;
     const sharedQuery = (launchParams.get('q') || launchParams.get('title') || '').trim().slice(0, 200);
     function openLaunchView() { document.querySelector(`.nav-button[data-view="${launchView}"]`).click(); }
     if (sharedQuery) document.querySelector('#search-input').value = sharedQuery;
@@ -2202,6 +2219,7 @@
   </script>
   <script src="../assets/workspace.js"></script>
   <script src="../assets/showcases.js"></script>
+  <script src="../assets/app-tour.js"></script>
   <script src="../assets/mobile-install.js" defer></script>
 
 </body>

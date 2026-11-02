@@ -112,6 +112,19 @@ class PublicEntryTests(unittest.TestCase):
             self.assertIn("classes.dex", apk.namelist())
             self.assertIsNone(apk.testzip())
 
+    def test_public_download_and_role_tours_are_wired(self):
+        page = (FRONTEND / "pages/marketplace.html").read_text()
+        for view in ["app-download", "app-tour"]:
+            self.assertIn(f'data-view="{view}"', page)
+            self.assertIn(f'class="view" id="{view}"', page)
+        for role in ["customer", "expert", "company"]:
+            self.assertIn(f'data-start-tour="{role}"', page)
+        parser = PageParser()
+        parser.feed(page)
+        self.assertIn("/downloads/rightconnect.apk", parser.links)
+        self.assertIn("../assets/app-tour.js", page)
+        self.assertIn("/assets/app-tour.js", (FRONTEND / "sw.js").read_text())
+
     def test_manifest_keeps_app_launch_destination_without_play_link(self):
         manifest = json.loads((FRONTEND / "manifest.webmanifest").read_text())
         self.assertEqual(manifest["start_url"], "/pages/marketplace.html")
@@ -127,6 +140,7 @@ class PublicEntryTests(unittest.TestCase):
         scripts.extend(path.read_text() for path in [
             FRONTEND / "assets/mobile-install.js", FRONTEND / "sw.js",
             FRONTEND / "assets/showcases.js", FRONTEND / "assets/workspace.js",
+            FRONTEND / "assets/app-tour.js",
         ])
         self.assertTrue(javascript(
             "const scripts = " + json.dumps(scripts) +
