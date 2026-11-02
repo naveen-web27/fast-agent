@@ -27,7 +27,7 @@ Users are in India, so Singapore is also the closest region to them (~50 ms vs ~
 1. **New project** → Region **Southeast Asia (Singapore) – ap-southeast-1**. Save the database password in a password manager.
    - Plan: Free works, but free projects **pause after 7 days without traffic** and have no daily backups. Use **Pro** for production.
 2. **Create the schema** (SQL Editor → New query):
-   1. Paste and run all of `db/schema.sql`. It contains every migration up to 017 (including RLS and Razorpay order IDs), so no migration files are needed on a new database.
+   1. Paste and run all of `db/schema.sql`. It contains the current schema through migration 022 (including video showcases, RLS, image storage, and Razorpay order IDs), so no migration files are needed on a new database.
    2. Do **not** run `db/seed.sql` (demo profiles and fake reviews).
 3. **Connection string** (Project Settings → Database → Connection string → **Session pooler**):
    - Use the **session pooler, port `5432`**: `postgresql://postgres.<ref>:<password>@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres`
@@ -104,6 +104,10 @@ Afterwards everyone signs in once more (the new project issues new tokens). Remo
 
 ## 5. Check after go-live
 
+- **Video showcases:** existing databases must apply `022_video_showcases.sql` before this release (dev first, then production). Confirm image-storage migration `018` is already applied. Test a free provider's third post is rejected, an active Pro/Enterprise profile can publish 10 but not 11, and customers/company staff cannot write. Check horizontal scrolling, View all pagination, Instagram manual cover upload, YouTube preview failure fallback, and editing/removal. See [showcase workflow and retention notes](features/02-discover-marketplace.md#video-showcases-november-2026).
+- `/` shows the public introduction for guests; a restored signed-in session continues to the marketplace. Direct marketplace, service, and authentication URLs still work.
+- `/downloads/rightconnect.apk` downloads the approved Android release. This public file is copied from `marketing/androind_webview/app-release.apk`; replace it when releasing an update and retain the same signing identity. Do not publish the source archive or signing material. This Median WebView APK targets the production domain even when downloaded from staging; it is separate from the older TWA/Play package and its asset-links configuration.
+- On Android browsers, check the optional download suggestion; on iOS, check Safari Home Screen guidance. Dismiss the suggestion and confirm it stays dismissed after navigation/reload. Native/standalone app launches should not show it. Test APK installation and updates on a real Android device before sharing publicly.
 - `https://rightconnect.app/api/v1/health` → `{"status":"ok"}`.
 - `https://rightconnect.app/api/v1/health/db` responds in well under 300 ms (dev takes ~1.2 s).
 - Google sign-in works and lands on the marketplace.

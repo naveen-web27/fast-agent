@@ -2,11 +2,201 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="refresh" content="0; url=/pages/marketplace.html">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>RightConnect</title>
+  <meta name="description" content="Meet experts and companies, compare their experience, and coordinate your next step with RightConnect. Explore our marketplace and online services.">
+  <meta name="theme-color" content="#101b31">
+  <title>RightConnect | Find the right people. Take the next step.</title>
+  <link rel="icon" href="/assets/rightconnect-mark.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <style>
+    :root { --navy:#101b31; --ink:#172033; --muted:#526079; --teal:#087b74; --mint:#e5f6f2; --line:#dfe6ee; --paper:#f4f6fa; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; color:var(--ink); background:var(--paper); font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    a { color:var(--teal); }
+    a:focus-visible,summary:focus-visible { outline:3px solid #d79212; outline-offset:4px; }
+    .skip { position:absolute; top:-80px; left:16px; padding:10px; background:white; z-index:10; }
+    .skip:focus { top:10px; }
+    .wrap { width:min(1120px,100% - 40px); margin:auto; }
+    header { background:white; border-bottom:1px solid var(--line); }
+    .header-inner { display:flex; align-items:center; justify-content:space-between; gap:20px; min-height:84px; padding-block:16px; }
+    .brand { display:flex; align-items:center; gap:10px; color:var(--navy); font-size:20px; font-weight:800; text-decoration:none; }
+    .brand img { border-radius:10px; }
+    nav,.actions { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
+    nav a { font-size:14px; font-weight:700; text-decoration:none; }
+    .button { display:inline-flex; align-items:center; justify-content:center; min-height:46px; padding:10px 20px; border:1px solid var(--line); border-radius:10px; color:var(--ink); background:white; font-weight:750; text-decoration:none; }
+    .button.primary { color:white; background:var(--teal); border-color:var(--teal); }
+    .button:hover { border-color:var(--teal); }
+    .button.primary:hover { background:#06645f; }
+    .hero { display:grid; grid-template-columns:1.25fr 1fr; align-items:center; gap:60px; padding-block:76px; }
+    .eyebrow { margin:0 0 16px; color:var(--teal); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.12em; }
+    h1 { margin:0 0 22px; color:var(--navy); font-size:clamp(38px,5vw,62px); line-height:1.08; letter-spacing:-.05em; }
+    h2 { margin:0 0 12px; font-size:clamp(26px,3vw,36px); line-height:1.2; letter-spacing:-.03em; }
+    h3 { margin:0 0 10px; font-size:20px; }
+    p { margin:0 0 18px; }
+    .intro { max-width:540px; color:var(--muted); font-size:18px; }
+    .note { margin:16px 0 0; color:var(--muted); font-size:14px; }
+    .journey { padding:32px; border-radius:22px; color:white; background:var(--navy); box-shadow:0 20px 50px #101b311c; }
+    .journey .eyebrow { color:#82dec9; }
+    .journey ol { display:grid; gap:22px; margin:24px 0 0; padding-left:24px; }
+    .journey li { padding-left:8px; }
+    .journey strong { display:block; }
+    .journey span { color:#c2cfe1; font-size:14px; }
+    .section { padding-block:52px; border-top:1px solid var(--line); }
+    .section-intro { max-width:660px; color:var(--muted); }
+    .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:26px; }
+    .card { padding:26px; border:1px solid var(--line); border-radius:16px; background:white; }
+    .card p { color:var(--muted); }
+    .card a { font-weight:750; }
+    .card-label { display:block; margin-bottom:16px; color:var(--teal); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; }
+    .app-panel { display:grid; grid-template-columns:1fr 1fr; gap:40px; padding:36px; border-radius:20px; background:var(--mint); }
+    .app-panel ol { padding-left:22px; color:var(--muted); }
+    .app-panel li { margin-bottom:8px; }
+    .app-panel details { padding:16px 0; border-top:1px solid #b5d8d1; }
+    .app-panel summary { cursor:pointer; font-weight:750; }
+    .app-panel details p { margin:12px 0 0; color:var(--muted); }
+    footer { padding-block:26px; border-top:1px solid var(--line); }
+    .footer-inner { display:flex; justify-content:space-between; flex-wrap:wrap; gap:16px; color:var(--muted); font-size:14px; }
+    #session-status:empty { display:none; }
+    @media (max-width:760px) {
+      .hero,.app-panel { grid-template-columns:1fr; gap:30px; }
+      .hero { padding-block:44px; }
+      .cards { grid-template-columns:1fr; }
+      .header-inner { align-items:flex-start; flex-direction:column; gap:12px; }
+      nav { gap:16px; }
+      nav .button { min-height:40px; padding:6px 12px; }
+      .section { padding-block:36px; }
+      .app-panel,.journey { padding:24px; }
+    }
+    @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+  </style>
 </head>
 <body>
-  <p>Opening <a href="/pages/marketplace.html">RightConnect</a>...</p>
+  <a class="skip" href="#main">Skip to content</a>
+  <header>
+    <div class="wrap header-inner">
+      <a class="brand" href="/"><img src="/assets/rightconnect-mark.svg" width="36" height="36" alt="">RightConnect</a>
+      <nav aria-label="Main navigation">
+        <a href="#services">Our services</a>
+        <a href="#get-app">Get the app</a>
+        <a href="/pages/auth.html#sign-in">Sign in</a>
+        <a class="button primary" href="/pages/auth.html">Sign up</a>
+      </nav>
+    </div>
+  </header>
+  <main id="main" class="wrap">
+    <section class="hero" aria-labelledby="hero-title">
+      <div>
+        <p class="eyebrow">People. Services. The right connection.</p>
+        <h1 id="hero-title">Find the right people.<br>Take the next step.</h1>
+        <p class="intro">Discover experts and companies, compare their experience, and start a conversation about what you need. RightConnect brings your search and follow-up into one place.</p>
+        <div class="actions">
+          <a class="button primary" href="/pages/marketplace.html">Explore marketplace</a>
+          <a class="button" href="/pages/auth.html">Create an account</a>
+        </div>
+        <p class="note">Browse on the web. No app download required.</p>
+        <p class="note" id="session-status" role="status"></p>
+      </div>
+      <aside class="journey" aria-label="How RightConnect works">
+        <p class="eyebrow">From searching to connecting</p>
+        <h2>A clearer way to find help.</h2>
+        <ol>
+          <li><strong>Discover your options</strong><span>Search by service, location, and the kind of help you need.</span></li>
+          <li><strong>Compare before you choose</strong><span>Look at experience, verification details, and customer reviews where available.</span></li>
+          <li><strong>Connect and follow through</strong><span>Send a request, coordinate a consultation, and track the conversation.</span></li>
+        </ol>
+      </aside>
+    </section>
+    <section class="section" id="services" aria-labelledby="services-title">
+      <p class="eyebrow">What you can do here</p>
+      <h2 id="services-title">One place. More ways to move forward.</h2>
+      <p class="section-intro">Find professional help, offer your own expertise, or explore our online service tools.</p>
+      <div class="cards">
+        <article class="card">
+          <span class="card-label">For customers</span>
+          <h3>Find experts &amp; companies</h3>
+          <p>Explore profiles, check available trust signals, and reach out to providers who fit your needs.</p>
+          <a href="/pages/marketplace.html">Browse the marketplace &rarr;</a>
+        </article>
+        <article class="card">
+          <span class="card-label">For experts &amp; businesses</span>
+          <h3>Make your expertise discoverable</h3>
+          <p>Create your account, add an expert or company profile, and manage customer enquiries in your workspace.</p>
+          <a href="/pages/auth.html">Join RightConnect &rarr;</a>
+        </article>
+        <article class="card">
+          <span class="card-label">Online services</span>
+          <h3>Explore useful tools</h3>
+          <p>Prepare competitive-exam photos and documents, or explore Tamil astrology and related traditional services.</p>
+          <a href="/pages/services.html">See service categories &rarr;</a>
+        </article>
+      </div>
+    </section>
+    <section class="section" id="get-app" aria-labelledby="app-title">
+      <div class="app-panel">
+        <div>
+          <p class="eyebrow">RightConnect on your phone</p>
+          <h2 id="app-title">Your next connection, a tap away.</h2>
+          <p>Use RightConnect in your browser or download our Android app directly from this website.</p>
+          <div class="actions">
+            <a class="button primary" href="/downloads/rightconnect.apk" download="RightConnect.apk">Download Android APK</a>
+            <a class="button" href="/pages/marketplace.html">Continue on the web</a>
+          </div>
+          <p class="note">Android only. Installation is optional. This is a direct APK download, not a Google Play link.</p>
+        </div>
+        <div>
+          <h3>Install on Android</h3>
+          <ol>
+            <li>Download the APK on your Android phone.</li>
+            <li>Open the downloaded file. If Android asks, allow your browser to install this app only if you trust this website.</li>
+            <li>Finish installation and open RightConnect. You can turn off your browser's install permission afterwards.</li>
+          </ol>
+          <details id="iphone-install">
+            <summary>Using an iPhone or iPad?</summary>
+            <p>The APK cannot be installed on iOS. Open RightConnect in Safari, tap Share (or More, then Share), choose Add to Home Screen, and tap Add. If you are in another app's browser, open this website in Safari first.</p>
+          </details>
+          <details>
+            <summary>Prefer not to install anything?</summary>
+            <p>All visitors can continue to the marketplace in their browser. Installing the app is never required to browse or create an account.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="wrap footer-inner">
+      <span>RightConnect &mdash; Find help. Build trust. Connect.</span>
+      <div class="actions"><a href="/pages/marketplace.html">Marketplace</a><a href="/pages/privacy.html">Privacy policy</a></div>
+    </div>
+  </footer>
+  <script src="/assets/mobile-install.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    function showInstallHelp() {
+      if (location.hash === '#iphone-install') document.querySelector('#iphone-install').open = true;
+    }
+    showInstallHelp();
+    window.addEventListener('hashchange', showInstallHelp);
+    (async function continueSignedInVisit() {
+      const status = document.querySelector('#session-status');
+      try {
+        if (['#iphone-install', '#get-app'].includes(location.hash)) return;
+        // A storage key is only a hint; let Supabase restore/refresh the session before navigating.
+        if (!Object.keys(localStorage).some((key) => key.startsWith('sb-') && key.endsWith('-auth-token'))) return;
+        const response = await fetch('/api/v1/auth/provider-config');
+        if (!response.ok) throw new Error('Session configuration could not be loaded.');
+        const config = await response.json();
+        if (!config.supabase_url || !config.supabase_publishable_key) return;
+        const client = window.supabase.createClient(config.supabase_url, config.supabase_publishable_key);
+        const { data, error } = await client.auth.getSession();
+        if (error) throw error;
+        if (data.session) location.replace('/pages/marketplace.html');
+      } catch (error) {
+        console.warn('RightConnect could not restore the homepage session.', error);
+        status.textContent = 'We could not check your sign-in status. You can still explore the marketplace or sign in above.';
+      }
+    })();
+  </script>
 </body>
 </html>

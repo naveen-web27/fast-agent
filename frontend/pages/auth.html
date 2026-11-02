@@ -116,6 +116,7 @@
   </main>
   <div class="toast" id="toast" hidden></div>
   <div class="loading-screen" id="loading-screen" role="status" aria-live="polite" hidden><img src="../assets/rightconnect-mark.svg" alt=""><span class="loading-dots" aria-hidden="true"><i></i><i></i><i></i></span><p id="loading-text">Signing you in…</p></div>
+  <script src="../assets/mobile-install.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const steps = document.querySelectorAll('.step');
@@ -400,6 +401,7 @@
     (async () => {
       const savedRole = sessionStorage.getItem('rightconnect-role');
       if (savedRole && roleNames[savedRole]) role = savedRole;
+      if (location.hash === '#sign-in') document.querySelector('#sign-in-link').click();
       if (reviewerMode) {
         role = 'customer';
         document.querySelector('#role-label').textContent = 'App reviewer';

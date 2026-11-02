@@ -63,6 +63,21 @@ Run isolated payment regressions from the repo root with `PYTHONPATH=backend pyt
 
 Keep secrets in Render or ignored `.env` files, never frontend code. Rotate any secret shared in chat. Refunds and recurring billing are not automated yet and must be managed manually in Razorpay and the corresponding identity's access.
 
+## Video showcases
+
+Providers can publish external YouTube Shorts/video and Instagram Reel links with a title, description, and cover. No video bytes or scraped metadata are stored.
+
+- `GET /api/v1/showcases?page=1&page_size=12&profile_id=<optional UUID>`: public, paginated listing (maximum page size 30).
+- `POST /api/v1/showcases/preview`: authenticated link validation/canonicalization and a generated YouTube thumbnail URL; Instagram requires a manual cover.
+- `GET /api/v1/profiles/{profile_id}/showcases/manage`: owner/company-admin posts, current limit, and paid-plan status.
+- `POST /api/v1/profiles/{profile_id}/showcases`: publish; body `{source_url, title, description, cover_url}`. Title: 2-120 characters; description: 2-600. A missing YouTube cover uses its generated thumbnail; Instagram must use an authenticated showcase upload.
+- `PUT /api/v1/profiles/{profile_id}/showcases/{showcase_id}`: replace the post's metadata.
+- `DELETE /api/v1/profiles/{profile_id}/showcases/{showcase_id}`: remove the post, not the external video or stored cover.
+
+Free quota: **2 per profile**. An active Pro (expert) or Enterprise (company) plan permits **10**. Parent-row locking serializes writes; canonical links are unique within each profile. Expiry prevents new posts at/over the free quota without unpublishing existing posts.
+
+Apply migration `022` before deployment, and ensure image-storage migration `018` is present. Fresh projects use `db/schema.sql`. Run focused regressions with `python3 -B -m unittest discover -s backend/tests -p 'test_showcases.py' -v`. See [full workflow and release checks](../docs/features/02-discover-marketplace.md#video-showcases-november-2026).
+
 ## Multi-role identities (customer + expert + company, same login)
 
 One auth identity (one `users` row) can act as a customer, have one personal expert profile, and admin any number of companies at the same time:

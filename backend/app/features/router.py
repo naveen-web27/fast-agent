@@ -13,6 +13,7 @@ from app.features.payments.router import router as payments_router
 from app.features.porutham.router import router as porutham_router
 from app.features.profiles.router import router as profiles_router
 from app.features.requests.router import router as requests_router
+from app.features.showcases.router import router as showcases_router
 
 feature_router = APIRouter()
 feature_router.include_router(ai_reports_router)
@@ -20,6 +21,7 @@ feature_router.include_router(health_router, tags=["health"])
 feature_router.include_router(auth_router, prefix="/auth", tags=["auth"])
 feature_router.include_router(marketplace_router, tags=["marketplace"])
 feature_router.include_router(profiles_router, tags=["profiles"])
+feature_router.include_router(showcases_router, tags=["showcases"])
 feature_router.include_router(admin_router, prefix="/admin", tags=["admin"])
 feature_router.include_router(requests_router, prefix="/requests", tags=["requests"])
 feature_router.include_router(booking_router, prefix="/requests", tags=["booking"])

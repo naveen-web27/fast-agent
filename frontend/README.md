@@ -1,7 +1,17 @@
 # RightConnect Web UI
 
+- `index.html`: public introduction homepage with marketplace, shared sign-in/sign-up, online services, and optional app installation. Restored Supabase sessions continue to the marketplace, which keeps its existing role-based destination.
 - `pages/marketplace.html`: marketplace discovery and request workspace.
-- `pages/auth.html`: mobile-first role selection, sign-in, and onboarding.
-- `assets/`: RightConnect logos and future local images.
+- `pages/auth.html`: mobile-first role selection, sign-in, and onboarding; `#sign-in` opens the existing Google sign-in step directly.
+- `assets/mobile-install.js`: optional Android APK / iOS Home Screen suggestion on all public pages. Dismissal persists in the browser; standalone apps, Median/GoNative WebViews, and Android WebViews do not show it.
+- `downloads/rightconnect.apk`: public Android download, copied from `marketing/androind_webview/app-release.apk`. Replace this file with each approved, signed release; never put keystores, signing keys, AABs, or source archives in this public directory. The supplied APK targets `https://rightconnect.app/pages/marketplace.html` and uses package `co.median.android.lplnepk`; it is a Median WebView build, not the older TWA build. Keep the same signing identity for updates.
+- `assets/`: RightConnect logos and local images.
+- `assets/showcases.js`: marketplace video cards, horizontal discovery row, dedicated paginated `?view=showcases` section, profile showcases, and the owner/company-admin publishing modal. Free: 2 per profile; active Pro/Enterprise: 10. Uses the existing optimized image upload/storage helper; never uploads videos.
 
-The frontend currently uses static HTML for fast product validation. The next conversion should move CSS and JavaScript into `frontend/css/` and `frontend/js/`, then connect each screen to the FastAPI endpoints.
+The frontend uses static HTML served by FastAPI from this directory. Open `/` for the introduction, or `/pages/marketplace.html` to go straight to discovery. The repository-root redirect now targets the introduction instead of the marketplace; for local use, run FastAPI rather than opening HTML from disk.
+
+Android downloads use a normal same-origin link with a download filename. iPhones/iPads cannot install APKs; the introduction page provides Safari Add to Home Screen instructions instead. Installation is never required. APK downloads bypass the service worker and are not precached.
+
+Run public entry regressions from the repository root with `python3 -B -m unittest discover -s frontend/tests -p 'test_public_entry.py' -v`. Static checks use only the standard library; JavaScript syntax/platform/dismissal checks use macOS JavaScriptCore through `osascript` and are skipped elsewhere. Also check real browser session restoration and test the signed APK on an Android device before release.
+
+Showcase API/schema setup and manual release checks: [video showcase workflow](../docs/features/02-discover-marketplace.md#video-showcases-november-2026). YouTube previews are image-only and titles/descriptions are manual. Instagram uses an uploaded cover instead of scraped previews. Deleting a post does not automatically delete its stored image; include unused covers in storage retention handling.

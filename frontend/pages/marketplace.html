@@ -298,6 +298,7 @@
       <div class="workspace" id="workspace-switcher"><small>Acting as</small><button class="workspace-button" id="workspace-button"><strong id="workspace-label">Customer</strong><span class="workspace-caret">⌄</span></button><div class="workspace-menu" id="workspace-menu" hidden></div></div>
       <nav class="navigation" aria-label="Primary navigation">
         <button class="nav-button active" data-view="discover"><span class="nav-icon">⌕</span><span>Discover</span></button>
+        <button class="nav-button" data-view="showcases"><span class="nav-icon" aria-hidden="true">&#9654;</span><span>Video showcases</span></button>
         <button class="nav-button" data-view="dashboard"><span class="nav-icon">▦</span><span>Dashboard</span></button>
         <button class="nav-button" data-view="requests"><span class="nav-icon">◫<b class="nav-badge" data-requests-badge hidden></b></span><span>My requests</span></button>
         <button class="nav-button" data-view="saved"><span class="nav-icon">♡</span><span>Saved</span></button>
@@ -307,13 +308,23 @@
       </nav>
       <div class="side-bottom" id="side-bottom" hidden><span class="section-tag">Signed in as</span><div class="profile-mini"><span class="avatar" id="sidebar-avatar">?</span><span id="sidebar-name"></span></div></div>
     </aside>
-    <main class="main">
+    <main class="main" data-install-banner-host>
       <header class="topbar"><div class="top-actions"><button class="icon-button mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="crumb"><strong>RightConnect</strong> / Marketplace</div></div><div class="top-actions"><div class="bell-wrap" id="bell-wrap" hidden><button class="icon-button" id="notif-button" type="button" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="bell-count" id="notif-count" hidden>0</span></button><div class="notif-menu" id="notif-menu" hidden></div></div><a class="secondary" href="auth.html" id="sign-in-link">Sign in or join</a><button class="secondary" id="request-expert">Become an expert</button><div class="user-chip" id="user-chip" hidden><button class="user-chip-button" id="user-menu-button"><span class="avatar" id="chip-avatar">?</span><span id="chip-name"></span></button><div class="user-menu" id="user-menu" hidden><button id="my-profile-button">My profile</button><button id="manage-interests-button">Interests</button><button id="profile-settings-button">Settings</button><button id="menu-support-button">Help</button><button id="sign-out-button">Sign out</button></div></div></div></header>
       <div class="page">
         <section class="view active" id="discover">
           <div class="page-title"><div><h1>Find help</h1></div><button class="primary" id="match-button">✦ Get matched</button></div>
+          <section class="showcase-discover" aria-labelledby="showcase-strip-title">
+            <div class="showcase-heading"><div><h2 id="showcase-strip-title">Video showcases</h2><p class="muted">Meet providers through their Reels and Shorts. Videos open on the original platform.</p></div><button class="secondary" type="button" data-view="showcases">View all showcases</button></div>
+            <div class="showcase-strip" id="showcase-strip" tabindex="0" role="region" aria-label="Recent video showcases, scroll horizontally"><p class="muted">Loading showcases...</p></div>
+          </section>
           <div class="search-panel"><label class="search-field">⌕ <input id="search-input" placeholder="What do you need?"></label><div class="kind-toggle" id="kind-toggle" role="group" aria-label="Profile type filter"><button type="button" class="pill kind-pill selected" data-kind="expert">Experts</button><button type="button" class="pill kind-pill selected" data-kind="company">Companies</button><button type="button" class="pill kind-pill" id="kind-customer-pill" data-kind="customer" hidden>Customers</button></div><button class="primary" id="search-button">Search</button></div>
           <div class="dashboard-grid"><div><div class="filter-row"><h2 id="result-count">Loading profiles…</h2></div><div class="results" id="results"></div><div class="pagination" id="pagination" hidden><button class="secondary" id="page-prev" type="button">← Prev</button><span id="page-indicator">Page 1</span><button class="secondary" id="page-next" type="button">Next →</button></div></div><aside><div class="insight-card"><span class="section-tag">Top picks</span><div class="match-list" id="match-list"></div></div><div class="stat-grid"><div class="stat"><small>Reviews</small><strong id="stat-reviews">–</strong></div><div class="stat"><small>Avg. reply</small><strong id="stat-response">–</strong></div></div></aside></div>
+        </section>
+        <section class="view" id="showcases">
+          <div class="page-title"><div><h1>Video showcases</h1><p>Discover experts and companies through their YouTube Shorts and Instagram Reels.</p></div></div>
+          <div class="showcase-heading"><p class="muted">Provider-posted promotional content, not a verification or endorsement. Watching opens an external website.</p><button class="secondary" type="button" id="showcase-manage">Manage my showcases</button></div>
+          <div class="showcase-grid" id="showcase-results" aria-live="polite"></div>
+          <div class="pagination" id="showcase-pagination" hidden><button class="secondary" id="showcase-prev" type="button">Previous</button><span id="showcase-page"></span><button class="secondary" id="showcase-next" type="button">Next</button></div>
         </section>
         <section class="view" id="dashboard">
           <div class="page-title"><div><span class="section-tag" id="dash-tag">Dashboard</span><h1 id="dash-title">Your overview</h1><p id="dash-copy">Everything that needs your attention, in one place.</p></div><div class="top-actions" id="dash-actions"></div></div>
@@ -505,10 +516,15 @@
       closeSidebar();
       window.scrollTo({ top: 0, behavior: 'smooth' });
       if (viewId === 'dashboard') loadDashboard();
+      if (viewId === 'showcases') window.loadVideoShowcases?.();
       if (viewId !== 'profile') {
         const url = new URL(window.location.href);
         if (url.searchParams.has('profile')) { url.searchParams.delete('profile'); window.history.replaceState({}, '', url); }
       }
+      const sectionUrl = new URL(window.location.href);
+      if (viewId === 'showcases') sectionUrl.searchParams.set('view', 'showcases');
+      else if (viewId !== 'profile' && sectionUrl.searchParams.get('view') === 'showcases') sectionUrl.searchParams.delete('view');
+      window.history.replaceState({}, '', sectionUrl);
     }
     buttons.forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
     let currentProfileId = null;
@@ -850,6 +866,7 @@
       showView('profile');
       if (!options.skipHistory) {
         const url = new URL(window.location.href);
+        if (url.searchParams.get('view') === 'showcases') url.searchParams.delete('view');
         url.searchParams.set('profile', profileId);
         window.history.pushState({ profileId }, '', url);
       }
@@ -869,7 +886,8 @@
 
     window.addEventListener('popstate', () => {
       const profileId = new URLSearchParams(window.location.search).get('profile');
-      if (profileId) { openProfile(profileId, { skipHistory: true }); } else { showView('discover'); }
+      if (profileId) { openProfile(profileId, { skipHistory: true }); }
+      else { showView(new URLSearchParams(window.location.search).get('view') === 'showcases' ? 'showcases' : 'discover'); }
     });
 
     document.querySelector('#share-profile-button').addEventListener('click', () => {
@@ -945,6 +963,7 @@
         ? profile.reviews.map((review) => `<div class="review"><strong>“${escapeHtml(review.body)}”</strong><span>${escapeHtml(review.reviewer_name)} · ★ ${review.rating.toFixed ? review.rating.toFixed(1) : review.rating}</span></div>`).join('')
         : '<p style="color:var(--muted);font-size:12px;margin:0">No reviews yet.</p>';
       renderProfileExtras(profile, own);
+      window.loadProfileShowcases?.(profile.id, own);
     }
 
     function renderInsights(profiles) {
@@ -1624,11 +1643,12 @@
       if (!authClient) throw new Error('Sign in again before uploading a photo.');
       if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw new Error('Choose a JPEG, PNG, or WebP image.');
       if (file.size > 8 * 1024 * 1024) throw new Error('Image must be 8 MB or smaller.');
-      if (!/^(customer|profile)-[0-9a-f-]{36}$/i.test(imageKey)) throw new Error('Invalid profile image target.');
+      if (!/^(customer|profile|showcase)-[0-9a-f-]{36}$/i.test(imageKey)) throw new Error('Invalid image target.');
       const { data: { session } } = await authClient.auth.getSession();
       if (!session?.user?.id) throw new Error('Your sign-in session has expired. Sign in again.');
       const bitmap = await createImageBitmap(file);
-      const scale = Math.min(1, 512 / Math.max(bitmap.width, bitmap.height));
+      const maxDimension = imageKey.startsWith('showcase-') ? 960 : 512;
+      const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
       const canvas = document.createElement('canvas');
       canvas.width = Math.max(1, Math.round(bitmap.width * scale));
       canvas.height = Math.max(1, Math.round(bitmap.height * scale));
@@ -2171,7 +2191,7 @@
     // Launch params come from manifest shortcuts (?view=) and the Android share sheet (?q=).
     const launchParams = new URLSearchParams(window.location.search);
     const sharedProfileId = launchParams.get('profile');
-    const launchView = ['requests', 'dashboard', 'saved'].includes(launchParams.get('view')) ? launchParams.get('view') : null;
+    const launchView = ['requests', 'dashboard', 'saved', 'showcases'].includes(launchParams.get('view')) ? launchParams.get('view') : null;
     const sharedQuery = (launchParams.get('q') || launchParams.get('title') || '').trim().slice(0, 200);
     function openLaunchView() { document.querySelector(`.nav-button[data-view="${launchView}"]`).click(); }
     if (sharedQuery) document.querySelector('#search-input').value = sharedQuery;
@@ -2181,6 +2201,8 @@
     loadProfiles();
   </script>
   <script src="../assets/workspace.js"></script>
+  <script src="../assets/showcases.js"></script>
+  <script src="../assets/mobile-install.js" defer></script>
 
 </body>
 </html>

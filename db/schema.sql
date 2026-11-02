@@ -394,6 +394,21 @@ CREATE INDEX ix_porutham_packs_owner ON porutham_packs(auth_user_id, status, exp
 REVOKE ALL ON porutham_history, porutham_packs FROM anon, authenticated;
 GRANT ALL ON porutham_history, porutham_packs TO service_role;
 
+CREATE TABLE video_showcases (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    source_url VARCHAR(500) NOT NULL,
+    title VARCHAR(120) NOT NULL CHECK (char_length(btrim(title)) BETWEEN 2 AND 120),
+    description VARCHAR(600) NOT NULL CHECK (char_length(btrim(description)) BETWEEN 2 AND 600),
+    cover_url VARCHAR(1000) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT video_showcases_profile_source_key UNIQUE (profile_id, source_url)
+);
+CREATE INDEX ix_video_showcases_profile_id ON video_showcases(profile_id);
+CREATE INDEX video_showcases_created_idx ON video_showcases(created_at, id);
+REVOKE ALL ON video_showcases FROM anon, authenticated;
+GRANT ALL ON video_showcases TO service_role;
+
 -- Block Supabase's public REST API (anon key) from reading tables; the backend connects as owner and bypasses RLS.
 DO $$
 DECLARE

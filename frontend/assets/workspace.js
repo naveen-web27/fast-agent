@@ -310,6 +310,7 @@ function renderEditor(profile) {
         <div class="modal-actions"><button class="secondary" type="button" id="ed-edu-cancel" hidden>Cancel</button><button class="primary" type="submit" id="ed-edu-save">Add education</button></div>
       </form>
     </section>` : ''}
+    <section class="editor-section"><h3>Video showcases</h3><p class="muted">Share YouTube Shorts and Instagram Reels with a thumbnail or poster. Free: 2 per profile. Active ${plan}: 10.</p><button class="secondary" type="button" id="editor-showcases">Manage video showcases</button></section>
     <section class="editor-section" id="editor-links"><h3>Links <span class="muted">${profile.social_links.length}/${profile.limits.social_links}</span></h3>
       ${profile.social_links.map((link, index) => `<div class="item-row"><span style="display:flex;align-items:center;gap:8px;min-width:0">${linkIcon(link.url)}<strong>${escapeHtml(link.platform)}</strong> <a href="${safeHref(link.url)}" target="_blank" rel="noopener noreferrer" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(link.url)}</a></span><button class="secondary" type="button" data-remove-link="${index}">Remove</button></div>`).join('')}
       ${profile.social_links.length < profile.limits.social_links
@@ -471,6 +472,7 @@ function wireEditor(profile) {
     editorSave(document.querySelector('#ed-basics-save'), base, 'PATCH', payload, 'Profile saved.');
   });
   const linkInput = document.querySelector('#ed-link-url');
+  document.querySelector('#editor-showcases').addEventListener('click', () => window.openShowcaseManager(profile.id));
   linkInput?.addEventListener('input', () => {
     const info = linkInfo(linkInput.value.trim());
     document.querySelector('#ed-link-detect').innerHTML = info.host ? `${linkIcon(linkInput.value.trim())} Shows as <strong>${escapeHtml(value('#ed-link-platform') || info.name)}</strong>` : '';

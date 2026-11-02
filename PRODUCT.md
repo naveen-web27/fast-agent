@@ -15,6 +15,7 @@ RightConnect is a trust marketplace for complex purchases. Customers discover ve
 ### Expert
 
 - Publish a profile with services, experience, languages, coverage area, credentials, social links, and availability.
+- Publish linked YouTube/Instagram video showcases with a thumbnail/poster and description: 2 per profile on Free, or 10 with active Pro.
 - Receive suitable customer requests.
 - Accept, decline, or propose a meeting time.
 - Build a reputation through verified outcomes and customer reviews.
@@ -22,6 +23,7 @@ RightConnect is a trust marketplace for complex purchases. Customers discover ve
 ### Company
 
 - Publish a company profile and service catalogue.
+- Company admins can publish linked video showcases: 2 per profile on Free, or 10 with active Enterprise.
 - Manage team members, enquiries, and partner experts.
 - Respond to qualified requests and keep the customer informed.
 

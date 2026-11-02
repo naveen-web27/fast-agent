@@ -13,9 +13,7 @@
   "categories": ["business", "productivity", "finance"],
   "launch_handler": { "client_mode": "navigate-existing" },
   "prefer_related_applications": false,
-  "related_applications": [
-    { "platform": "play", "url": "https://play.google.com/store/apps/details?id=app.rightconnect.twa", "id": "app.rightconnect.twa" }
-  ],
+  "related_applications": [],
   "background_color": "#f4f6fa",
   "theme_color": "#101b31",
   "icons": [
