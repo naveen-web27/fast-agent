@@ -20,15 +20,19 @@ from app.features.auth.schemas import (
     LookingRequest,
     MyProfileUpdate,
     OnboardingRequest,
+    PhoneCheckRequest,
+    PhoneCheckResponse,
     UserResponse,
 )
 from app.features.auth.service import (
+    PHONE_TAKEN_MESSAGE,
     CompanyConflictError,
     ExpertProfileConflictError,
     IdentityNotFoundError,
     InvalidOtpError,
     OnboardingConflictError,
     OrganizationAccessError,
+    SignupFieldConflictError,
     add_company,
     add_expert_profile,
     add_interest,
@@ -38,6 +42,7 @@ from app.features.auth.service import (
     delete_my_expert_profile,
     get_identities,
     get_user_profile,
+    phone_registered_to_other,
     remove_interest,
     send_domain_otp,
     set_looking,
@@ -157,6 +162,23 @@ async def complete_onboarding(
         return await create_user_profile(session, auth_user_id, payload)
     except OnboardingConflictError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    except SignupFieldConflictError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": f"{exc.field}_taken", "field": exc.field, "message": exc.message},
+        ) from exc
+
+
+@router.post("/phone-check", response_model=PhoneCheckResponse)
+async def check_phone(
+    payload: PhoneCheckRequest,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> PhoneCheckResponse:
+    """Tell the signup wizard whether the mobile number is free before the user moves on."""
+    if await phone_registered_to_other(session, payload.phone, auth_user_id):
+        return PhoneCheckResponse(available=False, message=PHONE_TAKEN_MESSAGE)
+    return PhoneCheckResponse(available=True)
 
 
 @router.post("/identities/expert", response_model=ExpertProfileSummary, status_code=status.HTTP_201_CREATED)

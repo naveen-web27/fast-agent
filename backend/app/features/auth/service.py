@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
@@ -55,6 +56,27 @@ class InvalidOtpError(Exception):
 
 class CompanyConflictError(Exception):
     """Raised when the account already administers a company."""
+
+
+class SignupFieldConflictError(Exception):
+    """Raised when a signup field that must be unique (phone, email) belongs to another account."""
+
+    def __init__(self, field: str, message: str) -> None:
+        super().__init__(message)
+        self.field = field
+        self.message = message
+
+
+PHONE_TAKEN_MESSAGE = "This mobile number is already registered with another account. Sign in with that account or use a different number."
+EMAIL_TAKEN_MESSAGE = "This email is already registered with another sign-in method. Sign in the way you did before."
+
+
+async def phone_registered_to_other(session: AsyncSession, phone: str, auth_user_id: UUID) -> bool:
+    """True if an active account other than this login already uses the phone number."""
+    owner = await session.scalar(
+        select(User.auth_user_id).where(User.phone == phone, User.deleted_at.is_(None)).limit(1)
+    )
+    return owner is not None and owner != auth_user_id
 
 
 def _slugify(name: str) -> str:
@@ -109,13 +131,15 @@ async def create_user_profile(
     payload: OnboardingRequest,
 ) -> UserResponse:
     """Create the base account for a Supabase-verified identity, plus its first expert/company listing."""
-    existing = await session.scalar(
-        select(User).where(
-            (User.auth_user_id == auth_user_id) | (User.email == str(payload.email)), User.deleted_at.is_(None)
-        )
-    )
-    if existing:
+    if await session.scalar(active_user_by_auth_id(auth_user_id)):
         raise OnboardingConflictError("This account has already completed onboarding")
+    email_owner = await session.scalar(
+        select(User.id).where(User.email == str(payload.email), User.deleted_at.is_(None)).limit(1)
+    )
+    if email_owner is not None:
+        raise SignupFieldConflictError("email", EMAIL_TAKEN_MESSAGE)
+    if payload.phone and await phone_registered_to_other(session, payload.phone, auth_user_id):
+        raise SignupFieldConflictError("phone", PHONE_TAKEN_MESSAGE)
 
     role = UserRole(payload.role)
     raw_interests = ([payload.interest] if payload.interest else []) + payload.interests
@@ -167,7 +191,19 @@ async def create_user_profile(
             )
         )
 
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError as exc:
+        # Two signups racing for the same phone/email slip past the checks above; the unique indexes catch them.
+        await session.rollback()
+        constraint = str(exc.orig)
+        if "users_phone_active_idx" in constraint:
+            raise SignupFieldConflictError("phone", PHONE_TAKEN_MESSAGE) from exc
+        if "users_email_active_idx" in constraint:
+            raise SignupFieldConflictError("email", EMAIL_TAKEN_MESSAGE) from exc
+        if "users_auth_user_id_active_idx" in constraint:
+            raise OnboardingConflictError("This account has already completed onboarding") from exc
+        raise
     await session.refresh(user)
 
     onboarding_status = "complete" if role is UserRole.CUSTOMER else "verification_pending"

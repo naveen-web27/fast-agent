@@ -100,7 +100,7 @@
       <section class="step" id="auth-step"><span class="eyebrow" style="color:#088a82" id="role-label">Customer account</span><h2>Sign in</h2><p id="sign-in-copy">One tap with Google.</p><div class="sign-in"><button class="oauth" id="google-button"><i class="google-g"></i> Continue with Google</button></div><form class="review-sign-in" id="review-sign-in" hidden><label for="review-email">Review account email<input id="review-email" name="email" type="email" autocomplete="username" required></label><label for="review-password">Password<input id="review-password" name="password" type="password" autocomplete="current-password" required></label><button class="continue" id="review-submit" type="submit">Sign in for app review</button></form><p class="terms" style="margin:16px 0 0">By continuing you accept our <a href="#terms">Terms</a> &amp; <a href="privacy.html">Privacy Policy</a>.</p></section>
       <section class="step" id="details-step"><div class="progress" id="wizard-progress" aria-hidden="true"></div><span class="eyebrow" style="color:#088a82" id="details-label">Step 1</span>
         <form class="form" id="details-form" novalidate>
-          <div class="q" data-for="customer expert company"><div class="q-head"><label for="name">Your name</label></div><input id="name" placeholder="Full name" autocomplete="name" maxlength="120" required></div>
+          <div class="q" data-for="customer expert company"><div class="q-head"><label for="name">Your name</label></div><input id="name" placeholder="Full name" autocomplete="name" minlength="2" maxlength="120" required></div>
           <div class="q" data-for="customer expert company"><div class="q-head"><label for="phone-number">Mobile number</label><button type="button" class="info" aria-expanded="false" aria-controls="info-phone" aria-label="Why we ask">i</button></div><p class="info-text" id="info-phone" hidden>We use it to verify you. Only people you work with on a request can see it.</p><div class="phone-row"><input id="phone-code" value="+91" inputmode="tel" maxlength="5" aria-label="Country code" required><input id="phone-number" type="tel" inputmode="numeric" placeholder="98765 43210" maxlength="16" autocomplete="tel-national" required></div><small class="field-hint" id="phone-hint"></small></div>
           <div class="q" data-for="customer"><div class="q-head"><label id="need-label">What do you need?</label><button type="button" class="info" aria-expanded="false" aria-controls="info-need" aria-label="About this question">i</button></div><p class="info-text" id="info-need" hidden>Tap one or more. We show the right experts first. You can change this later.</p><div class="interest-chips" id="interest-chips" role="group" aria-labelledby="need-label"></div><div class="other-box" id="interest-other" hidden><input id="interest-other-input" placeholder="Type, e.g. beauty" autocomplete="off" aria-label="Other service"><div class="suggest-list" id="interest-suggest" role="listbox" hidden></div></div></div>
           <div class="q" data-for="expert"><div class="q-head"><label for="service">Your main service</label><button type="button" class="info" aria-expanded="false" aria-controls="info-service" aria-label="About this question">i</button></div><p class="info-text" id="info-service" hidden>Shown on your profile, e.g. "Health insurance".</p><input id="service" placeholder="Health insurance" maxlength="120" required></div>
@@ -332,9 +332,56 @@
       skipButton.hidden = !('optional' in question.dataset);
       question.querySelector('input:not([type="hidden"]):not(#phone-code)')?.focus();
     }
-    function currentQuestionValid() {
+    const FIELD_LABELS = { full_name: 'Name', phone: 'Mobile number', city: 'City', primary_service: 'Main service', company_name: 'Company name', website: 'Website', years_experience: 'Years of experience' };
+    async function apiErrorMessage(response, fallback) {
+      if (response.status === 401) return 'Your sign-in expired. Please sign in again.';
+      if (response.status >= 500) return 'Something went wrong on our side. Please try again in a minute.';
+      const body = await response.json().catch(() => ({}));
+      const detail = body.detail;
+      if (typeof detail === 'string') return detail;
+      if (detail?.message) return detail.message;
+      if (Array.isArray(detail) && detail.length) {
+        const field = detail[0].loc?.[detail[0].loc.length - 1];
+        const message = String(detail[0].msg || '').replace(/^Value error, /, '');
+        return FIELD_LABELS[field] ? `${FIELD_LABELS[field]}: ${message}` : message || fallback;
+      }
+      return fallback;
+    }
+    function showPhoneQuestion(message) {
+      const phoneIndex = roleQuestions().findIndex((q) => q.querySelector('#phone-number'));
+      if (phoneIndex >= 0) showQuestion(phoneIndex);
+      setPhoneHint(message);
+      document.querySelector('#phone-number').focus();
+    }
+    async function phoneAvailable(phone) {
+      if (!authSession) return true;
+      try {
+        const response = await fetch(`${apiBase}/auth/phone-check`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authSession.access_token}` }, body: JSON.stringify({ phone }) });
+        if (response.ok) {
+          const result = await response.json();
+          if (!result.available) { showPhoneQuestion(result.message); return false; }
+          return true;
+        }
+        if (response.status === 422) { showPhoneQuestion(await apiErrorMessage(response, 'Enter a valid mobile number.')); return false; }
+      } catch (_) { /* Network hiccup: the final submit re-checks the number. */ }
+      return true;
+    }
+    async function currentQuestionValid() {
       const question = roleQuestions()[questionIndex];
-      if (question.querySelector('#phone-number')) return Boolean(validatedPhone());
+      const phoneInput = question.querySelector('#phone-number');
+      if (phoneInput) {
+        const phone = validatedPhone();
+        if (!phone) return false;
+        setButtonLoading(nextButton, true, 'Checking…');
+        const available = await phoneAvailable(phone);
+        setButtonLoading(nextButton, false);
+        return available;
+      }
+      const nameInput = question.querySelector('#name');
+      if (nameInput) {
+        nameInput.value = nameInput.value.trim().replace(/\s+/g, ' ');
+        nameInput.setCustomValidity(nameInput.value && nameInput.value.length < 2 ? 'Enter your full name (at least 2 letters).' : '');
+      }
       return [...question.querySelectorAll('input:not([type="hidden"])')].every((input) => input.reportValidity());
     }
     skipButton.addEventListener('click', () => {
@@ -350,7 +397,7 @@
 
     detailsForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-      if (!currentQuestionValid()) return;
+      if (!(await currentQuestionValid())) return;
       if (questionIndex < roleQuestions().length - 1) { showQuestion(questionIndex + 1); return; }
       if (!authSession) { show('auth-step'); return; }
       const phone = validatedPhone();
@@ -375,10 +422,32 @@
       };
       const submitButton = document.querySelector('#details-submit');
       setButtonLoading(submitButton, true, 'Creating account…');
-      const response = await fetch(`${apiBase}/auth/onboarding`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authSession.access_token}` }, body: JSON.stringify(payload) });
+      let response;
+      try {
+        response = await fetch(`${apiBase}/auth/onboarding`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authSession.access_token}` }, body: JSON.stringify(payload) });
+      } catch (_) {
+        setButtonLoading(submitButton, false);
+        showToast('No internet connection. Check your network and try again.', 'error');
+        return;
+      }
       setButtonLoading(submitButton, false);
-      if (response.status === 409) { sessionStorage.setItem('rightconnect-user', JSON.stringify({ full_name: payload.full_name, email: payload.email, role: payload.role })); show('success-step'); return; }
-      if (!response.ok) { const body = await response.json().catch(() => ({})); showToast(typeof body.detail === 'string' ? body.detail : (body.detail?.[0]?.msg || 'Could not create your account.'), 'error'); return; }
+      if (response.status === 409) {
+        const body = await response.clone().json().catch(() => ({}));
+        if (body.detail?.field === 'phone') { showPhoneQuestion(body.detail.message); return; }
+        if (body.detail?.message) { showToast(body.detail.message, 'error'); return; }
+        sessionStorage.setItem('rightconnect-user', JSON.stringify({ full_name: payload.full_name, email: payload.email, role: payload.role }));
+        show('success-step');
+        return;
+      }
+      if (response.status === 401) { showToast(await apiErrorMessage(response), 'error'); show('auth-step'); return; }
+      if (!response.ok) {
+        const body = await response.clone().json().catch(() => ({}));
+        const field = Array.isArray(body.detail) ? body.detail[0]?.loc?.at(-1) : null;
+        const message = await apiErrorMessage(response, 'Could not create your account. Please try again.');
+        if (field === 'phone') { showPhoneQuestion(message); return; }
+        showToast(message, 'error');
+        return;
+      }
       const created = await response.json();
       sessionStorage.setItem('rightconnect-user', JSON.stringify(created));
       show('success-step');

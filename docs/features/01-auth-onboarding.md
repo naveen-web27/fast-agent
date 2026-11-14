@@ -24,7 +24,8 @@ flowchart TD
 ## Completed
 
 - `GET /api/v1/auth/provider-config` — exposes Supabase public config ([backend/app/features/auth/router.py](../../backend/app/features/auth/router.py)).
-- `POST /api/v1/auth/onboarding` — creates `users` row plus role-specific `profiles`/`organizations` row in one call ([service.py](../../backend/app/features/auth/service.py)).
+- `POST /api/v1/auth/onboarding` — creates `users` row plus role-specific `profiles`/`organizations` row in one call ([service.py](../../backend/app/features/auth/service.py)). A mobile number or email already used by another active account returns 409 with `detail: {code: "phone_taken"|"email_taken", field, message}`; a login that already finished onboarding returns 409 with a string detail. Names are not unique.
+- `POST /api/v1/auth/phone-check` — `{phone}` → `{available, message}`; the signup wizard calls it when the user taps Next on the mobile-number step so duplicates are reported there, not at the end. Regression: `PYTHONPATH=backend python3 -B -m unittest discover -s backend/tests -p 'test_signup_conflicts.py' -v`.
 - `GET /api/v1/auth/me` — returns current user's profile, 404 if not onboarded.
 - `GET /api/v1/auth/identities` — lists all identities (customer, personal expert profile, admin/staff companies) for one auth user.
 - `POST /api/v1/auth/identities/expert` — add an expert profile to an already-onboarded account.

@@ -58,6 +58,23 @@ class OnboardingRequest(BaseModel):
         return list({value.lower(): value for value in cleaned}.values())
 
 
+class PhoneCheckRequest(BaseModel):
+    phone: str = Field(min_length=1, max_length=30)
+
+    @field_validator("phone")
+    @classmethod
+    def _validate_phone(cls, value: str) -> str:
+        normalized = normalize_phone(value)
+        if normalized is None:
+            raise ValueError("Enter your mobile number")
+        return normalized
+
+
+class PhoneCheckResponse(BaseModel):
+    available: bool
+    message: str | None = None
+
+
 class UserResponse(BaseModel):
     """Onboarding result returned to the frontend."""
 
