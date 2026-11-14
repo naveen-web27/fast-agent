@@ -1,0 +1,108 @@
+RIGHTCONNECT - FACEBOOK / INSTAGRAM AD INPUTS (Customers, Tamil Nadu)
+Copy each value into the matching box in Meta Ads Manager / Meta Business Suite "Create ad".
+Video: customers Tamil ad (final Tanglish version, 30-55s), 9:16 + 4:5 exports with burned-in Tamil subtitles.
+
+==================================================================
+1. GOAL
+==================================================================
+Goal ............ Get more website visitors
+                  (Video views only: "Get more video views")
+Campaign name ... RC_TN_Customers_Traffic_Nov26
+Special category  None
+
+==================================================================
+2. AD CREATIVE - How do you want your ad to look?
+==================================================================
+Format .......... Single video
+Media ........... Upload 9:16 video (Reels/Stories) and 4:5 video (Feed)
+Thumbnail ....... Frame with RightConnect logo + "Nalla expert? Sariyaana company?"
+Captions ........ Already burned into the video (Meta auto-captions do not handle Tamil well)
+
+------------------------------------------------------------------
+ADD DESCRIPTION (Primary text)
+"Include a description that explains the value of what you are promoting"
+Pick ONE option. First ~125 characters show before "See more".
+------------------------------------------------------------------
+
+Option A - Tamil
+உங்க business-க்கோ, personal தேவைக்கோ நல்ல expert அல்லது சரியான company-ஐத் தேடுறீங்களா?
+RightConnect-ல digital marketing, billing, tax filing போன்ற services தர்ற experts, companies-ஐ ஒரே இடத்துல தேடலாம். Profile, services, experience பார்த்து request அனுப்புங்க.
+Company-கிட்ட technical-ஆ என்ன பேசணும்னு தெரியலையா? முதல்ல ஒரு expert-கிட்ட பேசுங்க. அவங்க request-ஐ accept பண்ணதும், தேவைப்பட்டா ஒரு company-ஐ அதே conversation-க்கு invite பண்ணலாம்.
+Customers-க்கு join பண்ண free. 👉 rightconnect.app
+#RightConnect #TamilBusiness #ServiceProviders
+
+Option B - Tanglish
+Unga business-ku illa personal-ah oru problem solve panna nalla expert-ai, sariyaana company-ai theditu irukeengala?
+RightConnect-la digital marketing, billing, tax filing maadhiri services-ku experts, companies-ai ore idathula thedalaam. Profile, services, experience paathu request anuppunga.
+Customers-ku join panna free. 👉 rightconnect.app
+#RightConnect #TamilBusiness #ServiceProviders
+
+Option C - English
+Looking for the right expert or company for your business or personal need?
+On RightConnect, find experts and companies for digital marketing, billing, tax filing and more - all in one place. Check their profile, services and experience, then send a request.
+Free for customers to join. 👉 rightconnect.app
+#RightConnect #TamilNadu #ServiceProviders
+
+------------------------------------------------------------------
+HEADLINE (keep under ~40 characters)
+------------------------------------------------------------------
+Tamil ....... நல்ல expert-ஐ ஒரே இடத்துல தேடுங்க
+Tanglish .... Nalla expert-ai ore idathula thedunga
+English ..... Find the right expert in one place
+
+------------------------------------------------------------------
+LINK DESCRIPTION (optional, keep under ~30 characters)
+------------------------------------------------------------------
+Customers-க்கு free • rightconnect.app
+
+------------------------------------------------------------------
+BUTTON + LINK
+------------------------------------------------------------------
+Button label .... Learn more
+Website URL ..... https://rightconnect.app/pages/marketplace.html?utm_source=facebook&utm_medium=paid&utm_campaign=tn_customers_nov26
+Display link .... rightconnect.app
+
+==================================================================
+3. AUDIENCE
+==================================================================
+Audience name ... TN Customers 22-55
+Location ........ Tamil Nadu
+                  (or cities +25 km: Chennai, Coimbatore, Madurai, Tiruchirappalli, Salem, Tirunelveli)
+Age ............. 22 - 55
+Gender .......... All
+Languages ....... Leave blank (narrow only if needed: Tamil, English)
+Advantage+ audience  On (interests below are suggestions)
+Interests ....... Small business, Entrepreneurship, Self-employment,
+                  Small business owners (behaviour), Digital marketing,
+                  Accounting, Income tax, Goods and Services Tax, Insurance,
+                  Startup company
+
+==================================================================
+4. PLACEMENTS
+==================================================================
+Advantage+ placements (automatic)
+Manual alternative: Facebook Feed, Instagram Feed, Facebook Reels, Instagram Reels, Stories
+
+==================================================================
+5. BUDGET AND DURATION
+==================================================================
+Daily budget .... Rs 300 - 500
+Duration ........ 7 days (test), then keep only the best ad
+Check after 3-4 days: link CTR above 1%, cost per link click
+
+==================================================================
+6. A/B TEST - change only the opening hook (optional)
+==================================================================
+Hook 1 .. Service வேணும். ஆனா யாரை contact பண்ணுறதுன்னுதான் குழப்பமா?
+Hook 2 .. உங்க business-க்கு marketing help வேணுமா? அதுக்கான experts-ஐத் தேடுறீங்களா?
+Hook 3 .. யாரையாவது contact பண்ணும் முன்னாடி, அவங்க என்ன service பண்றாங்கன்னு தெரிஞ்சுக்கணுமா?
+
+==================================================================
+7. BEFORE PUBLISHING - CHECK
+==================================================================
+[ ] Do NOT claim "every expert/company is verified" - not every profile is verified.
+[ ] Every category named (digital marketing, billing, tax filing, insurance) has live providers in Tamil Nadu.
+[ ] Expert -> company invite is shown only after the expert accepts (not automatic or guaranteed).
+[ ] Video shows demo accounts only; no real phone numbers or emails.
+[ ] URL opens correctly on mobile.
+[ ] Facebook Page and Instagram are linked; payment method + GST details added.

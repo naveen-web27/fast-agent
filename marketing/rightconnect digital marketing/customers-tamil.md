@@ -8,7 +8,48 @@ Tone: நம்ம ஊர் நண்பர் ஒரு useful website-ஐ அ
 
 Production/claims rules: [team brief](README.md).
 
-## Main concept: "தேவை இருக்கு. யாரைக் கேட்பது?"
+## Final version (Tanglish, 45-55s)
+
+Founder-approved direction: business or personal problem → experts and companies in one place → example services → choose and request → expert can bring a company into the same conversation → join.
+
+### Storyboard
+
+| Target time | Visual direction | Voiceover (Tanglish) | On-screen text |
+| --- | --- | --- | --- |
+| 0-6s | Small-business owner at a shop counter, then the same person at home with personal papers, thinking whom to ask. | Unga business-ku, illa personal-ah oru problem solve panna, nalla expert-ai illa sariyaana company-ai theditu irukeengala? Appo idhu ungalukkudhaan. | Nalla expert? Sariyaana company? |
+| 6-12s | Original logo, then actual marketplace recording. | RightConnect-la, unga thevaikkaana services kudukkura experts-aiyum companies-aiyum ore idathula thedalaam. | RightConnect / Experts + Companies |
+| 12-22s | Quick cuts of live category search results. Show only categories with real providers. | Digital marketing-o, billing-o, tax filing-o, insurance pathi vilakkam-o… enna service venumnaalum, inga thedi paarunga. | Digital marketing • Billing • Tax filing • Insurance |
+| 22-30s | Open two real profiles; close-up on services and experience; send a request. | Avanga services, experience paathu, ungalukku yethavarai choose panni request anuppunga. | Paarunga. Choose pannunga. Request anuppunga. |
+| 30-44s | Customer hesitating over technical terms. Then real accepted-request workspace: expert uses "+ Invite a company"; company appears in the same participant list. Demo accounts only; hide contact details. | Company-kitta technical-ah enna pesanumnu theriyalaiya? Kavalai vendaam. Mudhalla oru expert-kitta pesunga. Avanga unga request-ai accept pannadhum, thevaina oru company-ai adhe conversation-ku invite panni, ungaloda serndhu pesalaam. | Expert + Company / Ore conversation |
+| 44-52s | Navy end card, logo, readable URL for ~3s. | Ippo right connect dot app-la join pannunga. Unga thevaikkaana expert-ai, illa company-ai choose pannunga. | rightconnect.app |
+
+### Continuous voiceover (Tanglish)
+
+> Unga business-ku, illa personal-ah oru problem solve panna, nalla expert-ai illa sariyaana company-ai theditu irukeengala? Appo idhu ungalukkudhaan.
+>
+> RightConnect-la, unga thevaikkaana services kudukkura experts-aiyum companies-aiyum ore idathula thedalaam.
+>
+> Digital marketing-o, billing-o, tax filing-o, insurance pathi vilakkam-o… enna service venumnaalum, inga thedi paarunga.
+>
+> Avanga services, experience paathu, ungalukku yethavarai choose panni request anuppunga.
+>
+> Company-kitta technical-ah enna pesanumnu theriyalaiya? Kavalai vendaam. Mudhalla oru expert-kitta pesunga. Avanga unga request-ai accept pannadhum, thevaina oru company-ai adhe conversation-ku invite panni, ungaloda serndhu pesalaam.
+>
+> Ippo right connect dot app-la join pannunga. Unga thevaikkaana expert-ai, illa company-ai choose pannunga.
+
+### 30-second cut (Tanglish)
+
+> Business-ku illa personal-ah oru problem solve panna nalla expert-ai, sariyaana company-ai theditu irukeengala?
+>
+> RightConnect-la digital marketing, billing, tax filing maadhiri services-ku experts, companies-ai ore idathula thedalaam.
+>
+> Company-kitta technical-ah pesa theriyalaina, mudhalla oru expert-kitta request anuppunga. Accept pannadhum, avanga company-ai adhe conversation-ku invite pannalaam.
+>
+> Ippo right connect dot app-la join pannunga.
+
+**Final-version checks:** confirm each named category has live providers in the target region before publishing; drop any that don't. The expert-to-company invite only happens after the expert accepts the request; do not show it as automatic or guaranteed. Insurance and tax lines mean finding a professional to explain or handle the service, not RightConnect selling or recommending a policy or filing.
+
+## Earlier version: "தேவை இருக்கு. யாரைக் கேட்பது?"
 
 ### 30-second storyboard
 

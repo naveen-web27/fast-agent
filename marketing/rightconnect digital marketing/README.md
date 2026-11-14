@@ -4,6 +4,8 @@
 
 The original campaign below uses separate ads for three audiences in two languages. For the founder-requested combined Tamil awareness ad, use [all-users-tamil.md](all-users-tamil.md): customer, expert, and company problems/solutions in one video, without onboarding instructions. It includes a longer master and a concise alternative. The planned homepage guide/app tour is separate and must not be advertised as available until published.
 
+Final founder-approved versions (Tanglish + English): customers in the "Final version" section of [customers-tamil.md](customers-tamil.md) and [customers-english.md](customers-english.md); experts and companies together in one video in [experts-companies-tamil.md](experts-companies-tamil.md) and [experts-companies-english.md](experts-companies-english.md).
+
 | Audience | Tamil script | English script | Primary action |
 | --- | --- | --- | --- |
 | Customers looking for services | [customers-tamil.md](customers-tamil.md) | [customers-english.md](customers-english.md) | Explore the marketplace |
