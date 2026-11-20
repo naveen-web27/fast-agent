@@ -20,7 +20,7 @@ from app.features.marketplace.schemas import (
 )
 from app.models.availability import AvailabilitySlot
 from app.models.organization_member import MemberRole, OrganizationMember
-from app.models.profile import Profile, ProfileKind, Service, VerificationStatus
+from app.models.profile import ClaimStatus, Organization, Profile, ProfileKind, Service, VerificationStatus
 from app.models.profile_extras import Credential, ProfileOffering
 from app.models.request import Request, RequestParticipant, RequestStatus
 from app.models.review import Review
@@ -66,6 +66,11 @@ async def count_resolved_clients(session: AsyncSession, profile: Profile) -> int
 
 async def _to_summary(session: AsyncSession, profile: Profile) -> ProfileSummary:
     resolved_count = await count_resolved_clients(session, profile)
+    organization = (
+        await session.get(Organization, profile.organization_id)
+        if profile.kind is ProfileKind.COMPANY and profile.organization_id
+        else None
+    )
     return ProfileSummary(
         id=profile.id,
         kind=profile.kind.value,
@@ -81,6 +86,7 @@ async def _to_summary(session: AsyncSession, profile: Profile) -> ProfileSummary
         response_minutes=profile.response_minutes,
         tags=[service.name for service in profile.services],
         resolved_clients_count=resolved_count if profile.show_resolved_count else None,
+        claimed=organization is None or organization.claim_status != ClaimStatus.UNCLAIMED.value,
     )
 
 

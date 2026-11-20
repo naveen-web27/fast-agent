@@ -59,6 +59,11 @@ CREATE TABLE organizations (
     email_domain_verified BOOLEAN NOT NULL DEFAULT FALSE,
     subscription_tier subscription_tier NOT NULL DEFAULT 'free',
     subscription_expires_at TIMESTAMPTZ,
+    -- 'unclaimed' listings are added by a platform admin until the real owner claims them.
+    claim_status TEXT NOT NULL DEFAULT 'claimed' CONSTRAINT organizations_claim_status_check CHECK (claim_status IN ('unclaimed', 'claimed')),
+    contact_email TEXT,
+    contact_phone TEXT,
+    claimed_at TIMESTAMPTZ,
     deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -408,6 +413,25 @@ CREATE INDEX ix_video_showcases_profile_id ON video_showcases(profile_id);
 CREATE INDEX video_showcases_created_idx ON video_showcases(created_at, id);
 REVOKE ALL ON video_showcases FROM anon, authenticated;
 GRANT ALL ON video_showcases TO service_role;
+
+CREATE TABLE organization_claims (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    business_email TEXT NOT NULL,
+    email_matches_listing BOOLEAN NOT NULL DEFAULT FALSE,
+    phone TEXT,
+    note TEXT,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    review_reason TEXT,
+    reviewed_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    reviewed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX organization_claims_one_pending_idx ON organization_claims(organization_id, user_id) WHERE status = 'pending';
+CREATE INDEX organization_claims_status_idx ON organization_claims(status, created_at);
+REVOKE ALL ON organization_claims FROM anon, authenticated;
+GRANT ALL ON organization_claims TO service_role;
 
 -- Block Supabase's public REST API (anon key) from reading tables; the backend connects as owner and bypasses RLS.
 DO $$

@@ -7,8 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.auth.lifecycle import restore_profile, restore_user, soft_delete_profile, soft_delete_user
 from app.models.admin_action import AdminAction
+from app.models.organization_claim import ClaimReviewStatus, OrganizationClaim
 from app.models.organization_member import MemberRole, OrganizationMember
-from app.models.profile import Organization, Profile, ProfileKind, VerificationStatus
+from app.models.profile import ClaimStatus, Organization, Profile, ProfileKind, VerificationStatus
 from app.models.request import Request, RequestEvent, RequestParticipant, RequestStatus
 from app.models.user import User, UserRole
 
@@ -62,18 +63,29 @@ async def list_profiles_for_review(session: AsyncSession, status: str, q: str | 
         .scalar_subquery()
     )
     owner_email = func.coalesce(User.email, admin_email)
-    query = select(Profile, owner_email).outerjoin(User, User.id == Profile.user_id)
+    query = (
+        select(Profile, owner_email, Organization.claim_status, Organization.contact_email)
+        .outerjoin(User, User.id == Profile.user_id)
+        .outerjoin(Organization, Organization.id == Profile.organization_id)
+    )
     if status == "blocked":
         query = query.where(Profile.blocked_at.is_not(None), Profile.deleted_at.is_(None))
     elif status == "deleted":
         query = query.where(Profile.deleted_at.is_not(None))
+    elif status == "unclaimed":
+        query = query.where(
+            Organization.claim_status == ClaimStatus.UNCLAIMED.value, Profile.blocked_at.is_(None), Profile.deleted_at.is_(None)
+        )
     elif status != "all":
         query = query.where(
             Profile.verification == VerificationStatus(status), Profile.blocked_at.is_(None), Profile.deleted_at.is_(None)
         )
+        if status == "pending":
+            # Admin-added listings wait for their owner's claim, not for verification.
+            query = query.where(or_(Organization.claim_status.is_(None), Organization.claim_status != ClaimStatus.UNCLAIMED.value))
     if q:
         pattern = f"%{q}%"
-        query = query.where(or_(Profile.display_name.ilike(pattern), owner_email.ilike(pattern)))
+        query = query.where(or_(Profile.display_name.ilike(pattern), owner_email.ilike(pattern), Organization.contact_email.ilike(pattern)))
     rows = (await session.execute(query.order_by(Profile.created_at.desc()).limit(200))).all()
     return [
         {
@@ -85,12 +97,14 @@ async def list_profiles_for_review(session: AsyncSession, status: str, q: str | 
             "verification": profile.verification.value,
             "owner_email": email,
             "organization_id": profile.organization_id,
+            "claim_status": claim_status,
+            "contact_email": contact_email,
             "blocked_at": profile.blocked_at,
             "blocked_reason": profile.blocked_reason,
             "deleted_at": profile.deleted_at,
             "created_at": profile.created_at,
         }
-        for profile, email in rows
+        for profile, email, claim_status, contact_email in rows
     ]
 
 
@@ -285,7 +299,13 @@ async def get_stats(session: AsyncSession) -> dict:
             select(func.count(Profile.id)).where(Profile.kind == ProfileKind.COMPANY, *live_profile)
         ),
         "profiles_pending": await count(
-            select(func.count(Profile.id)).where(Profile.verification == VerificationStatus.PENDING, *live_profile)
+            select(func.count(Profile.id))
+            .outerjoin(Organization, Organization.id == Profile.organization_id)
+            .where(
+                Profile.verification == VerificationStatus.PENDING,
+                *live_profile,
+                or_(Organization.claim_status.is_(None), Organization.claim_status != ClaimStatus.UNCLAIMED.value),
+            )
         ),
         "profiles_blocked": await count(
             select(func.count(Profile.id)).where(Profile.deleted_at.is_(None), Profile.blocked_at.is_not(None))
@@ -301,6 +321,14 @@ async def get_stats(session: AsyncSession) -> dict:
         ),
         "disputes_open": await count(
             select(func.count(RequestParticipant.id)).where(RequestParticipant.completion_disputed_at.is_not(None))
+        ),
+        "companies_unclaimed": await count(
+            select(func.count(Organization.id)).where(
+                Organization.claim_status == ClaimStatus.UNCLAIMED.value, Organization.deleted_at.is_(None)
+            )
+        ),
+        "claims_pending": await count(
+            select(func.count(OrganizationClaim.id)).where(OrganizationClaim.status == ClaimReviewStatus.PENDING.value)
         ),
     }
 

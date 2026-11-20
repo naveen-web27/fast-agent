@@ -127,11 +127,19 @@
     let authSession = null;
     const roleNames = { customer: 'Customer', expert: 'Expert', company: 'Company' };
     const apiBase = '/api/v1';
-    if (new URLSearchParams(location.search).get('return') === 'plans') sessionStorage.setItem('rightconnect-auth-return', 'plans');
+    const AUTH_RETURNS = { plans: ['plans.html', 'Back to plans'], claim: ['claim.html', 'Continue claiming your business'] };
+    function authReturnUrl() {
+      const key = sessionStorage.getItem('rightconnect-auth-return');
+      if (!AUTH_RETURNS[key]) return null;
+      const profile = key === 'claim' ? sessionStorage.getItem('rightconnect-claim-profile') : null;
+      return profile ? `${AUTH_RETURNS[key][0]}?profile=${encodeURIComponent(profile)}` : AUTH_RETURNS[key][0];
+    }
+    const requestedReturn = new URLSearchParams(location.search).get('return');
+    if (AUTH_RETURNS[requestedReturn]) sessionStorage.setItem('rightconnect-auth-return', requestedReturn);
     document.querySelector('#success-link').addEventListener('click', () => sessionStorage.removeItem('rightconnect-auth-return'));
-    if (sessionStorage.getItem('rightconnect-auth-return') === 'plans') {
-      document.querySelector('#success-link').href = 'plans.html';
-      document.querySelector('#success-link').textContent = 'Back to plans';
+    if (authReturnUrl()) {
+      document.querySelector('#success-link').href = authReturnUrl();
+      document.querySelector('#success-link').textContent = AUTH_RETURNS[sessionStorage.getItem('rightconnect-auth-return')][1];
     }
     let toastTimer = null;
     function showToast(message, variant) {
@@ -504,7 +512,7 @@
             }
             if (meResponse.ok) {
               sessionStorage.setItem('rightconnect-user', JSON.stringify(await meResponse.json()));
-              const destination = sessionStorage.getItem('rightconnect-auth-return') === 'plans' ? 'plans.html' : 'marketplace.html';
+              const destination = authReturnUrl() || 'marketplace.html';
               sessionStorage.removeItem('rightconnect-auth-return');
               leaving = true;
               setLoading('Opening RightConnect…');

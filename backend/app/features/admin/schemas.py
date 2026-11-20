@@ -17,6 +17,8 @@ class PendingProfile(BaseModel):
     verification: Literal["pending", "verified", "rejected"]
     owner_email: str | None
     organization_id: UUID | None
+    claim_status: Literal["unclaimed", "claimed"] | None = None
+    contact_email: str | None = None
     blocked_at: datetime | None = None
     blocked_reason: str | None = None
     deleted_at: datetime | None = None
@@ -59,6 +61,8 @@ class AdminStats(BaseModel):
     requests_new_7d: int
     requests_completed: int
     disputes_open: int
+    companies_unclaimed: int = 0
+    claims_pending: int = 0
 
 
 class AdminDispute(BaseModel):

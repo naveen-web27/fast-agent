@@ -25,6 +25,7 @@ flowchart TD
 - `POST /api/v1/admin/profiles/{profile_id}/verification` — approve/reject; cascades to the linked `organization` when the profile is a company.
 - Access control via `require_platform_admin()` in [security/dependencies.py](../../backend/app/security/dependencies.py), gated on `users.role == platform_admin`.
 - Frontend: [admin.html](../../frontend/pages/admin.html) — Pending/Verified/Rejected tabs, profile cards, verify/reject buttons.
+- Company listings & claims: **+ Add business** creates an unclaimed company listing, the **Unclaimed** profile filter lists them, and the **Claims** tab approves or rejects ownership claims (with a pending-count badge). See [06-company-features.md](06-company-features.md#unclaimed-listings--ownership-claims-november-2026).
 
 ## Not Done / To Do
 

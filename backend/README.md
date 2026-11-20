@@ -90,6 +90,10 @@ One auth identity (one `users` row) can act as a customer, have one personal exp
 
 Run `db/migrations/003_multi_role_identities.sql` against an existing database (adds `organization_members`, `email_verifications`, `organizations.email_domain_verified`).
 
+## Unclaimed company listings and claims
+
+Admins add real businesses with `POST /api/v1/admin/companies` (console: **+ Add business**). They appear in Discover as **Unclaimed** and cannot receive requests. Owners claim them on `/pages/claim.html` by proving a business email with a one-time code; admins approve or reject claims in the console's **Claims** tab, and approval makes the claimant the company admin. Apply `db/migrations/023_company_claims.sql` before deploying. Run `PYTHONPATH=backend python3 -B -m unittest discover -s backend/tests -p 'test_company_claims.py' -v`. Details: [company features](../docs/features/06-company-features.md#unclaimed-listings--ownership-claims-november-2026).
+
 ### Company email/domain verification
 
 Company `verification` starts `pending` (same manual-review flag used for expert credentials). Additionally, `organizations.email_domain_verified` can be set via a one-time email code:

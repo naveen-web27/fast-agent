@@ -5,6 +5,7 @@ from app.features.admin.router import router as admin_router
 from app.features.ai_reports.router import router as ai_reports_router
 from app.features.auth.router import router as auth_router
 from app.features.booking.router import router as booking_router
+from app.features.claims.router import router as claims_router
 from app.features.dashboard.router import router as dashboard_router
 from app.features.health.router import router as health_router
 from app.features.marketplace.router import router as marketplace_router
@@ -26,6 +27,7 @@ feature_router.include_router(admin_router, prefix="/admin", tags=["admin"])
 feature_router.include_router(requests_router, prefix="/requests", tags=["requests"])
 feature_router.include_router(booking_router, prefix="/requests", tags=["booking"])
 feature_router.include_router(organizations_router, prefix="/organizations", tags=["organizations"])
+feature_router.include_router(claims_router, prefix="/claims", tags=["claims"])
 feature_router.include_router(dashboard_router, prefix="/dashboard", tags=["dashboard"])
 feature_router.include_router(payments_router, prefix="/payments", tags=["payments"])
 feature_router.include_router(porutham_router, prefix="/porutham", tags=["porutham"])

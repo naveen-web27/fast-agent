@@ -58,6 +58,12 @@
     .toast { position:fixed; left:50%; bottom:24px; z-index:60; padding:10px 16px; color:#fff; border-radius:9px; background:#22314f; font-size:13px; font-weight:700; transform:translateX(-50%); }
     .toast.error { background:#7a2436; } .toast.success { background:#0f5c47; }
     @media (max-width:720px) { .card { flex-direction:column; align-items:flex-start; } .actions { justify-content:flex-start; } .toolbar input { min-width:0; width:100%; } }
+    nav.sections button.add-business { margin-left:auto; color:#fff; background:var(--teal); }
+    .badge.unclaimed { color:#7a5b00; background:#fff4d6; } .badge.approved,.badge.match { color:#0b6b4f; background:#e1f6ee; } .badge.nomatch { color:#7a5b00; background:#fff4d6; }
+    .card .note { margin-top:5px; padding:7px 9px; border-radius:7px; background:#f5f7fb; color:var(--ink); font-size:12px; white-space:pre-wrap; }
+    .modal.wide { width:min(94vw,560px); max-height:92vh; overflow:auto; }
+    .modal .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; } .modal .grid2 label,.modal .full label { margin-top:10px; }
+    @media (max-width:560px) { .modal .grid2 { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
@@ -65,9 +71,11 @@
   <nav class="sections" id="sections">
     <button data-section="overview" class="active">Overview</button>
     <button data-section="profiles">Profiles</button>
+    <button data-section="claims">Claims<span class="count" id="claims-count" hidden></span></button>
     <button data-section="users">Accounts</button>
     <button data-section="disputes">Disputes<span class="count" id="disputes-count" hidden></span></button>
     <button data-section="activity">Activity log</button>
+    <button type="button" id="add-business" class="add-business">+ Add business</button>
   </nav>
   <main>
     <div class="toolbar" id="toolbar" hidden>
@@ -88,6 +96,24 @@
   </div>
   <div class="toast" id="toast" hidden></div>
 
+  <div class="modal wide" id="business-modal" role="dialog" aria-modal="true" aria-labelledby="business-title" hidden>
+    <h2 id="business-title">Add a business</h2>
+    <p>Add a real local shop or consultancy. It appears in Discover as <b>Unclaimed</b> and can't receive requests until its owner claims it. Contact email and phone are only visible to admins and help match the owner's claim.</p>
+    <form id="business-form" novalidate>
+      <div class="full"><label for="biz-name">Business name *</label><input id="biz-name" maxlength="160" required></div>
+      <div class="grid2">
+        <div><label for="biz-service">Main service *</label><input id="biz-service" maxlength="120" required placeholder="e.g. Tax consultant, Mobile shop"></div>
+        <div><label for="biz-city">City / area *</label><input id="biz-city" maxlength="100" required></div>
+        <div><label for="biz-email">Business email</label><input id="biz-email" type="email" maxlength="254"></div>
+        <div><label for="biz-phone">Business phone</label><input id="biz-phone" type="tel" maxlength="30" placeholder="+91 98765 43210"></div>
+      </div>
+      <div class="full"><label for="biz-website">Website</label><input id="biz-website" maxlength="255" placeholder="example.com"></div>
+      <div class="full"><label for="biz-description">Short description</label><textarea id="biz-description" rows="3" maxlength="2000"></textarea></div>
+      <div class="error" id="business-error"></div>
+      <div class="row"><button class="btn" type="button" id="business-cancel">Cancel</button><button class="btn primary" type="submit" id="business-save">Add business</button></div>
+    </form>
+  </div>
+
   <script>
     const apiBase = '/api/v1';
     const content = document.querySelector('#content');
@@ -97,9 +123,10 @@
     const roleFilter = document.querySelector('#role-filter');
     let accessToken = null;
     let section = 'overview';
-    const filterState = { profiles: 'pending', users: 'active' };
+    const filterState = { profiles: 'pending', users: 'active', claims: 'pending' };
     const FILTERS = {
-      profiles: [['pending', 'Pending'], ['verified', 'Verified'], ['rejected', 'Rejected'], ['blocked', 'Blocked'], ['deleted', 'Deleted'], ['all', 'All']],
+      profiles: [['pending', 'Pending'], ['verified', 'Verified'], ['rejected', 'Rejected'], ['unclaimed', 'Unclaimed'], ['blocked', 'Blocked'], ['deleted', 'Deleted'], ['all', 'All']],
+      claims: [['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['all', 'All']],
       users: [['active', 'Active'], ['blocked', 'Blocked'], ['deleted', 'Deleted'], ['all', 'All']],
     };
 
@@ -179,11 +206,11 @@
     });
 
     // ---------- navigation ----------
-    document.querySelectorAll('#sections button').forEach((button) => button.addEventListener('click', () => switchSection(button.dataset.section)));
+    document.querySelectorAll('#sections button[data-section]').forEach((button) => button.addEventListener('click', () => switchSection(button.dataset.section)));
     function switchSection(next, filter) {
       section = next;
       if (filter) filterState[next] = filter;
-      document.querySelectorAll('#sections button').forEach((button) => button.classList.toggle('active', button.dataset.section === next));
+      document.querySelectorAll('#sections button[data-section]').forEach((button) => button.classList.toggle('active', button.dataset.section === next));
       searchInput.value = '';
       roleFilter.value = '';
       renderToolbar();
@@ -193,6 +220,7 @@
       const filters = FILTERS[section];
       toolbar.hidden = !filters;
       roleFilter.hidden = section !== 'users';
+      searchInput.hidden = section === 'claims';
       if (!filters) return;
       filtersBox.innerHTML = filters.map(([value, label]) => `<button data-filter="${value}" class="${filterState[section] === value ? 'active' : ''}">${label}</button>`).join('');
       filtersBox.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => {
@@ -214,6 +242,7 @@
           if (searchInput.value.trim()) params.set('q', searchInput.value.trim());
           return renderList(await api(`/admin/profiles?${params}`), renderProfileCard, 'profiles');
         }
+        if (section === 'claims') return renderList(await api(`/admin/claims?status=${filterState.claims}`), renderClaimCard, `${filterState.claims === 'all' ? '' : filterState.claims + ' '}claims`);
         if (section === 'users') {
           const params = new URLSearchParams({ status: filterState.users });
           if (searchInput.value.trim()) params.set('q', searchInput.value.trim());
@@ -237,9 +266,12 @@
 
     function renderOverview(stats) {
       setDisputeCount(stats.disputes_open);
+      setClaimCount(stats.claims_pending);
       const tiles = [
         ['Pending verifications', stats.profiles_pending, 'profiles', 'pending', stats.profiles_pending > 0],
+        ['Pending claims', stats.claims_pending, 'claims', 'pending', stats.claims_pending > 0],
         ['Open disputes', stats.disputes_open, 'disputes', null, stats.disputes_open > 0],
+        ['Unclaimed businesses', stats.companies_unclaimed, 'profiles', 'unclaimed'],
         ['Active accounts', stats.users_total, 'users', 'active'],
         ['New accounts (7 days)', stats.users_new_7d, 'users', 'active'],
         ['Live experts', stats.experts_live, 'profiles', 'verified'],
@@ -256,6 +288,11 @@
     }
     function setDisputeCount(count) {
       const badge = document.querySelector('#disputes-count');
+      badge.hidden = !count;
+      badge.textContent = count;
+    }
+    function setClaimCount(count) {
+      const badge = document.querySelector('#claims-count');
       badge.hidden = !count;
       badge.textContent = count;
     }
@@ -280,10 +317,11 @@
         buttons.push(blocked ? ['unblock', 'Unblock'] : ['block', 'Block']);
         buttons.push(['delete', 'Delete', 'danger']);
       }
+      const unclaimed = profile.claim_status === 'unclaimed';
       const element = card(`
-        <strong>${escapeHtml(profile.display_name)}<span class="badge ${escapeHtml(profile.verification)}">${escapeHtml(profile.verification)}</span>${blocked ? '<span class="badge blocked">blocked</span>' : ''}${deleted ? '<span class="badge deleted">deleted</span>' : ''}</strong>
+        <strong>${escapeHtml(profile.display_name)}<span class="badge ${escapeHtml(profile.verification)}">${escapeHtml(profile.verification)}</span>${unclaimed ? '<span class="badge unclaimed">unclaimed</span>' : ''}${blocked ? '<span class="badge blocked">blocked</span>' : ''}${deleted ? '<span class="badge deleted">deleted</span>' : ''}</strong>
         <small>${escapeHtml(profile.headline)}${profile.city ? ' · ' + escapeHtml(profile.city) : ''}</small>
-        <div class="meta">${escapeHtml(profile.kind.toUpperCase())}${profile.owner_email ? ' · ' + escapeHtml(profile.owner_email) : ''} · created ${formatDate(profile.created_at)}${deleted ? ' · deleted ' + formatDate(profile.deleted_at) : ''}</div>
+        <div class="meta">${escapeHtml(profile.kind.toUpperCase())}${profile.owner_email ? ' · ' + escapeHtml(profile.owner_email) : ''}${unclaimed ? ' · added by admin' + (profile.contact_email ? ', contact ' + escapeHtml(profile.contact_email) : '') : ''} · created ${formatDate(profile.created_at)}${deleted ? ' · deleted ' + formatDate(profile.deleted_at) : ''}</div>
         ${blocked && profile.blocked_reason ? `<div class="reason">Blocked: ${escapeHtml(profile.blocked_reason)}</div>` : ''}`, buttons);
       element.querySelectorAll('[data-action]').forEach((button) => button.addEventListener('click', () => profileAction(profile, button.dataset.action, button)));
       return element;
@@ -319,6 +357,79 @@
           onConfirm: async () => { await api(`${base}/restore`, { method: 'POST' }); done(`${name} restored.`); } });
       }
     }
+
+    // ---------- claims ----------
+    function renderClaimCard(claim) {
+      const pending = claim.status === 'pending';
+      const buttons = pending ? [['approve', 'Approve', 'primary'], ['reject', 'Reject', 'reject']] : [];
+      if (claim.profile_id) buttons.push(['view', 'View listing']);
+      const listingContact = [claim.listing_contact_email, claim.listing_contact_phone].filter(Boolean).map(escapeHtml).join(', ');
+      const element = card(`
+        <strong>${escapeHtml(claim.organization_name)}<span class="badge ${escapeHtml(claim.status)}">${escapeHtml(claim.status)}</span><span class="badge ${claim.email_matches_listing ? 'match' : 'nomatch'}">${claim.email_matches_listing ? 'email matches listing' : 'email not on listing'}</span></strong>
+        <small>Claimed by ${escapeHtml(claim.claimant_name)} &lt;${escapeHtml(claim.claimant_email)}&gt; · proved ${escapeHtml(claim.business_email)}${claim.phone ? ' · ' + escapeHtml(claim.phone) : ''}</small>
+        <div class="meta">${claim.city ? escapeHtml(claim.city) + ' · ' : ''}Listing contact: ${listingContact || 'none on file'} · sent ${formatDate(claim.created_at)}${claim.reviewed_at ? ' · reviewed ' + formatDate(claim.reviewed_at) : ''}</div>
+        ${claim.note ? `<div class="note">${escapeHtml(claim.note)}</div>` : ''}
+        ${claim.review_reason ? `<div class="reason">${escapeHtml(claim.review_reason)}</div>` : ''}`, buttons);
+      element.querySelectorAll('[data-action]').forEach((button) => button.addEventListener('click', () => {
+        const action = button.dataset.action;
+        const done = (text) => { showToast(text, 'success'); load(); refreshCounts(); };
+        if (action === 'view') { window.open(`/pages/marketplace.html?profile=${encodeURIComponent(claim.profile_id)}`, '_blank', 'noopener'); return; }
+        if (action === 'approve') {
+          return openConfirm({ title: `Approve claim for ${claim.organization_name}?`,
+            text: `${claim.claimant_name} becomes the company admin and can edit the profile and receive requests. Any other pending claims for this business are rejected.${claim.email_matches_listing ? '' : ' Their email does not match the listing, so check the note or call the business first.'}`,
+            okLabel: 'Approve', danger: false,
+            onConfirm: async () => { await api(`/admin/claims/${claim.id}/approve`, { method: 'POST' }); done('Claim approved.'); } });
+        }
+        if (action === 'reject') {
+          return openConfirm({ title: `Reject claim for ${claim.organization_name}?`, text: 'The claimant is emailed this reason and can submit a new claim with more proof.', needsReason: true, reasonLabel: 'Reason (sent to the claimant)', okLabel: 'Reject',
+            onConfirm: async (reason) => { await api(`/admin/claims/${claim.id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }); done('Claim rejected.'); } });
+        }
+      }));
+      return element;
+    }
+    async function refreshCounts() {
+      try { const stats = await api('/admin/stats'); setDisputeCount(stats.disputes_open); setClaimCount(stats.claims_pending); } catch (_) { /* counts are a convenience */ }
+    }
+
+    // ---------- add business ----------
+    const businessModal = document.querySelector('#business-modal');
+    const businessForm = document.querySelector('#business-form');
+    function closeBusiness() { businessModal.hidden = true; document.querySelector('#modal-scrim').hidden = true; }
+    document.querySelector('#add-business').addEventListener('click', () => {
+      businessForm.reset();
+      document.querySelector('#business-error').textContent = '';
+      document.querySelector('#modal-scrim').hidden = false;
+      businessModal.hidden = false;
+      document.querySelector('#biz-name').focus();
+    });
+    document.querySelector('#business-cancel').addEventListener('click', closeBusiness);
+    document.querySelector('#modal-scrim').addEventListener('click', () => { if (!businessModal.hidden) closeBusiness(); });
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !businessModal.hidden) closeBusiness(); });
+    businessForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const value = (id) => document.querySelector(id).value.trim();
+      const errorBox = document.querySelector('#business-error');
+      if (value('#biz-name').length < 2 || value('#biz-service').length < 2 || value('#biz-city').length < 2) { errorBox.textContent = 'Name, main service and city are required.'; return; }
+      if (value('#biz-email') && !document.querySelector('#biz-email').checkValidity()) { errorBox.textContent = 'Enter a valid business email or leave it empty.'; return; }
+      const save = document.querySelector('#business-save');
+      save.disabled = true;
+      save.textContent = 'Adding…';
+      try {
+        const created = await api('/admin/companies', { method: 'POST', body: JSON.stringify({
+          company_name: value('#biz-name'), primary_service: value('#biz-service'), city: value('#biz-city'),
+          contact_email: value('#biz-email') || null, contact_phone: value('#biz-phone') || null,
+          website: value('#biz-website') || null, description: value('#biz-description') || null,
+        }) });
+        closeBusiness();
+        showToast(`${created.name} added as an unclaimed listing.`, 'success');
+        switchSection('profiles', 'unclaimed');
+      } catch (error) {
+        errorBox.textContent = error.message;
+      } finally {
+        save.disabled = false;
+        save.textContent = 'Add business';
+      }
+    });
 
     // ---------- accounts ----------
     const ROLE_LABELS = { customer: 'customer', expert: 'expert', company_admin: 'company admin', platform_admin: 'platform admin' };

@@ -26,6 +26,8 @@ class ProfileSummary(BaseModel):
     tags: list[str]
     # None when the owner has hidden this badge (see ProfileVisibilityUpdate).
     resolved_clients_count: int | None
+    # False for admin-added company listings the owner hasn't claimed; they can't receive requests yet.
+    claimed: bool = True
 
 
 class ProfileListResponse(BaseModel):

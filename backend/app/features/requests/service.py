@@ -27,7 +27,7 @@ from app.features.requests.schemas import (
 )
 from app.models.availability import AvailabilitySlot
 from app.models.organization_member import MemberRole, OrganizationMember
-from app.models.profile import Organization, Profile, ProfileKind, Service, VerificationStatus
+from app.models.profile import ClaimStatus, Organization, Profile, ProfileKind, Service, VerificationStatus
 from app.models.request import Request, RequestEvent, RequestParticipant, RequestStatus
 from app.models.review import Review
 from app.models.social_link import SocialLink
@@ -589,6 +589,15 @@ def _is_participant(request: Request, user: User, my_org_ids: set[UUID], partici
     return any(_is_mine(participant, user, my_org_ids) for participant in participants)
 
 
+async def _require_claimed(session: AsyncSession, profile: Profile) -> None:
+    """Admin-added company listings have nobody to answer requests until the owner claims them."""
+    if profile.kind is not ProfileKind.COMPANY or profile.organization_id is None:
+        return
+    organization = await session.get(Organization, profile.organization_id)
+    if organization is not None and organization.claim_status == ClaimStatus.UNCLAIMED.value:
+        raise ProfileTargetError("This business hasn't joined RightConnect yet, so it can't receive requests.")
+
+
 async def create_request(session: AsyncSession, auth_user_id: UUID, payload: CreateRequestPayload) -> RequestDetail:
     """Create a request that targets one specific expert or company profile."""
     user = await _get_user(session, auth_user_id)
@@ -600,6 +609,7 @@ async def create_request(session: AsyncSession, auth_user_id: UUID, payload: Cre
         profile.organization_id is not None and profile.organization_id in await _my_organization_ids(session, user.id)
     ):
         raise ProfileTargetError("This is your own profile. You can't send a request to yourself.")
+    await _require_claimed(session, profile)
 
     request = Request(
         customer_id=user.id,
@@ -777,6 +787,7 @@ async def invite_company(session: AsyncSession, auth_user_id: UUID, request_id: 
         or profile.deleted_at is not None
     ):
         raise ProfileTargetError("Choose a valid company profile to invite")
+    await _require_claimed(session, profile)
 
     if any(p.organization_id == profile.organization_id for p in participants if p.organization_id is not None):
         raise DuplicateInviteError("This company is already part of the request")

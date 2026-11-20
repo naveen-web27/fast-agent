@@ -39,6 +39,9 @@ from app.features.admin.service import (
     undelete_user,
 )
 from app.features.auth.lifecycle import RestoreConflictError
+from app.features.claims.router import run_claim_action
+from app.features.claims.schemas import AdminClaimOut, ClaimRejection, UnclaimedListingCreate, UnclaimedListingOut
+from app.features.claims.service import approve_claim, create_unclaimed_listing, list_claims_for_admin, reject_claim
 from app.models.profile import VerificationStatus
 from app.models.user import User, UserRole, active_user_by_auth_id
 from app.security.dependencies import get_current_auth_user_id
@@ -90,7 +93,7 @@ async def stats(_: User = Depends(require_platform_admin), session: AsyncSession
 
 @router.get("/profiles", response_model=list[PendingProfile])
 async def list_profiles(
-    verification: str = Query(default="pending", pattern="^(pending|verified|rejected|blocked|deleted|all)$"),
+    verification: str = Query(default="pending", pattern="^(pending|verified|rejected|unclaimed|blocked|deleted|all)$"),
     q: str | None = Query(default=None, max_length=120),
     _: User = Depends(require_platform_admin),
     session: AsyncSession = Depends(get_db),
@@ -144,6 +147,50 @@ async def restore_profile_endpoint(
 ) -> dict[str, str]:
     await _run(undelete_profile(session, admin, profile_id))
     return {"status": "restored"}
+
+
+# ---------- Unclaimed company listings & ownership claims ----------
+
+
+@router.post("/companies", response_model=UnclaimedListingOut, status_code=status.HTTP_201_CREATED)
+async def add_unclaimed_company(
+    payload: UnclaimedListingCreate, admin: User = Depends(require_platform_admin), session: AsyncSession = Depends(get_db)
+) -> UnclaimedListingOut:
+    """Add a real local business as an unclaimed listing its owner can claim later."""
+    return await run_claim_action(create_unclaimed_listing(session, admin, payload))
+
+
+@router.get("/claims", response_model=list[AdminClaimOut])
+async def claims(
+    status_filter: str = Query(default="pending", alias="status", pattern="^(pending|approved|rejected|all)$"),
+    _: User = Depends(require_platform_admin),
+    session: AsyncSession = Depends(get_db),
+) -> list[AdminClaimOut]:
+    return await list_claims_for_admin(session, status_filter)
+
+
+@router.post("/claims/{claim_id}/approve")
+async def approve(
+    claim_id: UUID,
+    admin: User = Depends(require_platform_admin),
+    session: AsyncSession = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, str]:
+    """Make the claimant the company's admin; other pending claims for it are rejected."""
+    await run_claim_action(approve_claim(session, settings, admin, claim_id))
+    return {"status": "approved"}
+
+
+@router.post("/claims/{claim_id}/reject")
+async def reject(
+    claim_id: UUID,
+    payload: ClaimRejection,
+    admin: User = Depends(require_platform_admin),
+    session: AsyncSession = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, str]:
+    await run_claim_action(reject_claim(session, settings, admin, claim_id, payload.reason))
+    return {"status": "rejected"}
 
 
 # ---------- Accounts ----------

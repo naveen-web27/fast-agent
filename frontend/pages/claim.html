@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#123735">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>Claim your business | RightConnect</title>
+  <style>
+    :root { --ink:#142928; --muted:#536665; --green:#086f61; --line:#d8e6df; --paper:#f2f7f3; --surface:#fff; --warn:#7a5b00; --danger:#922d2d; }
+    * { box-sizing:border-box; } [hidden] { display:none !important; }
+    body { margin:0; color:var(--ink); background:radial-gradient(circle at 90% 0%,#dcefe0 0%,transparent 32%),var(--paper); font:14px/1.5 Manrope,sans-serif; }
+    button,input,textarea { font:inherit; } button { cursor:pointer; } button:disabled { cursor:not-allowed; opacity:.55; } a { color:inherit; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:70px; padding:12px max(24px,calc((100vw - 980px)/2)); border-bottom:1px solid var(--line); background:rgba(255,255,255,.82); backdrop-filter:blur(16px); }
+    .brand { display:flex; align-items:center; gap:10px; font-weight:800; text-decoration:none; }.brand img { width:32px; height:32px; }.back { font-size:12px; font-weight:700; text-decoration:none; }
+    main { max-width:980px; margin:auto; padding:48px 24px 90px; }
+    .eyebrow { color:var(--green); font:11px 'DM Mono',monospace; text-transform:uppercase; }
+    .intro { max-width:680px; margin-bottom:26px; }.intro h1 { margin:9px 0; font-size:clamp(28px,4vw,40px); line-height:1.14; }.intro p { margin:0; color:var(--muted); font-size:15px; }
+    .steps { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:0 0 26px; padding:0; list-style:none; counter-reset:step; }
+    .steps li { padding:14px 16px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--muted); font-size:12px; counter-increment:step; }
+    .steps li::before { content:counter(step); display:inline-grid; place-items:center; width:22px; height:22px; margin-right:8px; border-radius:50%; background:#e1f3e8; color:var(--green); font-weight:800; }
+    .steps strong { color:var(--ink); }
+    .status { margin:0 0 20px; padding:13px 16px; border-left:3px solid var(--green); background:#e1f3e8; color:#225449; font-weight:700; }.status.error { border-color:#b64747; background:#fff0ed; color:var(--danger); }
+    .panel { margin-bottom:18px; padding:22px; border:1px solid var(--line); border-radius:8px; background:var(--surface); box-shadow:0 9px 24px rgba(20,60,48,.04); }
+    .panel h2 { margin:0 0 4px; font-size:18px; }.panel > p { margin:0 0 16px; color:var(--muted); font-size:13px; }
+    .search { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto; gap:10px; }
+    input,textarea { width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:7px; background:#fff; color:var(--ink); }
+    input:focus,textarea:focus { outline:2px solid #9bd3c0; border-color:#74bba3; }
+    label { display:block; margin:14px 0 6px; font-size:12px; font-weight:800; } .hint { margin:6px 0 0; color:var(--muted); font-size:12px; }
+    .btn { min-height:44px; padding:0 18px; border:1px solid var(--green); border-radius:7px; background:var(--green); color:#fff; font-weight:800; }
+    .btn:hover:not(:disabled) { background:#054f46; } .btn.ghost { border-color:var(--line); background:#fff; color:var(--ink); } .btn.ghost:hover:not(:disabled) { background:#f4f8f5; }
+    .results { display:grid; gap:10px; margin-top:16px; }
+    .listing { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 16px; border:1px solid var(--line); border-radius:8px; background:#fbfdfb; }
+    .listing strong { display:block; } .listing small { color:var(--muted); font-size:12px; }
+    .empty { margin:16px 0 0; color:var(--muted); font-size:13px; }
+    .selected { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:16px; border:1px solid #b8e5dc; border-radius:8px; background:#f1faf6; }
+    .selected strong { display:block; font-size:16px; } .selected small { color:var(--muted); }
+    .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .badge.unclaimed,.badge.pending { color:var(--warn); background:#fff4d6; } .badge.claimed,.badge.approved { color:#0b6b4f; background:#e1f6ee; } .badge.rejected { color:#fff; background:#b64747; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; } .row > div { flex:1 1 220px; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+    .claim-item { padding:14px 16px; border:1px solid var(--line); border-radius:8px; margin-top:10px; }
+    .claim-item .meta { margin-top:4px; color:var(--muted); font-size:12px; } .claim-item .reason { margin-top:6px; color:var(--danger); font-size:12px; }
+    .fineprint { margin-top:22px; color:var(--muted); font-size:12px; line-height:1.7; }
+    .loading-screen { position:fixed; inset:0; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; background:rgba(244,246,250,.94); }
+    .loading-screen img { width:62px; height:62px; border-radius:16px; } .loading-screen p { margin:0; font-size:16px; font-weight:800; }
+    @media(max-width:760px) { .topbar { padding:12px 18px; } main { padding:28px 18px calc(40px + env(safe-area-inset-bottom)); } .steps,.search { grid-template-columns:1fr; } .listing,.selected { flex-direction:column; align-items:flex-start; } }
+  </style>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="marketplace.html"><img src="../assets/rightconnect-mark.svg" alt="">RightConnect</a><a class="back" href="marketplace.html">← Back to marketplace</a></header>
+  <main>
+    <div class="intro"><span class="eyebrow">For business owners</span><h1>Claim your business</h1><p>RightConnect lists real local shops and consultancies so customers can find them. If your business is listed, claim it to manage the profile and start receiving customer requests. Claiming is free.</p></div>
+    <ol class="steps">
+      <li><strong>Find your business</strong><br>Search by name and city.</li>
+      <li><strong>Prove your email</strong><br>We email a 6-digit code to your business address.</li>
+      <li><strong>We review it</strong><br>Once approved, you manage the profile.</li>
+    </ol>
+    <div class="status" id="status" role="status" aria-live="polite" hidden></div>
+
+    <section class="panel" id="find-panel">
+      <h2>Find your business</h2>
+      <p>Only businesses that haven't been claimed yet are shown.</p>
+      <form class="search" id="search-form">
+        <input id="search-q" type="search" placeholder="Business name or service" maxlength="120" aria-label="Business name or service">
+        <input id="search-city" type="search" placeholder="City" maxlength="100" aria-label="City">
+        <button class="btn" type="submit">Search</button>
+      </form>
+      <div class="results" id="results"></div>
+    </section>
+
+    <section class="panel" id="claim-panel" hidden>
+      <h2>Claim this business</h2>
+      <div class="selected" id="selected"></div>
+
+      <div id="already-claimed" hidden><p class="hint" style="margin-top:14px">This business has already been claimed by its owner. If you think that's a mistake, contact <a href="mailto:rightconnect.co@gmail.com">rightconnect.co@gmail.com</a>.</p></div>
+
+      <div id="sign-in-box" hidden>
+        <p class="hint" style="margin-top:14px">Sign in first so we know who is claiming the business. New here? Creating an account takes a minute.</p>
+        <div class="actions"><button class="btn" type="button" id="google-button">Continue with Google</button><a class="btn ghost" id="join-link" href="auth.html?return=claim" style="display:inline-grid;place-items:center;text-decoration:none">Create an account</a></div>
+      </div>
+
+      <div id="onboard-box" hidden>
+        <p class="hint" style="margin-top:14px">You're signed in, but your RightConnect account isn't finished yet.</p>
+        <div class="actions"><a class="btn" href="auth.html?return=claim" style="display:inline-grid;place-items:center;text-decoration:none">Finish your account</a></div>
+      </div>
+
+      <form id="claim-form" hidden novalidate>
+        <div class="row">
+          <div><label for="claim-email">Business email</label><input id="claim-email" type="email" autocomplete="email" maxlength="254" required placeholder="owner@yourbusiness.com"></div>
+          <button class="btn ghost" type="button" id="send-code">Send code</button>
+        </div>
+        <p class="hint">Use the email on your website's domain or the one customers already know for your business. A matching email is approved faster.</p>
+        <div id="code-step" hidden>
+          <label for="claim-code">6-digit code</label>
+          <input id="claim-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="\d{6}" placeholder="123456">
+          <label for="claim-phone">Business phone (optional)</label>
+          <input id="claim-phone" type="tel" autocomplete="tel" maxlength="30" placeholder="+91 98765 43210">
+          <label for="claim-note">How can we confirm you own it? (optional)</label>
+          <textarea id="claim-note" rows="3" maxlength="1000" placeholder="e.g. I'm the owner. GST or shop licence number, or a link to our Google Maps listing."></textarea>
+          <div class="actions"><button class="btn" type="submit" id="submit-claim">Submit claim</button></div>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel" id="mine-panel" hidden>
+      <h2>Your claims</h2>
+      <div id="mine"></div>
+    </section>
+
+    <p class="fineprint">Only the real owner or an authorised manager may claim a business. False claims are rejected and can lead to account suspension. Need help? Email <a href="mailto:rightconnect.co@gmail.com">rightconnect.co@gmail.com</a>. <a href="privacy.html">Privacy Policy</a></p>
+  </main>
+  <div class="loading-screen" id="loading-screen" role="status" aria-live="polite" hidden><img src="../assets/rightconnect-mark.svg" alt=""><p id="loading-text">Loading…</p></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const apiBase = '/api/v1';
+    const statusBox = document.querySelector('#status');
+    let authClient = null;
+    let token = null;
+    let onboarded = false;
+    let listing = null;
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+    function message(text, error = false) {
+      statusBox.textContent = text;
+      statusBox.classList.toggle('error', error);
+      statusBox.hidden = !text;
+      if (text) statusBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    function setLoading(text) {
+      document.querySelector('#loading-screen').hidden = !text;
+      if (text) document.querySelector('#loading-text').textContent = text;
+    }
+    window.addEventListener('pageshow', (event) => { if (event.persisted) setLoading(null); });
+
+    async function api(path, options = {}) {
+      const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+      let response;
+      try { response = await fetch(`${apiBase}${path}`, { ...options, headers }); }
+      catch (_) { throw new Error('No internet connection. Check your network and try again.'); }
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        const detail = typeof body.detail === 'string' ? body.detail : body.detail?.[0]?.msg;
+        const error = new Error(detail || `Something went wrong (${response.status}). Please try again.`);
+        error.status = response.status;
+        throw error;
+      }
+      return response.status === 204 ? null : response.json();
+    }
+
+    // ---------- find ----------
+    function renderResults(items) {
+      const box = document.querySelector('#results');
+      if (!items.length) { box.innerHTML = '<p class="empty">No unclaimed business matches that search. If your business isn\'t listed, you can <a href="auth.html">join RightConnect</a> and register it yourself.</p>'; return; }
+      box.innerHTML = '';
+      items.forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'listing';
+        row.innerHTML = `<div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.headline)}${item.city ? ' · ' + escapeHtml(item.city) : ''}</small></div><button class="btn ghost" type="button">This is my business</button>`;
+        row.querySelector('button').addEventListener('click', () => selectListing(item));
+        box.appendChild(row);
+      });
+    }
+    async function search() {
+      const params = new URLSearchParams();
+      const q = document.querySelector('#search-q').value.trim();
+      const city = document.querySelector('#search-city').value.trim();
+      if (q) params.set('q', q);
+      if (city) params.set('city', city);
+      document.querySelector('#results').innerHTML = '<p class="empty">Searching…</p>';
+      try { renderResults(await api(`/claims/listings?${params}`)); }
+      catch (error) { document.querySelector('#results').innerHTML = `<p class="empty">${escapeHtml(error.message)}</p>`; }
+    }
+    document.querySelector('#search-form').addEventListener('submit', (event) => { event.preventDefault(); search(); });
+
+    // ---------- claim ----------
+    function selectListing(item) {
+      listing = item;
+      sessionStorage.setItem('rightconnect-claim-profile', item.profile_id);
+      const url = new URL(location.href);
+      url.searchParams.set('profile', item.profile_id);
+      history.replaceState(null, '', url);
+      message('');
+      document.querySelector('#selected').innerHTML = `<div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.headline)}${item.city ? ' · ' + escapeHtml(item.city) : ''}${item.website_url ? ' · ' + escapeHtml(item.website_url) : ''}</small></div><span class="badge ${escapeHtml(item.claim_status)}">${escapeHtml(item.claim_status)}</span>`;
+      const claimed = item.claim_status !== 'unclaimed';
+      document.querySelector('#already-claimed').hidden = !claimed;
+      document.querySelector('#sign-in-box').hidden = claimed || Boolean(token);
+      document.querySelector('#onboard-box').hidden = claimed || !token || onboarded;
+      document.querySelector('#claim-form').hidden = claimed || !token || !onboarded;
+      document.querySelector('#code-step').hidden = true;
+      document.querySelector('#claim-panel').hidden = false;
+      document.querySelector('#claim-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    document.querySelector('#google-button').addEventListener('click', async () => {
+      if (!authClient) { message('Google sign-in is unavailable right now.', true); return; }
+      sessionStorage.setItem('rightconnect-auth-return', 'claim');
+      sessionStorage.setItem('rightconnect-oauth-pending', '1');
+      setLoading('Opening Google…');
+      const { error } = await authClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${location.origin}/pages/auth.html` } });
+      if (error) { sessionStorage.removeItem('rightconnect-oauth-pending'); setLoading(null); message(error.message, true); }
+    });
+    document.querySelectorAll('a[href="auth.html?return=claim"]').forEach((link) => link.addEventListener('click', () => sessionStorage.setItem('rightconnect-auth-return', 'claim')));
+
+    document.querySelector('#send-code').addEventListener('click', async () => {
+      const emailInput = document.querySelector('#claim-email');
+      if (!emailInput.checkValidity() || !emailInput.value.trim()) { message('Enter a valid business email.', true); emailInput.focus(); return; }
+      const button = document.querySelector('#send-code');
+      button.disabled = true;
+      button.textContent = 'Sending…';
+      try {
+        await api('/claims/code', { method: 'POST', body: JSON.stringify({ profile_id: listing.profile_id, email: emailInput.value.trim() }) });
+        message(`We sent a 6-digit code to ${emailInput.value.trim()}. It expires in 10 minutes.`);
+        document.querySelector('#code-step').hidden = false;
+        document.querySelector('#claim-code').focus();
+        button.textContent = 'Resend code';
+      } catch (error) {
+        message(error.message, true);
+        button.textContent = 'Send code';
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.querySelector('#claim-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const code = document.querySelector('#claim-code').value.trim();
+      if (!/^\d{6}$/.test(code)) { message('Enter the 6-digit code from your email.', true); return; }
+      const button = document.querySelector('#submit-claim');
+      button.disabled = true;
+      button.textContent = 'Submitting…';
+      try {
+        await api('/claims', { method: 'POST', body: JSON.stringify({
+          profile_id: listing.profile_id,
+          email: document.querySelector('#claim-email').value.trim(),
+          code,
+          phone: document.querySelector('#claim-phone').value.trim() || null,
+          note: document.querySelector('#claim-note').value.trim() || null,
+        }) });
+        message(`Thanks! Your claim for ${listing.name} is waiting for review. We'll email you when it's decided.`);
+        document.querySelector('#claim-form').reset();
+        document.querySelector('#claim-form').hidden = true;
+        sessionStorage.removeItem('rightconnect-claim-profile');
+        await loadMine();
+      } catch (error) {
+        message(error.message, true);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Submit claim';
+      }
+    });
+
+    // ---------- my claims ----------
+    async function loadMine() {
+      if (!token || !onboarded) return;
+      try {
+        const claims = await api('/claims/mine');
+        document.querySelector('#mine-panel').hidden = !claims.length;
+        document.querySelector('#mine').innerHTML = claims.map((claim) => `
+          <div class="claim-item">
+            <strong>${escapeHtml(claim.organization_name)}</strong> <span class="badge ${escapeHtml(claim.status)}">${escapeHtml(claim.status)}</span>
+            <div class="meta">Using ${escapeHtml(claim.business_email)} · sent ${new Date(claim.created_at).toLocaleDateString()}${claim.reviewed_at ? ' · reviewed ' + new Date(claim.reviewed_at).toLocaleDateString() : ''}</div>
+            ${claim.status === 'approved' ? `<div class="meta"><a href="marketplace.html${claim.profile_id ? '?profile=' + encodeURIComponent(claim.profile_id) : ''}">Open and edit your company profile →</a></div>` : ''}
+            ${claim.status === 'rejected' && claim.review_reason ? `<div class="reason">${escapeHtml(claim.review_reason)}</div>` : ''}
+          </div>`).join('');
+      } catch (_) { /* The claim list is optional context; keep the page usable. */ }
+    }
+
+    // ---------- startup ----------
+    (async () => {
+      const requested = new URLSearchParams(location.search).get('profile') || sessionStorage.getItem('rightconnect-claim-profile');
+      try {
+        const config = await (await fetch(`${apiBase}/auth/provider-config`)).json();
+        if (config.supabase_url && config.supabase_publishable_key) {
+          authClient = window.supabase.createClient(config.supabase_url, config.supabase_publishable_key);
+          token = (await authClient.auth.getSession()).data.session?.access_token || null;
+        }
+        if (token) {
+          const me = await fetch(`${apiBase}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+          onboarded = me.ok;
+          if (me.status === 403) { message('Your account has been suspended.', true); token = null; onboarded = false; }
+        }
+      } catch (_) {
+        message('Could not reach RightConnect. Check your connection and reload.', true);
+      }
+      await loadMine();
+      if (requested) {
+        try { selectListing(await api(`/claims/listings/${encodeURIComponent(requested)}`)); }
+        catch (error) { sessionStorage.removeItem('rightconnect-claim-profile'); message(error.message, true); }
+      }
+      search();
+    })();
+  </script>
+</body>
+</html>

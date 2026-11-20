@@ -22,6 +22,11 @@ class ProfileKind(StrEnum):
     COMPANY = "company"
 
 
+class ClaimStatus(StrEnum):
+    UNCLAIMED = "unclaimed"
+    CLAIMED = "claimed"
+
+
 def _enum(enum_cls: type[StrEnum], name: str) -> Enum:
     return Enum(enum_cls, name=name, create_type=False, values_callable=lambda members: [m.value for m in members])
 
@@ -45,6 +50,12 @@ class Organization(Base):
         _enum(SubscriptionTier, "subscription_tier"), nullable=False, default=SubscriptionTier.FREE
     )
     subscription_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Admin-added listings stay 'unclaimed' (no members) until an owner's claim is approved.
+    claim_status: Mapped[str] = mapped_column(String, nullable=False, default=ClaimStatus.CLAIMED.value)
+    # Admin-only contact details used to match and follow up on claims; never shown publicly.
+    contact_email: Mapped[str | None] = mapped_column(String)
+    contact_phone: Mapped[str | None] = mapped_column(String)
+    claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
