@@ -3,7 +3,7 @@ from functools import reduce
 from operator import add
 from uuid import UUID
 
-from sqlalchemy import case, func, or_, select, update
+from sqlalchemy import case, false, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.plans import CREDENTIAL_LIMIT, SOCIAL_LINK_LIMIT, profile_plan_active
@@ -122,13 +122,21 @@ async def search_profiles(
     kind: str | None = None,
     page: int = 1,
     page_size: int = 12,
+    exclude_query: str | None = None,
 ) -> ProfileListResponse:
-    """Return a page of profiles matching the search, best matches first."""
+    """Return a page of profiles matching the search, best matches first.
+
+    exclude_query returns the opposite set: profiles that do NOT match it, so the discover page
+    can list "other profiles" under the recommended ones without repeating them."""
     stmt = select(Profile).where(Profile.blocked_at.is_(None), Profile.deleted_at.is_(None))
     # A search of only filler words ("I need help") lists everyone rather than nothing.
     relevance = _relevance(query) if query else None
     if relevance is not None:
         stmt = stmt.where(relevance[0])
+    excluded = _relevance(exclude_query) if exclude_query else None
+    if excluded is not None:
+        # ILIKE on a NULL bio yields NULL; treat it as "no match" so those profiles still appear.
+        stmt = stmt.where(~func.coalesce(excluded[0], false()))
     if city:
         stmt = stmt.where(Profile.city.ilike(_like(city), escape="\\"))
     if kind:

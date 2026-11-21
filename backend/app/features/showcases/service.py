@@ -5,10 +5,11 @@ from sqlalchemy import Select, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.plans import profile_plan_active
+from app.features.marketplace.catalog import search_terms
 from app.features.profiles.service import ProfileAccessError, ProfileNotFoundError, _require_manage
 from app.features.showcases.links import parse_video_link, validate_cover_url
 from app.features.showcases.schemas import ManagedShowcases, ShowcaseInput, ShowcaseList, ShowcaseOut
-from app.models.profile import Organization, Profile, ProfileKind
+from app.models.profile import Organization, Profile, ProfileKind, Service
 from app.models.showcase import VideoShowcase
 from app.models.user import User
 
@@ -45,12 +46,37 @@ def public_showcases() -> Select[tuple[VideoShowcase, str]]:
     )
 
 
+def _like(value: str) -> str:
+    escaped = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
+def interest_filter(query: str):
+    """Match a customer's interest/search words against the video and the provider behind it, or None."""
+    words, related_services = search_terms(query)
+    conditions = []
+    for word in [*words, *related_services]:
+        pattern = _like(word)
+        conditions.extend([
+            VideoShowcase.title.ilike(pattern, escape="\\"),
+            VideoShowcase.description.ilike(pattern, escape="\\"),
+            Profile.display_name.ilike(pattern, escape="\\"),
+            Profile.headline.ilike(pattern, escape="\\"),
+            func.array_to_string(Profile.keywords, " ").ilike(pattern, escape="\\"),
+            Profile.services.any(Service.name.ilike(pattern, escape="\\")),
+        ])
+    return or_(*conditions) if conditions else None
+
+
 async def list_showcases(
-    session: AsyncSession, page: int, page_size: int, profile_id: UUID | None = None,
+    session: AsyncSession, page: int, page_size: int, profile_id: UUID | None = None, query: str | None = None,
 ) -> ShowcaseList:
     stmt = public_showcases()
     if profile_id:
         stmt = stmt.where(VideoShowcase.profile_id == profile_id)
+    matcher = interest_filter(query) if query else None
+    if matcher is not None:
+        stmt = stmt.where(matcher)
     total = await session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     rows = (await session.execute(
         stmt.order_by(VideoShowcase.created_at.desc(), VideoShowcase.id.desc())

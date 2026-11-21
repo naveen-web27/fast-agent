@@ -35,6 +35,21 @@
     @media (max-width:720px) { .showcase-discover { padding:12px; } .showcase-strip .showcase-card { flex-basis:210px; } .showcase-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .showcase-copy { padding:10px; } .showcase-copy h3 { font-size:13px; } }
     @media (max-width:360px) { .showcase-grid { grid-template-columns:1fr; } }
     @media print { .showcase-discover,#profile-showcases { display:none; } }
+    .showcase-side { margin:0 0 16px; padding:14px; }
+    .showcase-side .showcase-heading { margin-bottom:10px; } .showcase-side .showcase-heading h2 { font-size:15px; } .showcase-side .showcase-heading p { font-size:11px; }
+    .showcase-side .showcase-heading .secondary { min-height:32px; padding:0 10px; font-size:11px; }
+    .showcase-vertical { flex-direction:column; max-height:min(760px,calc(100vh - 140px)); overflow-x:hidden; overflow-y:auto; padding:2px 4px 2px 2px; scroll-padding-top:2px; scroll-snap-type:y proximity; }
+    .showcase-vertical .showcase-card { flex:0 0 auto; }
+    .showcase-vertical .showcase-cover { aspect-ratio:16/10; }
+    .showcase-vertical .showcase-card,.showcase-group-title { scroll-snap-align:start; }
+    .showcase-group-title { flex:0 0 auto; margin:0; color:var(--muted); font-size:11px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+    .showcase-group-title:not(:first-child) { margin-top:10px; padding-top:12px; border-top:1px solid var(--line); }
+    @media (max-width:1050px) {
+      .showcase-vertical { flex-direction:row; max-height:none; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x proximity; }
+      .showcase-vertical .showcase-card { flex:0 0 210px; }
+      .showcase-vertical .showcase-cover { aspect-ratio:3/4; }
+      .showcase-group-title,.showcase-group-title:not(:first-child) { align-self:center; margin:0; padding:0 4px; border:0; writing-mode:vertical-rl; transform:rotate(180deg); }
+    }
   `;
   document.head.append(styles);
 
@@ -109,18 +124,56 @@
     root.append(note, button);
   }
 
-  async function loadStrip() {
+  function showcaseInterestTerms() {
+    const searched = document.querySelector('#search-input')?.value.trim();
+    if (searched) return searched;
+    const saved = typeof currentInterests !== 'undefined' && Array.isArray(currentInterests) ? currentInterests : [];
+    return saved.join(' ').trim();
+  }
+
+  function groupTitle(text) {
+    const title = document.createElement('p');
+    title.className = 'showcase-group-title';
+    title.textContent = text;
+    return title;
+  }
+
+  let stripTerms = null;
+  async function loadStrip(force = true) {
+    const terms = showcaseInterestTerms();
+    if (!force && terms === stripTerms) return;
+    stripTerms = terms;
     const ticket = ++stripRequest;
     const root = document.querySelector('#showcase-strip');
     try {
-      const data = await api('/showcases?page_size=8');
+      const [matching, latest] = await Promise.all([
+        terms ? api(`/showcases?${new URLSearchParams({ q: terms, page_size: '10' })}`) : Promise.resolve({ results: [] }),
+        api('/showcases?page_size=12'),
+      ]);
       if (ticket !== stripRequest) return;
-      renderCards(root, data.results, 'No video showcases yet. Experts and companies can add theirs from View all showcases.');
+      const shown = new Set(matching.results.map((item) => item.id));
+      const others = latest.results.filter((item) => !shown.has(item.id));
+      if (!matching.results.length && !others.length) {
+        renderCards(root, [], 'No video showcases yet. Experts and companies can add theirs from View all.');
+        return;
+      }
+      root.replaceChildren();
+      if (matching.results.length) {
+        root.append(groupTitle('For your interests'));
+        matching.results.forEach((item) => root.append(card(item)));
+      }
+      if (others.length) {
+        if (matching.results.length || terms) root.append(groupTitle(matching.results.length ? 'More showcases' : 'Latest showcases'));
+        others.forEach((item) => root.append(card(item)));
+      }
+      root.scrollTop = 0;
     } catch (error) {
       if (ticket !== stripRequest) return;
-      loadError(root, `Could not load video showcases. ${error.message}`, loadStrip);
+      loadError(root, `Could not load video showcases. ${error.message}`, () => loadStrip());
     }
   }
+  // The marketplace calls this after each profile search so the sidebar follows the customer's interest.
+  window.refreshShowcaseSidebar = () => loadStrip(false);
 
   window.loadVideoShowcases = async () => {
     const ticket = ++feedRequest;

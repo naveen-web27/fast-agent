@@ -58,6 +58,11 @@
     .tag button { border:0; background:transparent; color:#7c8aa5; cursor:pointer; font-size:13px; line-height:1; padding:0; }
     .tag button:hover { color:#c0392b; }
     .resolved-badge { display:inline-flex; align-items:center; gap:4px; margin-top:6px; color:var(--good); font-size:11px; font-weight:800; }
+    .other-profiles { margin-top:30px; }
+    .other-divider { display:flex; align-items:center; gap:12px; color:var(--muted); font-size:13px; font-weight:800; }
+    .other-divider::before,.other-divider::after { content:''; flex:1; height:1px; background:var(--line); }
+    .other-note { margin:6px 0 13px; font-size:12px; text-align:center; }
+    #other-pagination { justify-content:center; }
     .unclaimed-badge { display:inline-flex; align-items:center; padding:2px 7px; color:#7a5b00; border-radius:999px; background:#fff4d6; font-size:10px; font-weight:800; }
     .unclaimed-note { margin-top:12px; padding:11px 12px; color:#5d4a12; border:1px solid #f2dfa7; border-radius:9px; background:#fffaf0; font-size:12px; line-height:1.45; }
     .unclaimed-note a { display:inline-block; margin-top:6px; color:#08736c; font-weight:800; }
@@ -321,12 +326,8 @@
       <div class="page">
         <section class="view active" id="discover">
           <div class="page-title"><div><h1>Find help</h1></div><button class="primary" id="match-button">✦ Get matched</button></div>
-          <section class="showcase-discover" aria-labelledby="showcase-strip-title">
-            <div class="showcase-heading"><div><h2 id="showcase-strip-title">Video showcases</h2><p class="muted">Meet providers through their Reels and Shorts. Videos open on the original platform.</p></div><button class="secondary" type="button" data-view="showcases">View all showcases</button></div>
-            <div class="showcase-strip" id="showcase-strip" tabindex="0" role="region" aria-label="Recent video showcases, scroll horizontally"><p class="muted">Loading showcases...</p></div>
-          </section>
           <div class="search-panel"><label class="search-field">⌕ <input id="search-input" placeholder="What do you need?"></label><div class="kind-toggle" id="kind-toggle" role="group" aria-label="Profile type filter"><button type="button" class="pill kind-pill selected" data-kind="expert">Experts</button><button type="button" class="pill kind-pill selected" data-kind="company">Companies</button><button type="button" class="pill kind-pill" id="kind-customer-pill" data-kind="customer" hidden>Customers</button></div><button class="primary" id="search-button">Search</button></div>
-          <div class="dashboard-grid"><div><div class="filter-row"><h2 id="result-count">Loading profiles…</h2></div><div class="results" id="results"></div><div class="pagination" id="pagination" hidden><button class="secondary" id="page-prev" type="button">← Prev</button><span id="page-indicator">Page 1</span><button class="secondary" id="page-next" type="button">Next →</button></div></div><aside><div class="insight-card"><span class="section-tag">Top picks</span><div class="match-list" id="match-list"></div></div><div class="stat-grid"><div class="stat"><small>Reviews</small><strong id="stat-reviews">–</strong></div><div class="stat"><small>Avg. reply</small><strong id="stat-response">–</strong></div></div></aside></div>
+          <div class="dashboard-grid"><div><div class="filter-row"><h2 id="result-count">Loading profiles…</h2></div><div class="results" id="results"></div><div class="pagination" id="pagination" hidden><button class="secondary" id="page-prev" type="button">← Prev</button><span id="page-indicator">Page 1</span><button class="secondary" id="page-next" type="button">Next →</button></div><section class="other-profiles" id="other-profiles" aria-labelledby="other-profiles-title" hidden><div class="other-divider"><span id="other-profiles-title">Other profiles</span></div><p class="muted other-note">Not an exact match for your search, but they may still help.</p><div class="results" id="other-results"></div><div class="pagination" id="other-pagination" hidden><button class="secondary" id="other-more" type="button">Show more profiles</button></div></section></div><aside class="discover-side"><section class="showcase-discover showcase-side" aria-labelledby="showcase-strip-title"><div class="showcase-heading"><div><h2 id="showcase-strip-title">Video showcases</h2><p class="muted">Reels and Shorts from providers. Videos open on the original platform.</p></div><button class="secondary" type="button" data-view="showcases">View all</button></div><div class="showcase-strip showcase-vertical" id="showcase-strip" tabindex="0" role="region" aria-label="Video showcases, scroll vertically"><p class="muted">Loading showcases...</p></div></section><div class="insight-card"><span class="section-tag">Top picks</span><div class="match-list" id="match-list"></div></div><div class="stat-grid"><div class="stat"><small>Reviews</small><strong id="stat-reviews">–</strong></div><div class="stat"><small>Avg. reply</small><strong id="stat-response">–</strong></div></div></aside></div>
         </section>
         <section class="view" id="showcases">
           <div class="page-title"><div><h1>Video showcases</h1><p>Discover experts and companies through their YouTube Shorts and Instagram Reels.</p></div></div>
@@ -757,6 +758,8 @@
     async function renderLeadsMode() {
       paginationBar.hidden = true;
       resultsList.innerHTML = '';
+      otherKey = null;
+      otherSection.hidden = true;
       if (!accessToken) { resultCount.textContent = 'Sign in to see customer requests.'; return; }
       resultCount.innerHTML = '<span class="spinner"></span>Loading your customer requests…';
       await loadRequests();
@@ -1013,11 +1016,50 @@
       document.querySelector('#stat-response').textContent = avgResponse ? `${avgResponse} min` : '–';
     }
 
+    const otherSection = document.querySelector('#other-profiles');
+    const otherResults = document.querySelector('#other-results');
+    const otherMore = document.querySelector('#other-more');
+    let otherKey = null;
+    let otherPage = 1;
+    let otherTicket = 0;
+    // Profiles that don't match the search, listed under the recommended ones so customers can keep browsing.
+    async function loadOtherProfiles(query, kinds, append = false) {
+      const key = `${query}|${kinds.join(',')}`;
+      if (!query) { otherKey = null; otherSection.hidden = true; otherResults.innerHTML = ''; return; }
+      if (!append && key === otherKey) return;
+      const ticket = ++otherTicket;
+      otherPage = append ? otherPage + 1 : 1;
+      if (!append) { otherKey = key; otherResults.innerHTML = ''; }
+      setButtonLoading(otherMore, append, 'Loading…');
+      try {
+        const params = new URLSearchParams({ exclude_q: query, page: otherPage, page_size: pageSize });
+        if (kinds.length === 1) params.set('kind', kinds[0]);
+        const response = await fetch(`${apiBase}/profiles?${params}`);
+        if (!response.ok) throw new Error('Request failed');
+        const data = await response.json();
+        if (ticket !== otherTicket) return;
+        data.results.forEach((profile) => otherResults.appendChild(renderProfileCard(profile)));
+        otherSection.hidden = !otherResults.children.length;
+        document.querySelector('#other-pagination').hidden = data.page * data.page_size >= data.total;
+      } catch (_) {
+        if (ticket !== otherTicket) return;
+        if (!append) { otherKey = null; otherSection.hidden = true; }
+      } finally {
+        if (ticket === otherTicket) setButtonLoading(otherMore, false);
+      }
+    }
+    otherMore.addEventListener('click', () => {
+      const query = document.querySelector('#search-input').value.trim();
+      loadOtherProfiles(query, selectedKinds().filter((kind) => kind !== 'customer'), true);
+    });
+
     let profilesTicket = 0;
     async function loadProfiles() {
       const ticket = ++profilesTicket;
       const query = document.querySelector('#search-input').value.trim();
       const kinds = selectedKinds().filter((kind) => kind !== 'customer');
+      window.refreshShowcaseSidebar?.();
+      loadOtherProfiles(query, kinds);
       resultCount.innerHTML = '<span class="spinner"></span>Loading profiles…';
       paginationBar.hidden = true;
       resultsList.classList.add('results-loading');
@@ -2167,6 +2209,7 @@
       } else if (getActingType() !== 'customer') {
         searchInput.value = '';
       }
+      window.refreshShowcaseSidebar?.();
       maybeShowNeedDone(user);
     }
 

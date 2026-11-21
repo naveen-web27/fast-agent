@@ -43,10 +43,13 @@ async def list_profiles(
     kind: str | None = Query(default=None, pattern="^(expert|company)$"),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=12, ge=1, le=50),
+    exclude_q: str | None = Query(default=None, max_length=200, description="Return only profiles that do NOT match this search"),
     session: AsyncSession = Depends(get_db),
 ) -> ProfileListResponse:
     """Search verified experts and companies stored in the database."""
-    return await search_profiles(session, query=q, city=city, kind=kind, page=page, page_size=page_size)
+    return await search_profiles(
+        session, query=q, city=city, kind=kind, page=page, page_size=page_size, exclude_query=exclude_q
+    )
 
 
 @router.get("/profiles/saved", response_model=ProfileListResponse)
