@@ -328,7 +328,7 @@
       <div class="side-bottom" id="side-bottom" hidden><span class="section-tag">Signed in as</span><div class="profile-mini"><span class="avatar" id="sidebar-avatar">?</span><span id="sidebar-name"></span></div></div>
     </aside>
     <main class="main" data-install-banner-host>
-      <header class="topbar"><div class="top-actions"><button class="icon-button mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="crumb"><strong>RightConnect</strong> / Marketplace</div></div><div class="top-actions"><div class="bell-wrap" id="bell-wrap" hidden><button class="icon-button" id="notif-button" type="button" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="bell-count" id="notif-count" hidden>0</span></button><div class="notif-menu" id="notif-menu" hidden></div></div><a class="secondary" href="auth.html" id="sign-in-link">Sign in or join</a><button class="secondary" id="request-expert">Become an expert</button><div class="user-chip" id="user-chip" hidden><button class="user-chip-button" id="user-menu-button"><span class="avatar" id="chip-avatar">?</span><span id="chip-name"></span></button><div class="user-menu" id="user-menu" hidden><button id="my-profile-button">My profile</button><button id="manage-interests-button">Interests</button><button id="profile-settings-button">Settings</button><button id="menu-support-button">Help</button><button id="sign-out-button">Sign out</button></div></div></div></header>
+      <header class="topbar"><div class="top-actions"><button class="icon-button mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="crumb"><strong>RightConnect</strong> / Marketplace</div></div><div class="top-actions"><div class="bell-wrap" id="bell-wrap" hidden><button class="icon-button" id="notif-button" type="button" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="bell-count" id="notif-count" hidden>0</span></button><div class="notif-menu" id="notif-menu" hidden></div></div><a class="secondary" href="auth.html" id="sign-in-link">Sign in or join</a><a class="secondary" id="find-work-link" href="workers.html?tab=me">Find work</a><button class="secondary" id="request-expert">Become an expert</button><div class="user-chip" id="user-chip" hidden><button class="user-chip-button" id="user-menu-button"><span class="avatar" id="chip-avatar">?</span><span id="chip-name"></span></button><div class="user-menu" id="user-menu" hidden><button id="my-profile-button">My profile</button><button id="manage-interests-button">Interests</button><button id="profile-settings-button">Settings</button><button id="menu-support-button">Help</button><button id="sign-out-button">Sign out</button></div></div></div></header>
       <div class="page">
         <section class="view active" id="discover">
           <div class="page-title"><div><h1>Find help</h1></div><button class="primary" id="match-button">✦ Get matched</button></div>
@@ -2047,6 +2047,12 @@
       } else {
         items.push(`<button class="workspace-add" id="add-expert-button" type="button">+ Add expert profile</button>`);
       }
+      // Worker profiles live on the Workers & jobs page, so these entries navigate there.
+      const worker = identities.worker_profile;
+      const lightLabel = { available: 'available', busy: 'busy', offline: 'offline' };
+      items.push(worker
+        ? `<button class="workspace-link" type="button" data-worker-link>Worker profile <small>${escapeHtml(lightLabel[worker.availability] || '')}</small></button>`
+        : `<button class="workspace-add" type="button" data-worker-link>+ Register as a worker</button>`);
       items.push('<hr>');
       identities.companies.forEach((company) => {
         items.push(`<button data-type="company" data-id="${escapeHtml(company.organization_id)}" data-label="${escapeHtml(company.name)}">${escapeHtml(company.name)} <small>${escapeHtml(company.verification)}</small></button>`);
@@ -2068,9 +2074,11 @@
       const addExpertButton = document.querySelector('#add-expert-button');
       if (addExpertButton) addExpertButton.addEventListener('click', () => { workspaceMenu.hidden = true; openModal('expert-modal'); });
       document.querySelector('#add-company-button')?.addEventListener('click', () => { workspaceMenu.hidden = true; openModal('company-modal'); });
+      workspaceMenu.querySelector('[data-worker-link]')?.addEventListener('click', () => { window.location.href = 'workers.html?tab=me'; });
       workspaceMenu.querySelectorAll('[data-verify-org]').forEach((button) => button.addEventListener('click', () => { workspaceMenu.hidden = true; openOtpModal(button.dataset.verifyOrg, ''); }));
 
       document.querySelector('#request-expert').hidden = Boolean(identities.expert_profile);
+      document.querySelector('#find-work-link').hidden = Boolean(identities.worker_profile);
       document.querySelector('#requests-tabs').hidden = !(identities.expert_profile || identities.companies.length);
       renderRequestsList();
     }
@@ -2234,11 +2242,15 @@
       const alertBox = document.querySelector('#location-alert');
       const missing = [];
       if (identities?.expert_profile?.location_missing) missing.push({ label: 'your expert profile', profileId: identities.expert_profile.id });
+      if (identities?.worker_profile?.location_missing) missing.push({ label: 'your worker profile', href: 'workers.html?tab=me' });
       (identities?.companies || []).filter((company) => company.member_role === 'admin' && company.location_missing && company.profile_id)
         .forEach((company) => missing.push({ label: company.name, profileId: company.profile_id }));
       if (missing.length) {
         alertBox.innerHTML = `<span>📍 <strong>Location missing</strong> on ${missing.map((item) => escapeHtml(item.label)).join(', ')}. Customers nearby see providers with a PIN code first.</span><span>${missing.map((item, index) => `<button class="secondary" type="button" data-fix-location="${index}">Add PIN code${missing.length > 1 ? ` (${escapeHtml(item.label)})` : ''}</button>`).join(' ')}</span>`;
-        alertBox.querySelectorAll('[data-fix-location]').forEach((button) => button.addEventListener('click', () => openProfileEditor(missing[Number(button.dataset.fixLocation)].profileId, 'basics')));
+        alertBox.querySelectorAll('[data-fix-location]').forEach((button) => button.addEventListener('click', () => {
+          const item = missing[Number(button.dataset.fixLocation)];
+          if (item.href) window.location.href = item.href; else openProfileEditor(item.profileId, 'basics');
+        }));
         alertBox.hidden = false;
       } else if (!RCLocation.get(currentUser)) {
         alertBox.innerHTML = '<span>📍 Add your PIN code to see experts and companies near you first.</span><button class="secondary" type="button" data-focus-pin>Add PIN code</button>';

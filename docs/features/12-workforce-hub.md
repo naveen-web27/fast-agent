@@ -45,6 +45,7 @@ flowchart TD
 - Signup: `role=worker` in `POST /auth/onboarding` (needs main work, city, `adult_confirmed`; optional `area`). Worker accounts are ready immediately (no verification queue).
 - Data: [worker.py](../../backend/app/models/worker.py) (`worker_profiles`, `worker_experiences`, `worker_hires`, `worker_reviews`, `job_posts`), `user_role` value `worker`; migration [024_workforce_hub.sql](../../db/migrations/024_workforce_hub.sql).
 - Frontend: [workers.html](../../frontend/pages/workers.html) (Find workers, Jobs, Hires, My work profile), worker option in [auth.html](../../frontend/pages/auth.html), "Workers & jobs" in the [marketplace](../../frontend/pages/marketplace.html) sidebar, Workers tab and "+ Add worker" in the [admin console](../../backend/admin/index.html).
+- Existing accounts: the marketplace "Acting as" menu shows **+ Register as a worker** (or **Worker profile** with the availability light once created) and a **Find work** top-bar link; both open `workers.html?tab=me`. `GET /auth/identities` returns `worker_profile` (`id`, `headline`, `availability`, `location_missing`).
 - Regression: `PYTHONPATH=backend python3 -B -m unittest discover -s backend/tests -p 'test_workforce_hub.py' -v`.
 
 ## Not Done / To Do

@@ -2,7 +2,7 @@
 import hashlib
 import re
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -20,17 +20,19 @@ from app.features.auth.schemas import (
     ExpertProfileSummary,
     IdentitiesResponse,
     MyProfileUpdate,
+    WorkerIdentity,
     OnboardingRequest,
     UserResponse,
 )
 from app.features.marketplace.service import count_resolved_clients
 from app.features.workers.schemas import WorkerCreate
-from app.features.workers.service import new_worker_for_user
+from app.features.workers.service import effective_availability, new_worker_for_user
 from app.models.email_verification import EmailVerification
 from app.models.organization_invite import OrganizationInvite
 from app.models.organization_member import MemberRole, OrganizationMember
 from app.models.profile import Organization, Profile, ProfileKind, Service, VerificationStatus
 from app.models.user import SubscriptionTier, User, UserRole, active_user_by_auth_id
+from app.models.worker import WorkerProfile
 
 OTP_TTL_MINUTES = 10
 OTP_MAX_ATTEMPTS = 5
@@ -323,6 +325,20 @@ async def get_identities(session: AsyncSession, auth_user_id: UUID) -> Identitie
             )
         )
 
+    worker = await session.scalar(
+        select(WorkerProfile).where(WorkerProfile.user_id == user.id, WorkerProfile.deleted_at.is_(None))
+    )
+    worker_profile = (
+        WorkerIdentity(
+            id=worker.id,
+            headline=worker.headline,
+            availability=effective_availability(worker.availability, worker.busy_until, date.today()),
+            location_missing=worker.pincode is None,
+        )
+        if worker
+        else None
+    )
+
     onboarding_status = "complete" if user.role in (UserRole.CUSTOMER, UserRole.WORKER) else "verification_pending"
     return IdentitiesResponse(
         user=UserResponse(
@@ -337,6 +353,7 @@ async def get_identities(session: AsyncSession, auth_user_id: UUID) -> Identitie
         ),
         expert_profile=expert_profile,
         companies=companies,
+        worker_profile=worker_profile,
     )
 
 

@@ -220,12 +220,22 @@ class CompanyMembership(BaseModel):
     location_missing: bool = False
 
 
+class WorkerIdentity(BaseModel):
+    """The account's worker (service partner) profile, managed on workers.html."""
+
+    id: UUID
+    headline: str
+    availability: Literal["available", "busy", "offline"]
+    location_missing: bool = False
+
+
 class IdentitiesResponse(BaseModel):
     """Everything this auth identity can act as: customer, expert, and/or company admin."""
 
     user: UserResponse
     expert_profile: ExpertProfileSummary | None
     companies: list[CompanyMembership]
+    worker_profile: WorkerIdentity | None = None
 
 
 class DomainOtpSendRequest(BaseModel):
