@@ -6,6 +6,7 @@ from uuid import UUID
 from sqlalchemy import case, false, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.location import proximity, proximity_rank
 from app.core.plans import CREDENTIAL_LIMIT, SOCIAL_LINK_LIMIT, profile_plan_active
 from app.features.marketplace.catalog import search_terms
 from app.features.profiles.service import load_educations, load_experiences
@@ -77,6 +78,7 @@ async def _to_summary(session: AsyncSession, profile: Profile) -> ProfileSummary
         display_name=profile.display_name,
         headline=profile.headline,
         city=profile.city,
+        pincode=profile.pincode,
         years_experience=profile.years_experience,
         languages=profile.languages,
         avatar_url=profile.avatar_url,
@@ -123,6 +125,8 @@ async def search_profiles(
     page: int = 1,
     page_size: int = 12,
     exclude_query: str | None = None,
+    near_pincode: str | None = None,
+    near_city: str | None = None,
 ) -> ProfileListResponse:
     """Return a page of profiles matching the search, best matches first.
 
@@ -147,10 +151,17 @@ async def search_profiles(
     ordering = [Profile.average_rating.desc(), Profile.review_count.desc()]
     if relevance is not None:
         ordering.insert(0, relevance[1].desc())
+    # Nearest first (same area, district, state), then the best search match within that distance.
+    nearness = proximity_rank(Profile.pincode, Profile.city, near_pincode, near_city)
+    if nearness is not None:
+        ordering.insert(0, nearness.desc())
     stmt = stmt.order_by(*ordering)
     stmt = stmt.offset((page - 1) * page_size).limit(page_size)
     profiles = (await session.scalars(stmt)).all()
     results = [await _to_summary(session, profile) for profile in profiles]
+    if nearness is not None:
+        for profile, summary in zip(profiles, results):
+            summary.nearness = proximity(profile.pincode, profile.city, near_pincode, near_city)
     return ProfileListResponse(results=results, total=total, page=page, page_size=page_size)
 
 

@@ -162,6 +162,7 @@ class ShowcaseServiceTests(unittest.IsolatedAsyncioTestCase):
             "VideoShowcase": FakeModel, "OrganizationMember": FakeModel,
             "ProfileKind": Kind, "MemberRole": SimpleNamespace(ADMIN=SimpleNamespace(value="admin")),
             "select": lambda *args: Expression(), "func": SimpleNamespace(count=lambda: Expression()),
+            "proximity_rank": lambda *args: None,
             "or_": lambda *args: Expression(),
             "active_user_by_auth_id": lambda value: Expression(),
             "profile_plan_active": self.paid,
@@ -322,7 +323,7 @@ class ShowcaseServiceTests(unittest.IsolatedAsyncioTestCase):
         self.session.scalar.side_effect = [13]
         self.session.execute.return_value = SimpleNamespace(all=lambda: [(row, "Expert name")])
         # Public query expressions refer to additional model columns.
-        for name in ("kind", "deleted_at", "blocked_at"):
+        for name in ("kind", "deleted_at", "blocked_at", "pincode", "city"):
             setattr(FakeModel, name, Expression())
         result = await self.service.list_showcases(self.session, 2, 12)
         self.assertEqual((result.total, result.page, result.page_size), (13, 2, 12))

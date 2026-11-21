@@ -58,6 +58,11 @@
     .tag button { border:0; background:transparent; color:#7c8aa5; cursor:pointer; font-size:13px; line-height:1; padding:0; }
     .tag button:hover { color:#c0392b; }
     .resolved-badge { display:inline-flex; align-items:center; gap:4px; margin-top:6px; color:var(--good); font-size:11px; font-weight:800; }
+    .near-field { display:flex; align-items:center; gap:6px; min-width:150px; padding:0 10px; border:1px solid var(--line); border-radius:8px; background:#fbfcfe; font-size:13px; }
+    .near-field input { width:110px; min-height:40px; border:0; outline:0; background:transparent; font:inherit; }
+    .near-field.missing { border-color:#f2dfa7; background:#fffaf0; }
+    .location-alert { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin-top:14px; padding:11px 14px; color:#5d4a12; border:1px solid #f2dfa7; border-radius:10px; background:#fffaf0; font-size:13px; }
+    .location-alert button { min-height:32px; padding:0 12px; font-size:12px; }
     .other-profiles { margin-top:30px; }
     .other-divider { display:flex; align-items:center; gap:12px; color:var(--muted); font-size:13px; font-weight:800; }
     .other-divider::before,.other-divider::after { content:''; flex:1; height:1px; background:var(--line); }
@@ -310,6 +315,7 @@
       <nav class="navigation" aria-label="Primary navigation">
         <button class="nav-button active" data-view="discover"><span class="nav-icon">⌕</span><span>Discover</span></button>
         <button class="nav-button" data-view="showcases"><span class="nav-icon" aria-hidden="true">&#9654;</span><span>Video showcases</span></button>
+        <button class="nav-button" data-view="workers"><span class="nav-icon" aria-hidden="true">⚒</span><span>Workers &amp; jobs</span></button>
         <button class="nav-button" data-view="app-download" title="Download Android app"><span class="nav-icon" aria-hidden="true">&#8595;</span><span>Download app</span></button>
         <button class="nav-button" data-view="app-tour" title="App tour"><span class="nav-icon" aria-hidden="true">?</span><span>App tour</span></button>
         <button class="nav-button" data-view="dashboard"><span class="nav-icon">▦</span><span>Dashboard</span></button>
@@ -326,7 +332,8 @@
       <div class="page">
         <section class="view active" id="discover">
           <div class="page-title"><div><h1>Find help</h1></div><button class="primary" id="match-button">✦ Get matched</button></div>
-          <div class="search-panel"><label class="search-field">⌕ <input id="search-input" placeholder="What do you need?"></label><div class="kind-toggle" id="kind-toggle" role="group" aria-label="Profile type filter"><button type="button" class="pill kind-pill selected" data-kind="expert">Experts</button><button type="button" class="pill kind-pill selected" data-kind="company">Companies</button><button type="button" class="pill kind-pill" id="kind-customer-pill" data-kind="customer" hidden>Customers</button></div><button class="primary" id="search-button">Search</button></div>
+          <div class="search-panel"><label class="search-field">⌕ <input id="search-input" placeholder="What do you need?"></label><label class="near-field" title="Your PIN code: people near you are shown first">📍 <input id="near-pin" inputmode="numeric" maxlength="7" placeholder="Your PIN code" aria-label="Your PIN code, to show people near you first"></label><div class="kind-toggle" id="kind-toggle" role="group" aria-label="Profile type filter"><button type="button" class="pill kind-pill selected" data-kind="expert">Experts</button><button type="button" class="pill kind-pill selected" data-kind="company">Companies</button><button type="button" class="pill kind-pill" id="kind-customer-pill" data-kind="customer" hidden>Customers</button></div><button class="primary" id="search-button">Search</button></div>
+          <div class="location-alert" id="location-alert" hidden></div>
           <div class="dashboard-grid"><div><div class="filter-row"><h2 id="result-count">Loading profiles…</h2></div><div class="results" id="results"></div><div class="pagination" id="pagination" hidden><button class="secondary" id="page-prev" type="button">← Prev</button><span id="page-indicator">Page 1</span><button class="secondary" id="page-next" type="button">Next →</button></div><section class="other-profiles" id="other-profiles" aria-labelledby="other-profiles-title" hidden><div class="other-divider"><span id="other-profiles-title">Other profiles</span></div><p class="muted other-note">Not an exact match for your search, but they may still help.</p><div class="results" id="other-results"></div><div class="pagination" id="other-pagination" hidden><button class="secondary" id="other-more" type="button">Show more profiles</button></div></section></div><aside class="discover-side"><section class="showcase-discover showcase-side" aria-labelledby="showcase-strip-title"><div class="showcase-heading"><div><h2 id="showcase-strip-title">Video showcases</h2><p class="muted">Reels and Shorts from providers. Videos open on the original platform.</p></div><button class="secondary" type="button" data-view="showcases">View all</button></div><div class="showcase-strip showcase-vertical" id="showcase-strip" tabindex="0" role="region" aria-label="Video showcases, scroll vertically"><p class="muted">Loading showcases...</p></div></section><div class="insight-card"><span class="section-tag">Top picks</span><div class="match-list" id="match-list"></div></div><div class="stat-grid"><div class="stat"><small>Reviews</small><strong id="stat-reviews">–</strong></div><div class="stat"><small>Avg. reply</small><strong id="stat-response">–</strong></div></div></aside></div>
         </section>
         <section class="view" id="showcases">
@@ -379,6 +386,7 @@
     <button class="nav-button" data-view="plans" type="button"><span class="nav-icon">◆</span><span>Plans</span></button>
   </nav>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../assets/location.js"></script>
   <div class="modal-scrim" id="modal-scrim" hidden></div>
   <div class="toast" id="toast" hidden></div>
   <div class="api-spinner" id="api-spinner" role="status" aria-live="polite" hidden><img src="../assets/rightconnect-mark.svg" alt=""><span class="loading-dots" aria-hidden="true"><i></i><i></i><i></i></span>Signing you in…</div>
@@ -391,7 +399,7 @@
     <form id="expert-form">
       <div class="field"><label for="expert-headline">Headline</label><input id="expert-headline" placeholder="e.g. Digital marketing consultant" required></div>
       <div class="field"><label for="expert-service">Primary service</label><input id="expert-service" placeholder="Digital marketing"></div>
-      <div class="field"><label for="expert-city">City</label><input id="expert-city" placeholder="Chennai"></div>
+      <div class="field"><label for="expert-city">City</label><input id="expert-city" placeholder="Chennai"></div><div class="field"><label for="expert-pincode">PIN code</label><input id="expert-pincode" inputmode="numeric" maxlength="7" placeholder="600042"></div>
       <div class="field"><label for="expert-experience">Years of experience</label><input id="expert-experience" type="number" min="0"></div>
       <div class="field"><label for="expert-bio">Short bio</label><textarea id="expert-bio" rows="3"></textarea></div>
       <div class="modal-actions"><button type="button" class="secondary" id="expert-cancel">Cancel</button><button type="submit" class="primary" id="expert-submit">Create expert profile</button></div>
@@ -404,7 +412,7 @@
       <div class="field"><label for="company-name-input">Company name</label><input id="company-name-input" required></div>
       <div class="field"><label for="company-work-email">Work email</label><input id="company-work-email" type="email" required></div>
       <div class="field"><label for="company-website">Website</label><input id="company-website" type="url" placeholder="https://"></div>
-      <div class="field"><label for="company-city">City</label><input id="company-city"></div>
+      <div class="field"><label for="company-city">City</label><input id="company-city"></div><div class="field"><label for="company-pincode">PIN code</label><input id="company-pincode" inputmode="numeric" maxlength="7" placeholder="600042"></div>
       <div class="field"><label for="company-service">Main service offered</label><input id="company-service" maxlength="120" placeholder="e.g. Health insurance"></div>
       <div class="modal-actions"><button type="button" class="secondary" id="company-cancel">Cancel</button><button type="submit" class="primary" id="company-submit">Create company</button></div>
     </form>
@@ -532,6 +540,7 @@
     const navButtons = document.querySelectorAll('.nav-button');
     function showView(viewId) {
       if (viewId === 'plans') { window.location.href = 'plans.html'; return; }
+      if (viewId === 'workers') { window.location.href = 'workers.html'; return; }
       views.forEach((view) => view.classList.toggle('active', view.id === viewId));
       navButtons.forEach((button) => button.classList.toggle('active', button.dataset.view === viewId));
       closeSidebar();
@@ -847,9 +856,7 @@
     function renderProfileCard(profile) {
       const article = document.createElement('article');
       article.dataset.profileId = profile.id;
-      const roleLine = profile.kind === 'company'
-        ? profile.headline
-        : `${profile.headline}${profile.city ? ` · ${profile.city}` : ''}`;
+      const roleLine = profile.headline;
       const metaLine = profile.kind === 'expert'
         ? `${profile.years_experience ? `${profile.years_experience} yrs` : ''}${profile.languages.length ? ` · ${profile.languages.join(', ')}` : ''}`
         : (profile.response_minutes ? `Replies in ${profile.response_minutes} min` : '');
@@ -860,6 +867,7 @@
         <div>
           <div class="profile-head"><h3>${escapeHtml(profile.display_name)}</h3>${profile.verified ? `<span class="verified">● Verified</span>` : ''}${profile.claimed === false ? `<span class="unclaimed-badge" title="Added by RightConnect. The owner hasn't joined yet.">Unclaimed</span>` : ''}</div>
           <div class="profile-role">${escapeHtml(roleLine)}</div>
+          ${RCLocation.html(profile)}
           <div class="profile-meta">${escapeHtml(metaLine)}</div>
           <div class="tags">${profile.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
           ${profile.resolved_clients_count != null ? `<div class="resolved-badge">✓ ${profile.resolved_clients_count} helped</div>` : ''}
@@ -950,7 +958,7 @@
       document.querySelector('#profile-portrait').innerHTML = profile.avatar_url ? `<img src="${safeHref(profile.avatar_url)}" alt="${escapeHtml(profile.display_name)}">` : escapeHtml(initialsOf(profile.display_name));
       document.querySelector('#profile-verified').hidden = !profile.verified;
       document.querySelector('#profile-name').textContent = profile.display_name;
-      document.querySelector('#profile-subtitle').textContent = `${profile.headline}${profile.city ? ` · ${profile.city}` : ''}`;
+      document.querySelector('#profile-subtitle').textContent = `${profile.headline} · 📍 ${RCLocation.text(profile) || 'Location not added'}`;
       const facts = [];
       if (profile.kind === 'company') {
         if (profile.founded_year) facts.push(`Founded ${profile.founded_year}`);
@@ -1024,7 +1032,7 @@
     let otherTicket = 0;
     // Profiles that don't match the search, listed under the recommended ones so customers can keep browsing.
     async function loadOtherProfiles(query, kinds, append = false) {
-      const key = `${query}|${kinds.join(',')}`;
+      const key = `${query}|${kinds.join(',')}|${RCLocation.get(currentUser)}`;
       if (!query) { otherKey = null; otherSection.hidden = true; otherResults.innerHTML = ''; return; }
       if (!append && key === otherKey) return;
       const ticket = ++otherTicket;
@@ -1032,7 +1040,7 @@
       if (!append) { otherKey = key; otherResults.innerHTML = ''; }
       setButtonLoading(otherMore, append, 'Loading…');
       try {
-        const params = new URLSearchParams({ exclude_q: query, page: otherPage, page_size: pageSize });
+        const params = RCLocation.apply(new URLSearchParams({ exclude_q: query, page: otherPage, page_size: pageSize }), currentUser);
         if (kinds.length === 1) params.set('kind', kinds[0]);
         const response = await fetch(`${apiBase}/profiles?${params}`);
         if (!response.ok) throw new Error('Request failed');
@@ -1069,6 +1077,7 @@
         if (kinds.length === 1) params.set('kind', kinds[0]);
         params.set('page', currentPage);
         params.set('page_size', pageSize);
+        RCLocation.apply(params, currentUser);
         const response = await fetch(`${apiBase}/profiles?${params.toString()}`);
         if (!response.ok) throw new Error('Request failed');
         const data = await response.json();
@@ -2073,6 +2082,7 @@
         if (!response.ok) return;
         identities = await response.json();
         renderWorkspaceMenu();
+        renderLocationAlert();
       } catch (_) {
         // Workspace switcher just stays on Customer if identities can't be loaded.
       }
@@ -2084,6 +2094,7 @@
         headline: document.querySelector('#expert-headline').value,
         primary_service: document.querySelector('#expert-service').value || null,
         city: document.querySelector('#expert-city').value || null,
+        pincode: RCLocation.clean(document.querySelector('#expert-pincode').value) || null,
         years_experience: Number(document.querySelector('#expert-experience').value) || null,
         bio: document.querySelector('#expert-bio').value || null,
         languages: [],
@@ -2108,6 +2119,7 @@
         work_email: workEmail,
         website: document.querySelector('#company-website').value || null,
         city: document.querySelector('#company-city').value || null,
+        pincode: RCLocation.clean(document.querySelector('#company-pincode').value) || null,
         primary_service: document.querySelector('#company-service').value.trim() || null,
       };
       const submitButton = document.querySelector('#company-submit');
@@ -2189,7 +2201,57 @@
       showToast('Company email verified.', 'success');
     });
 
+    // ---------- location: the visitor's PIN code ranks nearby people first ----------
+    const nearInput = document.querySelector('#near-pin');
+    function syncNearField() {
+      const pin = RCLocation.get(currentUser);
+      nearInput.value = pin;
+      nearInput.closest('.near-field').classList.toggle('missing', !pin);
+    }
+    async function saveVisitorPincode(pin) {
+      RCLocation.set(pin);
+      if (!accessToken || !currentUser || currentUser.pincode === pin) return;
+      try {
+        const response = await fetch(`${apiBase}/auth/me`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ pincode: pin || null }) });
+        if (response.ok) currentUser = { ...currentUser, ...(await response.json()) };
+      } catch (_) { /* Kept on this device; the account copy is retried next time. */ }
+    }
+    nearInput.addEventListener('change', async () => {
+      const pin = RCLocation.clean(nearInput.value);
+      if (pin && !RCLocation.valid(pin)) { showToast('Enter a valid 6-digit PIN code.', 'error'); syncNearField(); return; }
+      await saveVisitorPincode(pin);
+      syncNearField();
+      renderLocationAlert();
+      currentPage = 1;
+      refreshDiscoverResults();
+      window.refreshShowcaseSidebar?.(true);
+      if (pin) showToast('Showing people near you first.', 'success');
+    });
+    nearInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); nearInput.blur(); } });
+
+    // Nudges anyone whose own listing or account has no PIN, since they can't be matched by distance.
+    function renderLocationAlert() {
+      const alertBox = document.querySelector('#location-alert');
+      const missing = [];
+      if (identities?.expert_profile?.location_missing) missing.push({ label: 'your expert profile', profileId: identities.expert_profile.id });
+      (identities?.companies || []).filter((company) => company.member_role === 'admin' && company.location_missing && company.profile_id)
+        .forEach((company) => missing.push({ label: company.name, profileId: company.profile_id }));
+      if (missing.length) {
+        alertBox.innerHTML = `<span>📍 <strong>Location missing</strong> on ${missing.map((item) => escapeHtml(item.label)).join(', ')}. Customers nearby see providers with a PIN code first.</span><span>${missing.map((item, index) => `<button class="secondary" type="button" data-fix-location="${index}">Add PIN code${missing.length > 1 ? ` (${escapeHtml(item.label)})` : ''}</button>`).join(' ')}</span>`;
+        alertBox.querySelectorAll('[data-fix-location]').forEach((button) => button.addEventListener('click', () => openProfileEditor(missing[Number(button.dataset.fixLocation)].profileId, 'basics')));
+        alertBox.hidden = false;
+      } else if (!RCLocation.get(currentUser)) {
+        alertBox.innerHTML = '<span>📍 Add your PIN code to see experts and companies near you first.</span><button class="secondary" type="button" data-focus-pin>Add PIN code</button>';
+        alertBox.querySelector('[data-focus-pin]').addEventListener('click', () => nearInput.focus());
+        alertBox.hidden = false;
+      } else {
+        alertBox.hidden = true;
+      }
+    }
+    window.renderLocationAlert = renderLocationAlert;
+
     function applySignedInUser(user) {
+      const nearBefore = RCLocation.get(currentUser);
       const initials = user.full_name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase();
       document.querySelector('#sidebar-avatar').textContent = initials;
       document.querySelector('#sidebar-name').textContent = user.full_name;
@@ -2202,12 +2264,18 @@
       sessionStorage.setItem('rightconnect-user', JSON.stringify(user));
       currentUser = user;
       currentInterests = user.interests || [];
+      // A PIN typed before signing in is saved to the account; an account PIN replaces the device one.
+      if (!user.pincode && RCLocation.get(null)) saveVisitorPincode(RCLocation.get(null));
+      syncNearField();
+      renderLocationAlert();
       const searchInput = document.querySelector('#search-input');
       if (getActingType() === 'customer' && user.looking_for_help !== false && currentInterests.length && !searchInput.value.trim()) {
         searchInput.value = currentInterests[currentInterests.length - 1];
         loadProfiles();
       } else if (getActingType() !== 'customer') {
         searchInput.value = '';
+      } else if (RCLocation.get(user) !== nearBefore) {
+        loadProfiles();
       }
       window.refreshShowcaseSidebar?.();
       maybeShowNeedDone(user);
@@ -2272,6 +2340,8 @@
     function openLaunchView() { document.querySelector(`.nav-button[data-view="${launchView}"]`).click(); }
     if (sharedQuery) document.querySelector('#search-input').value = sharedQuery;
     applyNavForActing(getActingType());
+    syncNearField();
+    renderLocationAlert();
     if (sharedProfileId) { openProfile(sharedProfileId, { skipHistory: true }); }
     else if (launchView) { openLaunchView(); }
     loadProfiles();

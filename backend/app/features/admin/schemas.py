@@ -38,7 +38,7 @@ class AdminUser(BaseModel):
     full_name: str
     email: str
     phone: str | None
-    role: Literal["customer", "expert", "company_admin", "platform_admin"]
+    role: Literal["customer", "expert", "company_admin", "platform_admin", "worker"]
     created_at: datetime
     blocked_at: datetime | None
     blocked_reason: str | None
@@ -63,6 +63,8 @@ class AdminStats(BaseModel):
     disputes_open: int
     companies_unclaimed: int = 0
     claims_pending: int = 0
+    workers_live: int = 0
+    workers_unclaimed: int = 0
 
 
 class AdminDispute(BaseModel):

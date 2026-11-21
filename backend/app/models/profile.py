@@ -99,6 +99,8 @@ class Profile(Base):
     headline: Mapped[str] = mapped_column(String, nullable=False)
     bio: Mapped[str | None] = mapped_column(Text)
     city: Mapped[str | None] = mapped_column(String)
+    # 6-digit Indian PIN code; drives "nearest first" ranking (see app/core/location.py).
+    pincode: Mapped[str | None] = mapped_column(String)
     years_experience: Mapped[int | None] = mapped_column(SmallInteger)
     languages: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False, default=list)
     # Owner-chosen search words; matched by search but not shown on the card.

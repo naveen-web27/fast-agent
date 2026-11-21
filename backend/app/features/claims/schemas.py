@@ -6,6 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.core.links import normalize_url
+from app.core.location import normalize_pincode
 from app.features.auth.schemas import normalize_phone
 
 
@@ -15,6 +16,7 @@ class UnclaimedListingCreate(BaseModel):
     company_name: str = Field(min_length=2, max_length=160)
     primary_service: str = Field(min_length=2, max_length=120)
     city: str = Field(min_length=2, max_length=100)
+    pincode: str | None = Field(default=None, max_length=10)
     description: str | None = Field(default=None, max_length=2000)
     website: str | None = Field(default=None, max_length=255)
     contact_email: EmailStr | None = None
@@ -42,6 +44,11 @@ class UnclaimedListingCreate(BaseModel):
     @classmethod
     def _phone(cls, value: str | None) -> str | None:
         return normalize_phone(value)
+
+    @field_validator("pincode")
+    @classmethod
+    def _pincode(cls, value: str | None) -> str | None:
+        return normalize_pincode(value)
 
 
 class UnclaimedListingOut(BaseModel):

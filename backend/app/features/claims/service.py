@@ -155,6 +155,7 @@ async def create_unclaimed_listing(session: AsyncSession, admin: User, payload: 
         headline=payload.primary_service,
         bio=payload.description,
         city=payload.city,
+        pincode=payload.pincode,
         verification=VerificationStatus.PENDING,
     )
     profile.services = [await _service_for(session, payload.primary_service)]

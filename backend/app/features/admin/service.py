@@ -12,6 +12,7 @@ from app.models.organization_member import MemberRole, OrganizationMember
 from app.models.profile import ClaimStatus, Organization, Profile, ProfileKind, VerificationStatus
 from app.models.request import Request, RequestEvent, RequestParticipant, RequestStatus
 from app.models.user import User, UserRole
+from app.models.worker import WorkerProfile
 
 
 class ProfileNotFoundError(Exception):
@@ -329,6 +330,12 @@ async def get_stats(session: AsyncSession) -> dict:
         ),
         "claims_pending": await count(
             select(func.count(OrganizationClaim.id)).where(OrganizationClaim.status == ClaimReviewStatus.PENDING.value)
+        ),
+        "workers_live": await count(
+            select(func.count(WorkerProfile.id)).where(WorkerProfile.deleted_at.is_(None), WorkerProfile.blocked_at.is_(None))
+        ),
+        "workers_unclaimed": await count(
+            select(func.count(WorkerProfile.id)).where(WorkerProfile.deleted_at.is_(None), WorkerProfile.user_id.is_(None))
         ),
     }
 

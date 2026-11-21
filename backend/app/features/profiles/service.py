@@ -160,6 +160,7 @@ async def _managed(session: AsyncSession, profile: Profile) -> ManagedProfile:
         headline=profile.headline,
         bio=profile.bio,
         city=profile.city,
+        pincode=profile.pincode,
         years_experience=profile.years_experience,
         languages=profile.languages,
         avatar_url=profile.avatar_url,
@@ -212,7 +213,7 @@ async def update_profile(session: AsyncSession, auth_user_id: UUID, profile_id: 
     for field in ("display_name", "headline"):
         if changes.get(field):
             setattr(profile, field, changes[field])
-    for field in ("bio", "city", "years_experience", "avatar_url", "intro_video_url", "portfolio_url", "founded_year", "team_size"):
+    for field in ("bio", "city", "pincode", "years_experience", "avatar_url", "intro_video_url", "portfolio_url", "founded_year", "team_size"):
         if field in changes:
             setattr(profile, field, changes[field])
     if changes.get("languages") is not None:

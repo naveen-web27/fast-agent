@@ -15,6 +15,7 @@ from app.features.porutham.router import router as porutham_router
 from app.features.profiles.router import router as profiles_router
 from app.features.requests.router import router as requests_router
 from app.features.showcases.router import router as showcases_router
+from app.features.workers.router import router as workers_router
 
 feature_router = APIRouter()
 feature_router.include_router(ai_reports_router)
@@ -28,6 +29,7 @@ feature_router.include_router(requests_router, prefix="/requests", tags=["reques
 feature_router.include_router(booking_router, prefix="/requests", tags=["booking"])
 feature_router.include_router(organizations_router, prefix="/organizations", tags=["organizations"])
 feature_router.include_router(claims_router, prefix="/claims", tags=["claims"])
+feature_router.include_router(workers_router, prefix="/workers", tags=["workers"])
 feature_router.include_router(dashboard_router, prefix="/dashboard", tags=["dashboard"])
 feature_router.include_router(payments_router, prefix="/payments", tags=["payments"])
 feature_router.include_router(porutham_router, prefix="/porutham", tags=["porutham"])

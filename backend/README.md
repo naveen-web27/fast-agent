@@ -90,6 +90,14 @@ One auth identity (one `users` row) can act as a customer, have one personal exp
 
 Run `db/migrations/003_multi_role_identities.sql` against an existing database (adds `organization_members`, `email_verifications`, `organizations.email_domain_verified`).
 
+## Location (PIN codes)
+
+Lists rank nearest first using 6-digit PIN codes (same area, district, state, region) via `near`/`near_city` query params; logic is in `app/core/location.py`. Apply `db/migrations/025_location_pincodes.sql` before deploying. Run `PYTHONPATH=backend python3 -B -m unittest discover -s backend/tests -p 'test_location.py' -v`. Details: [location](../docs/features/13-location.md).
+
+## Workforce hub (workers / service partners)
+
+Workers sign up with `role=worker` or create a profile on `/pages/workers.html`; employers search, hire, review and post jobs under `/api/v1/workers`. Skills become employer-verified when a verified company confirms the worker's history. Admins add workers and issue claim codes via `/api/v1/admin/workers`. Apply `db/migrations/024_workforce_hub.sql` before deploying. Run `PYTHONPATH=backend python3 -B -m unittest discover -s backend/tests -p 'test_workforce_hub.py' -v`. Details: [workforce hub](../docs/features/12-workforce-hub.md).
+
 ## Unclaimed company listings and claims
 
 Admins add real businesses with `POST /api/v1/admin/companies` (console: **+ Add business**). They appear in Discover as **Unclaimed** and cannot receive requests. Owners claim them on `/pages/claim.html` by proving a business email with a one-time code; admins approve or reject claims in the console's **Claims** tab, and approval makes the claimant the company admin. Apply `db/migrations/023_company_claims.sql` before deploying. Run `PYTHONPATH=backend python3 -B -m unittest discover -s backend/tests -p 'test_company_claims.py' -v`. Details: [company features](../docs/features/06-company-features.md#unclaimed-listings--ownership-claims-november-2026).

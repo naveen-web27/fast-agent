@@ -4,6 +4,7 @@ from uuid import UUID
 from sqlalchemy import Select, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.location import proximity_rank
 from app.core.plans import profile_plan_active
 from app.features.marketplace.catalog import search_terms
 from app.features.profiles.service import ProfileAccessError, ProfileNotFoundError, _require_manage
@@ -69,7 +70,13 @@ def interest_filter(query: str):
 
 
 async def list_showcases(
-    session: AsyncSession, page: int, page_size: int, profile_id: UUID | None = None, query: str | None = None,
+    session: AsyncSession,
+    page: int,
+    page_size: int,
+    profile_id: UUID | None = None,
+    query: str | None = None,
+    near_pincode: str | None = None,
+    near_city: str | None = None,
 ) -> ShowcaseList:
     stmt = public_showcases()
     if profile_id:
@@ -78,8 +85,12 @@ async def list_showcases(
     if matcher is not None:
         stmt = stmt.where(matcher)
     total = await session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    ordering = [VideoShowcase.created_at.desc(), VideoShowcase.id.desc()]
+    nearness = proximity_rank(Profile.pincode, Profile.city, near_pincode, near_city)
+    if nearness is not None:
+        ordering.insert(0, nearness.desc())
     rows = (await session.execute(
-        stmt.order_by(VideoShowcase.created_at.desc(), VideoShowcase.id.desc())
+        stmt.order_by(*ordering)
         .offset((page - 1) * page_size).limit(page_size)
     )).all()
     return ShowcaseList(

@@ -41,9 +41,11 @@ async def browse_showcases(
     page_size: int = Query(default=12, ge=1, le=30),
     profile_id: UUID | None = None,
     q: str | None = Query(default=None, max_length=200, description="Interest or search words to match"),
+    near: str | None = Query(default=None, pattern=r"^[1-9][0-9]{5}$", description="Viewer's PIN code: nearby providers first"),
+    near_city: str | None = Query(default=None, max_length=100),
     session: AsyncSession = Depends(get_db),
 ) -> ShowcaseList:
-    return await list_showcases(session, page, page_size, profile_id, q)
+    return await list_showcases(session, page, page_size, profile_id, q, near, near_city)
 
 
 @router.post("/showcases/preview", response_model=VideoPreview)

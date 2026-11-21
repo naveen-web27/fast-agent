@@ -265,6 +265,7 @@ function renderEditor(profile) {
           ${field('ed-name', profile.kind === 'company' ? 'Company name' : 'Display name', profile.display_name, 'required minlength="2" maxlength="160"')}
           ${field('ed-headline', 'Headline', profile.headline, 'required minlength="2" maxlength="160" placeholder="e.g. Health insurance advisor for families"')}
           ${field('ed-city', 'City', profile.city, 'maxlength="100"')}
+          ${field('ed-pincode', 'PIN code (customers nearby see you first)', profile.pincode, 'inputmode="numeric" maxlength="7" pattern="[1-9][0-9]{5}" placeholder="600042"')}
           ${profile.kind === 'expert' ? field('ed-years', 'Years of experience', profile.years_experience, 'type="number" min="0" max="80"') : ''}
           ${profile.kind === 'company' ? field('ed-founded', 'Founded (year)', profile.founded_year, 'type="number" min="1800" max="2100" placeholder="2015"') : ''}
           ${profile.kind === 'company' ? `<div class="field"><label for="ed-team-size">Team size</label><select id="ed-team-size"><option value="">Not set</option>${TEAM_SIZES.map((size) => `<option value="${size}" ${profile.team_size === size ? 'selected' : ''}>${size} people</option>`).join('')}</select></div>` : ''}
@@ -420,6 +421,7 @@ async function editorSave(button, path, method, payload, message) {
   try {
     renderEditor(await api(path, { method, body: payload === undefined ? undefined : JSON.stringify(payload) }));
     showToast(message, 'success');
+    if (payload && 'pincode' in payload) loadIdentities();
     if (document.querySelector('#dashboard').classList.contains('active')) loadDashboard();
     if (document.querySelector('#profile').classList.contains('active') && currentProfileId === editorProfile.id) openProfile(currentProfileId, { skipHistory: true });
   } catch (error) {
@@ -443,6 +445,7 @@ function wireEditor(profile) {
       display_name: value('#ed-name'),
       headline: value('#ed-headline'),
       city: value('#ed-city') || null,
+      pincode: RCLocation.clean(value('#ed-pincode')) || null,
       languages: value('#ed-languages').split(',').map((item) => item.trim()).filter(Boolean),
       avatar_url: profile.avatar_url,
       bio: value('#ed-bio') || null,
@@ -906,6 +909,7 @@ function renderMeEditor() {
       <div class="editor-grid">
         ${field('me-name', 'Name', user.full_name, 'required minlength="2" maxlength="120"')}
         ${field('me-city', 'City', user.city, 'maxlength="100"')}
+        ${field('me-pincode', 'PIN code (to see people near you first)', user.pincode, 'inputmode="numeric" maxlength="7" pattern="[1-9][0-9]{5}" placeholder="600042"')}
         <div class="field image-upload-field"><label for="me-avatar-file">Profile photo</label><div class="image-upload-control"><div class="image-preview" id="me-avatar-preview">${user.avatar_url ? `<img src="${safeHref(user.avatar_url)}" alt="Current profile photo">` : '<span>No photo</span>'}</div><input id="me-avatar-file" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="me-avatar-help"><small id="me-avatar-help">JPEG, PNG or WebP; up to 8 MB. Stored as an optimized image.</small></div></div>
       </div>
       <div class="field"><label>Areas of interest</label><div class="tag-list" id="me-interests"></div><div class="interest-editor-row"><input id="me-interest-input" maxlength="120" placeholder="Add an area of interest"><button class="secondary" type="button" id="me-interest-add">Add</button></div><small>Up to 20 interests.</small></div>
@@ -945,7 +949,7 @@ function renderMeEditor() {
       const avatarUrl = selectedAvatarFile
         ? await window.uploadProfileImage(selectedAvatarFile, `customer-${user.id}`)
         : user.avatar_url;
-      const updated = await api('/auth/me', { method: 'PATCH', body: JSON.stringify({ full_name: value('#me-name'), city: value('#me-city') || null, avatar_url: avatarUrl, bio: value('#me-bio') || null, interests: meInterests }) });
+      const updated = await api('/auth/me', { method: 'PATCH', body: JSON.stringify({ full_name: value('#me-name'), city: value('#me-city') || null, pincode: RCLocation.clean(value('#me-pincode')) || null, avatar_url: avatarUrl, bio: value('#me-bio') || null, interests: meInterests }) });
       applySignedInUser(updated);
       renderMe();
       showToast('Profile saved.', 'success');

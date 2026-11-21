@@ -27,6 +27,13 @@ RightConnect is a trust marketplace for complex purchases. Customers discover ve
 - Manage team members, enquiries, and partner experts.
 - Respond to qualified requests and keep the customer informed.
 
+### Worker (service partner)
+
+- Local workers such as cooks, drivers, sales staff and helpers publish a work profile with skills, area and expected pay.
+- Show availability with a light: available now, busy until a date, or not looking.
+- Build a trusted work history: skills confirmed by a verified employer show as verified; others are self-declared.
+- Receive hire requests or apply to job posts; contact details are shared after acceptance; employers review completed work.
+
 ### Platform Admin
 
 - Verify identity, credentials, and business information.

@@ -7,9 +7,10 @@ from uuid import UUID
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 from app.core.links import normalize_url
+from app.core.location import normalize_pincode
 
-Role = Literal["customer", "expert", "company_admin", "platform_admin"]
-OnboardingRole = Literal["customer", "expert", "company_admin"]
+Role = Literal["customer", "expert", "company_admin", "platform_admin", "worker"]
+OnboardingRole = Literal["customer", "expert", "company_admin", "worker"]
 
 
 def normalize_phone(value: str | None) -> str | None:
@@ -45,6 +46,35 @@ class OnboardingRequest(BaseModel):
     work_email: EmailStr | None = None
     website: str | None = Field(default=None, max_length=255)
     business_registration: str | None = Field(default=None, max_length=160)
+    # Workers: neighbourhood within the city, and the mandatory 18+ confirmation.
+    area: str | None = Field(default=None, max_length=100)
+    adult_confirmed: bool = False
+    pincode: str | None = Field(default=None, max_length=10)
+
+    @field_validator("pincode")
+    @classmethod
+    def _pincode(cls, value: str | None) -> str | None:
+        return normalize_pincode(value)
+
+    @model_validator(mode="after")
+    def _provider_location(self):
+        # Providers and workers are ranked by distance, so they must say where they work.
+        if self.role in ("expert", "company_admin", "worker") and not self.pincode:
+            raise ValueError("Enter your 6-digit PIN code")
+        return self
+
+    @model_validator(mode="after")
+    def _worker_fields(self):
+        if self.role == "worker":
+            if not self.adult_confirmed:
+                raise ValueError("Workers must be 18 or older")
+            if len((self.primary_service or "").strip()) < 2:
+                raise ValueError("Enter the main work you do")
+            if len((self.city or "").strip()) < 2:
+                raise ValueError("Enter your city")
+            if self.years_experience is not None and self.years_experience > 70:
+                raise ValueError("Years of experience must be 70 or less")
+        return self
 
     @field_validator("phone")
     @classmethod
@@ -90,6 +120,7 @@ class UserResponse(BaseModel):
     need_fulfilled_at: datetime | None = None
     bio: str | None = None
     city: str | None = None
+    pincode: str | None = None
     avatar_url: str | None = None
     member_since: datetime | None = None
 
@@ -100,8 +131,14 @@ class MyProfileUpdate(BaseModel):
     full_name: str | None = Field(default=None, min_length=2, max_length=120)
     bio: str | None = Field(default=None, max_length=1000)
     city: str | None = Field(default=None, max_length=100)
+    pincode: str | None = Field(default=None, max_length=10)
     avatar_url: str | None = Field(default=None, max_length=500)
     interests: list[str] | None = Field(default=None, max_length=20)
+
+    @field_validator("pincode")
+    @classmethod
+    def _pincode(cls, value: str | None) -> str | None:
+        return normalize_pincode(value)
 
     @field_validator("avatar_url")
     @classmethod
@@ -127,9 +164,15 @@ class ExpertProfileRequest(BaseModel):
     headline: str = Field(min_length=2, max_length=160)
     bio: str | None = Field(default=None, max_length=2000)
     city: str | None = Field(default=None, max_length=100)
+    pincode: str | None = Field(default=None, max_length=10)
     primary_service: str | None = Field(default=None, max_length=120)
     years_experience: int | None = Field(default=None, ge=0, le=80)
     languages: list[str] = Field(default_factory=list)
+
+    @field_validator("pincode")
+    @classmethod
+    def _pincode(cls, value: str | None) -> str | None:
+        return normalize_pincode(value)
 
 
 class ExpertProfileSummary(BaseModel):
@@ -142,6 +185,8 @@ class ExpertProfileSummary(BaseModel):
     show_resolved_count: bool
     plan_active: bool = False
     plan_expires_at: datetime | None = None
+    # No PIN code on the listing, so it can't be ranked by distance; the app asks the owner to add one.
+    location_missing: bool = False
 
 
 class CompanyRequest(BaseModel):
@@ -151,8 +196,14 @@ class CompanyRequest(BaseModel):
     work_email: EmailStr
     website: str | None = Field(default=None, max_length=255)
     city: str | None = Field(default=None, max_length=100)
+    pincode: str | None = Field(default=None, max_length=10)
     primary_service: str | None = Field(default=None, min_length=2, max_length=120)
     business_registration: str | None = Field(default=None, max_length=160)
+
+    @field_validator("pincode")
+    @classmethod
+    def _pincode(cls, value: str | None) -> str | None:
+        return normalize_pincode(value)
 
 
 class CompanyMembership(BaseModel):
@@ -166,6 +217,7 @@ class CompanyMembership(BaseModel):
     show_resolved_count: bool
     plan_active: bool = False
     plan_expires_at: datetime | None = None
+    location_missing: bool = False
 
 
 class IdentitiesResponse(BaseModel):

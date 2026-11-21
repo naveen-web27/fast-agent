@@ -24,6 +24,8 @@ from app.features.auth.schemas import (
     UserResponse,
 )
 from app.features.marketplace.service import count_resolved_clients
+from app.features.workers.schemas import WorkerCreate
+from app.features.workers.service import new_worker_for_user
 from app.models.email_verification import EmailVerification
 from app.models.organization_invite import OrganizationInvite
 from app.models.organization_member import MemberRole, OrganizationMember
@@ -89,7 +91,7 @@ async def get_user_profile(session: AsyncSession, auth_user_id: UUID) -> UserRes
     user = await session.scalar(active_user_by_auth_id(auth_user_id))
     if user is None:
         return None
-    onboarding_status = "complete" if user.role is UserRole.CUSTOMER else "verification_pending"
+    onboarding_status = "complete" if user.role in (UserRole.CUSTOMER, UserRole.WORKER) else "verification_pending"
     active = user.subscription_expires_at is not None and user.subscription_expires_at > datetime.now(timezone.utc)
     return UserResponse(
         id=user.id,
@@ -104,6 +106,7 @@ async def get_user_profile(session: AsyncSession, auth_user_id: UUID) -> UserRes
         need_fulfilled_at=user.need_fulfilled_at,
         bio=user.bio,
         city=user.city,
+        pincode=user.pincode,
         avatar_url=user.avatar_url,
         member_since=user.created_at,
     )
@@ -116,7 +119,7 @@ async def update_my_profile(session: AsyncSession, auth_user_id: UUID, payload: 
     changes = payload.model_dump(exclude_unset=True)
     if changes.get("full_name"):
         user.full_name = changes["full_name"].strip()
-    for field in ("bio", "city", "avatar_url"):
+    for field in ("bio", "city", "pincode", "avatar_url"):
         if field in changes:
             setattr(user, field, (changes[field] or "").strip() or None)
     if changes.get("interests") is not None:
@@ -152,6 +155,7 @@ async def create_user_profile(
         role=role,
         interests=interests,
         city=payload.city,
+        pincode=payload.pincode,
     )
     session.add(user)
     await session.flush()
@@ -164,9 +168,25 @@ async def create_user_profile(
                 display_name=payload.full_name,
                 headline=payload.primary_service or "Independent expert",
                 city=payload.city,
+                pincode=payload.pincode,
                 years_experience=payload.years_experience,
                 languages=[payload.preferred_language] if payload.preferred_language else [],
                 verification=VerificationStatus.PENDING,
+            )
+        )
+    elif role is UserRole.WORKER:
+        session.add(
+            new_worker_for_user(
+                user,
+                WorkerCreate(
+                    headline=payload.primary_service,
+                    city=payload.city,
+                    area=payload.area,
+                    pincode=payload.pincode,
+                    languages=[payload.preferred_language] if payload.preferred_language else [],
+                    years_experience=payload.years_experience,
+                    adult_confirmed=payload.adult_confirmed,
+                ),
             )
         )
     elif role is UserRole.COMPANY_ADMIN and payload.company_name:
@@ -187,6 +207,7 @@ async def create_user_profile(
                 display_name=payload.company_name,
                 headline="Company",
                 city=payload.city,
+                pincode=payload.pincode,
                 verification=VerificationStatus.PENDING,
             )
         )
@@ -206,7 +227,7 @@ async def create_user_profile(
         raise
     await session.refresh(user)
 
-    onboarding_status = "complete" if role is UserRole.CUSTOMER else "verification_pending"
+    onboarding_status = "complete" if role in (UserRole.CUSTOMER, UserRole.WORKER) else "verification_pending"
     return UserResponse(
         id=user.id,
         full_name=user.full_name,
@@ -268,6 +289,7 @@ async def get_identities(session: AsyncSession, auth_user_id: UUID) -> Identitie
             show_resolved_count=expert_profile_row.show_resolved_count,
             plan_active=expert_plan_active(expert_profile_row),
             plan_expires_at=plan_expiry(expert_profile_row.subscription_tier, expert_profile_row.subscription_expires_at),
+            location_missing=expert_profile_row.pincode is None,
         )
         if expert_profile_row
         else None
@@ -297,10 +319,11 @@ async def get_identities(session: AsyncSession, auth_user_id: UUID) -> Identitie
                 show_resolved_count=company_profile.show_resolved_count if company_profile else True,
                 plan_active=company_plan_active(organization),
                 plan_expires_at=plan_expiry(organization.subscription_tier, organization.subscription_expires_at),
+                location_missing=company_profile is not None and company_profile.pincode is None,
             )
         )
 
-    onboarding_status = "complete" if user.role is UserRole.CUSTOMER else "verification_pending"
+    onboarding_status = "complete" if user.role in (UserRole.CUSTOMER, UserRole.WORKER) else "verification_pending"
     return IdentitiesResponse(
         user=UserResponse(
             id=user.id,
@@ -336,6 +359,7 @@ async def add_expert_profile(session: AsyncSession, auth_user_id: UUID, payload:
         headline=payload.headline,
         bio=payload.bio,
         city=payload.city,
+        pincode=payload.pincode,
         years_experience=payload.years_experience,
         languages=payload.languages,
         verification=VerificationStatus.PENDING,
@@ -351,6 +375,7 @@ async def add_expert_profile(session: AsyncSession, auth_user_id: UUID, payload:
         review_count=profile.review_count,
         resolved_clients_count=0,
         show_resolved_count=profile.show_resolved_count,
+        location_missing=profile.pincode is None,
     )
 
 
@@ -388,6 +413,7 @@ async def add_company(session: AsyncSession, auth_user_id: UUID, payload: Compan
         display_name=payload.company_name,
         headline=payload.primary_service or "Company",
         city=payload.city,
+        pincode=payload.pincode,
         verification=VerificationStatus.PENDING,
     )
     if payload.primary_service:
@@ -410,6 +436,7 @@ async def add_company(session: AsyncSession, auth_user_id: UUID, payload: Compan
         email_domain_verified=organization.email_domain_verified,
         resolved_clients_count=0,
         show_resolved_count=company_profile.show_resolved_count,
+        location_missing=company_profile.pincode is None,
     )
 
 

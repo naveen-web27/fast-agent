@@ -19,6 +19,8 @@ Legend: ✅ Done · 🟡 Partial · ❌ Not started
 | 9 | Notifications & Billing | ❌ Not started (only OTP emails exist) | [09-notifications-billing.md](09-notifications-billing.md) |
 | 10 | Backlog: recommendations, disputes, analytics (saved profiles & share links now done) | 🟡 Partial | [10-backlog.md](10-backlog.md) |
 | 11 | Tamil AI reports and optional saved family members | 12-check Porutham page first; six service pages are placeholders; report API remains disabled pending setup | [11-tamil-ai-reports.md](11-tamil-ai-reports.md) |
+| 12 | Local workforce hub (workers / service partners, verified skills, hires, jobs) | 🟡 Partial (Google login only; phone OTP and distance search missing) | [12-workforce-hub.md](12-workforce-hub.md) |
+| 13 | Location: nearest first by PIN code across India | 🟡 Partial (PIN ranking done; km distance/GPS missing) | [13-location.md](13-location.md) |
 
 ## How To Use These Docs
 

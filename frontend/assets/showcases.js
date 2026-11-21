@@ -139,16 +139,23 @@
   }
 
   let stripTerms = null;
+  function nearParams(params) {
+    const account = typeof currentUser !== 'undefined' ? currentUser : null;
+    return window.RCLocation ? window.RCLocation.apply(params, account) : params;
+  }
+
   async function loadStrip(force = true) {
     const terms = showcaseInterestTerms();
-    if (!force && terms === stripTerms) return;
-    stripTerms = terms;
+    const near = nearParams(new URLSearchParams()).toString();
+    const key = `${terms}|${near}`;
+    if (!force && key === stripTerms) return;
+    stripTerms = key;
     const ticket = ++stripRequest;
     const root = document.querySelector('#showcase-strip');
     try {
       const [matching, latest] = await Promise.all([
-        terms ? api(`/showcases?${new URLSearchParams({ q: terms, page_size: '10' })}`) : Promise.resolve({ results: [] }),
-        api('/showcases?page_size=12'),
+        terms ? api(`/showcases?${nearParams(new URLSearchParams({ q: terms, page_size: '10' }))}`) : Promise.resolve({ results: [] }),
+        api(`/showcases?${nearParams(new URLSearchParams({ page_size: '12' }))}`),
       ]);
       if (ticket !== stripRequest) return;
       const shown = new Set(matching.results.map((item) => item.id));
@@ -173,7 +180,7 @@
     }
   }
   // The marketplace calls this after each profile search so the sidebar follows the customer's interest.
-  window.refreshShowcaseSidebar = () => loadStrip(false);
+  window.refreshShowcaseSidebar = (force = false) => loadStrip(force);
 
   window.loadVideoShowcases = async () => {
     const ticket = ++feedRequest;

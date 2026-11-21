@@ -96,19 +96,27 @@
         <p class="info-text" id="info-expert" hidden>For advisors, consultants and agents. We verify you before you appear in search.</p>
         <div class="role-line"><button class="role company" data-role="company"><span class="role-icon">▣</span><span><strong>I'm a company</strong></span><span class="arrow">›</span></button><button type="button" class="info" aria-expanded="false" aria-controls="info-company" aria-label="About company accounts">i</button></div>
         <p class="info-text" id="info-company" hidden>For businesses. Get customer requests and manage your team. We verify you before you appear in search.</p>
+        <div class="divider">or find work</div>
+        <div class="role-line"><button class="role worker" data-role="worker"><span class="role-icon">⚒</span><span><strong>I'm a worker</strong><small>Service partner · Free</small></span><span class="arrow">›</span></button><button type="button" class="info" aria-expanded="false" aria-controls="info-worker" aria-label="About worker accounts">i</button></div>
+        <p class="info-text" id="info-worker" hidden>For cooks, drivers, sales staff, helpers, electricians and more. Show your skills, switch on your green light when you're free, and get hired by shops, hotels and homes near you. Employers you work for can verify your skills.</p>
       </div></section>
       <section class="step" id="auth-step"><span class="eyebrow" style="color:#088a82" id="role-label">Customer account</span><h2>Sign in</h2><p id="sign-in-copy">One tap with Google.</p><div class="sign-in"><button class="oauth" id="google-button"><i class="google-g"></i> Continue with Google</button></div><form class="review-sign-in" id="review-sign-in" hidden><label for="review-email">Review account email<input id="review-email" name="email" type="email" autocomplete="username" required></label><label for="review-password">Password<input id="review-password" name="password" type="password" autocomplete="current-password" required></label><button class="continue" id="review-submit" type="submit">Sign in for app review</button></form><p class="terms" style="margin:16px 0 0">By continuing you accept our <a href="#terms">Terms</a> &amp; <a href="privacy.html">Privacy Policy</a>.</p></section>
       <section class="step" id="details-step"><div class="progress" id="wizard-progress" aria-hidden="true"></div><span class="eyebrow" style="color:#088a82" id="details-label">Step 1</span>
         <form class="form" id="details-form" novalidate>
-          <div class="q" data-for="customer expert company"><div class="q-head"><label for="name">Your name</label></div><input id="name" placeholder="Full name" autocomplete="name" minlength="2" maxlength="120" required></div>
-          <div class="q" data-for="customer expert company"><div class="q-head"><label for="phone-number">Mobile number</label><button type="button" class="info" aria-expanded="false" aria-controls="info-phone" aria-label="Why we ask">i</button></div><p class="info-text" id="info-phone" hidden>We use it to verify you. Only people you work with on a request can see it.</p><div class="phone-row"><input id="phone-code" value="+91" inputmode="tel" maxlength="5" aria-label="Country code" required><input id="phone-number" type="tel" inputmode="numeric" placeholder="98765 43210" maxlength="16" autocomplete="tel-national" required></div><small class="field-hint" id="phone-hint"></small></div>
+          <div class="q" data-for="customer expert company worker"><div class="q-head"><label for="name">Your name</label></div><input id="name" placeholder="Full name" autocomplete="name" minlength="2" maxlength="120" required></div>
+          <div class="q" data-for="customer expert company worker"><div class="q-head"><label for="phone-number">Mobile number</label><button type="button" class="info" aria-expanded="false" aria-controls="info-phone" aria-label="Why we ask">i</button></div><p class="info-text" id="info-phone" hidden>We use it to verify you. Only people you work with on a request can see it.</p><div class="phone-row"><input id="phone-code" value="+91" inputmode="tel" maxlength="5" aria-label="Country code" required><input id="phone-number" type="tel" inputmode="numeric" placeholder="98765 43210" maxlength="16" autocomplete="tel-national" required></div><small class="field-hint" id="phone-hint"></small></div>
           <div class="q" data-for="customer"><div class="q-head"><label id="need-label">What do you need?</label><button type="button" class="info" aria-expanded="false" aria-controls="info-need" aria-label="About this question">i</button></div><p class="info-text" id="info-need" hidden>Tap one or more. We show the right experts first. You can change this later.</p><div class="interest-chips" id="interest-chips" role="group" aria-labelledby="need-label"></div><div class="other-box" id="interest-other" hidden><input id="interest-other-input" placeholder="Type, e.g. beauty" autocomplete="off" aria-label="Other service"><div class="suggest-list" id="interest-suggest" role="listbox" hidden></div></div></div>
           <div class="q" data-for="expert"><div class="q-head"><label for="service">Your main service</label><button type="button" class="info" aria-expanded="false" aria-controls="info-service" aria-label="About this question">i</button></div><p class="info-text" id="info-service" hidden>Shown on your profile, e.g. "Health insurance".</p><input id="service" placeholder="Health insurance" maxlength="120" required></div>
+          <div class="q" data-for="worker"><div class="q-head"><label for="work">What work do you do?</label><button type="button" class="info" aria-expanded="false" aria-controls="info-work" aria-label="About this question">i</button></div><p class="info-text" id="info-work" hidden>Your main work, shown on your profile. You can add more skills later.</p><input id="work" placeholder="Cook, Driver, Sales staff…" maxlength="120" minlength="2" required></div>
           <div class="q" data-for="company"><div class="q-head"><label for="company">Company name</label></div><input id="company" placeholder="Business name" autocomplete="organization" maxlength="160" required></div>
           <div class="q" data-for="expert company" data-optional><div class="q-head"><label for="city">Your city</label></div><input id="city" placeholder="Chennai" autocomplete="address-level2" maxlength="100"></div>
-          <div class="q" data-for="expert" data-optional><div class="q-head"><label>Language</label></div><div class="choice-grid" id="language-choices"><button type="button" class="choice" data-language="English">English</button><button type="button" class="choice" data-language="Tamil">Tamil</button><button type="button" class="choice" data-language="Hindi">Hindi</button><button type="button" class="choice" data-language="Telugu">Telugu</button></div><input type="hidden" id="language" value=""></div>
-          <div class="q" data-for="expert" data-optional><div class="q-head"><label for="experience">Years of experience</label></div><input id="experience" type="number" inputmode="numeric" min="0" max="80" placeholder="5"></div>
+          <div class="q" data-for="expert company"><div class="q-head"><label for="pincode">Your PIN code</label><button type="button" class="info" aria-expanded="false" aria-controls="info-pincode" aria-label="Why we ask">i</button></div><p class="info-text" id="info-pincode" hidden>Customers near you see you first. Use the PIN code of the area where you work.</p><input id="pincode" autocomplete="postal-code" required inputmode="numeric" maxlength="6" pattern="[1-9][0-9]{5}" title="6-digit PIN code, e.g. 600042" placeholder="600042"></div>
+          <div class="q" data-for="customer" data-optional><div class="q-head"><label for="customer-pincode">Your area PIN code</label><button type="button" class="info" aria-expanded="false" aria-controls="info-customer-pincode" aria-label="Why we ask">i</button></div><p class="info-text" id="info-customer-pincode" hidden>We show experts, companies and workers near you first. You can change it any time.</p><input id="customer-pincode" autocomplete="postal-code" inputmode="numeric" maxlength="6" pattern="[1-9][0-9]{5}" title="6-digit PIN code, e.g. 600042" placeholder="600042"></div>
+          <div class="q" data-for="worker"><div class="q-head"><label for="worker-city">Where do you work?</label></div><input id="worker-city" placeholder="City, e.g. Chennai" autocomplete="address-level2" maxlength="100" minlength="2" required><input id="worker-area" placeholder="Area (optional), e.g. Velachery" maxlength="100" style="margin-top:10px"><input id="worker-pincode" autocomplete="postal-code" required inputmode="numeric" maxlength="6" pattern="[1-9][0-9]{5}" title="6-digit PIN code, e.g. 600042" placeholder="PIN code, e.g. 600042" style="margin-top:10px"></div>
+          <div class="q" data-for="expert worker" data-optional><div class="q-head"><label>Language</label></div><div class="choice-grid" id="language-choices"><button type="button" class="choice" data-language="English">English</button><button type="button" class="choice" data-language="Tamil">Tamil</button><button type="button" class="choice" data-language="Hindi">Hindi</button><button type="button" class="choice" data-language="Telugu">Telugu</button></div><input type="hidden" id="language" value=""></div>
+          <div class="q" data-for="expert worker" data-optional><div class="q-head"><label for="experience">Years of experience</label></div><input id="experience" type="number" inputmode="numeric" min="0" max="80" placeholder="5"></div>
           <div class="q" data-for="company" data-optional><div class="q-head"><label for="website">Website</label></div><input id="website" inputmode="url" autocomplete="url" placeholder="yourcompany.com" maxlength="255"></div>
+          <div class="q" data-for="worker"><div class="q-head"><label for="adult">Age</label></div><label class="adult-check" style="display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.4"><input id="adult" type="checkbox" required style="width:22px;height:22px;min-height:0;margin-top:1px"> I am 18 years or older. RightConnect does not allow child labour.</label></div>
           <div class="wizard-actions"><button type="button" class="outline skip" id="details-skip" hidden>Skip</button><button class="continue" type="submit" id="details-submit">Next</button></div>
         </form></section>
       <section class="step" id="success-step"><div class="success"><div class="success-mark">✓</div><h2 id="success-title">All set!</h2><p id="success-copy">Find the right help now.</p><a class="continue" id="success-link" href="marketplace.html" style="text-decoration:none">Start</a></div></section>
@@ -125,9 +133,9 @@
     let role = 'customer';
     let authClient = null;
     let authSession = null;
-    const roleNames = { customer: 'Customer', expert: 'Expert', company: 'Company' };
+    const roleNames = { customer: 'Customer', expert: 'Expert', company: 'Company', worker: 'Worker (service partner)' };
     const apiBase = '/api/v1';
-    const AUTH_RETURNS = { plans: ['plans.html', 'Back to plans'], claim: ['claim.html', 'Continue claiming your business'] };
+    const AUTH_RETURNS = { plans: ['plans.html', 'Back to plans'], claim: ['claim.html', 'Continue claiming your business'], workers: ['workers.html', 'Back to workers'] };
     function authReturnUrl() {
       const key = sessionStorage.getItem('rightconnect-auth-return');
       if (!AUTH_RETURNS[key]) return null;
@@ -340,7 +348,7 @@
       skipButton.hidden = !('optional' in question.dataset);
       question.querySelector('input:not([type="hidden"]):not(#phone-code)')?.focus();
     }
-    const FIELD_LABELS = { full_name: 'Name', phone: 'Mobile number', city: 'City', primary_service: 'Main service', company_name: 'Company name', website: 'Website', years_experience: 'Years of experience' };
+    const FIELD_LABELS = { full_name: 'Name', phone: 'Mobile number', city: 'City', area: 'Area', adult_confirmed: 'Age', pincode: 'PIN code', primary_service: 'Main service', company_name: 'Company name', website: 'Website', years_experience: 'Years of experience' };
     async function apiErrorMessage(response, fallback) {
       if (response.status === 401) return 'Your sign-in expired. Please sign in again.';
       if (response.status >= 500) return 'Something went wrong on our side. Please try again in a minute.';
@@ -416,11 +424,14 @@
         email: authSession.user.email,
         phone,
         role: role === 'company' ? 'company_admin' : role,
-        city: document.querySelector('#city').value || null,
+        city: (role === 'worker' ? document.querySelector('#worker-city').value.trim() : document.querySelector('#city').value) || null,
+        area: role === 'worker' ? (document.querySelector('#worker-area').value.trim() || null) : null,
+        adult_confirmed: role === 'worker' && document.querySelector('#adult').checked,
+        pincode: document.querySelector({ worker: '#worker-pincode', customer: '#customer-pincode' }[role] || '#pincode').value.replace(/\s/g, '') || null,
         preferred_language: document.querySelector('#language').value || null,
         interest: null,
         interests: role === 'customer' ? [...selectedInterests] : [],
-        primary_service: document.querySelector('#service').value || null,
+        primary_service: (role === 'worker' ? document.querySelector('#work').value.trim() : document.querySelector('#service').value) || null,
         years_experience: Number(document.querySelector('#experience').value) || null,
         credential_number: null,
         company_name: document.querySelector('#company').value || null,
@@ -471,8 +482,16 @@
       originalShow(id);
       if (id === 'details-step') showQuestion(0);
       if (id === 'success-step') {
-        document.querySelector('#success-title').textContent = role === 'customer' ? 'All set!' : 'Profile started';
-        document.querySelector('#success-copy').textContent = role === 'customer' ? 'Find the right help now.' : "We'll verify you soon. Add more details any time.";
+        const copy = {
+          customer: ['All set!', 'Find the right help now.'],
+          worker: ['You\'re in!', 'Your work profile is live. Add your skills and switch on your green light to get hired.'],
+        }[role] || ['Profile started', "We'll verify you soon. Add more details any time."];
+        document.querySelector('#success-title').textContent = copy[0];
+        document.querySelector('#success-copy').textContent = copy[1];
+        if (role === 'worker' && !authReturnUrl()) {
+          document.querySelector('#success-link').href = 'workers.html?tab=me';
+          document.querySelector('#success-link').textContent = 'Open my work profile';
+        }
       }
     };
     (async () => {
@@ -511,8 +530,9 @@
               return;
             }
             if (meResponse.ok) {
-              sessionStorage.setItem('rightconnect-user', JSON.stringify(await meResponse.json()));
-              const destination = authReturnUrl() || 'marketplace.html';
+              const me = await meResponse.json();
+              sessionStorage.setItem('rightconnect-user', JSON.stringify(me));
+              const destination = authReturnUrl() || (me.role === 'worker' ? 'workers.html' : 'marketplace.html');
               sessionStorage.removeItem('rightconnect-auth-return');
               leaving = true;
               setLoading('Opening RightConnect…');

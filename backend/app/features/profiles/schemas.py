@@ -6,6 +6,7 @@ from uuid import UUID
 from pydantic import AfterValidator, BaseModel, Field, field_validator, model_validator
 
 from app.core.links import normalize_url
+from app.core.location import normalize_pincode
 
 TeamSize = Literal["1-10", "11-50", "51-200", "201-500", "500+"]
 
@@ -26,9 +27,15 @@ class ProfileUpdate(BaseModel):
     headline: str | None = Field(default=None, min_length=2, max_length=160)
     bio: str | None = Field(default=None, max_length=2000)
     city: str | None = Field(default=None, max_length=100)
+    pincode: str | None = Field(default=None, max_length=10)
     years_experience: int | None = Field(default=None, ge=0, le=80)
     languages: list[str] | None = Field(default=None, max_length=10)
     avatar_url: OptionalLink = None
+
+    @field_validator("pincode")
+    @classmethod
+    def _pincode(cls, value: str | None) -> str | None:
+        return normalize_pincode(value)
     services: list[str] | None = Field(default=None, max_length=10)
     keywords: list[str] | None = Field(default=None, max_length=20)
     intro_video_url: OptionalLink = None
@@ -178,6 +185,7 @@ class ManagedProfile(BaseModel):
     headline: str
     bio: str | None
     city: str | None
+    pincode: str | None = None
     years_experience: int | None
     languages: list[str]
     avatar_url: str | None

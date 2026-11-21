@@ -1,6 +1,6 @@
 """Admin-only endpoints: profile & account moderation, disputes, stats, and audit trail."""
 from collections.abc import Awaitable
-from typing import TypeVar
+from typing import Literal, TypeVar
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -42,6 +42,9 @@ from app.features.auth.lifecycle import RestoreConflictError
 from app.features.claims.router import run_claim_action
 from app.features.claims.schemas import AdminClaimOut, ClaimRejection, UnclaimedListingCreate, UnclaimedListingOut
 from app.features.claims.service import approve_claim, create_unclaimed_listing, list_claims_for_admin, reject_claim
+from app.features.workers import service as worker_service
+from app.features.workers.router import run_worker_action
+from app.features.workers.schemas import AdminWorkerCreate, AdminWorkerOut, ClaimCodeOut
 from app.models.profile import VerificationStatus
 from app.models.user import User, UserRole, active_user_by_auth_id
 from app.security.dependencies import get_current_auth_user_id
@@ -193,13 +196,61 @@ async def reject(
     return {"status": "rejected"}
 
 
+# ---------- Workers (service partners) ----------
+
+
+@router.get("/workers", response_model=list[AdminWorkerOut])
+async def admin_workers(
+    status_filter: str = Query(default="all", alias="status", pattern="^(unclaimed|claimed|blocked|deleted|all)$"),
+    q: str | None = Query(default=None, max_length=120),
+    _: User = Depends(require_platform_admin),
+    session: AsyncSession = Depends(get_db),
+) -> list[AdminWorkerOut]:
+    return await worker_service.admin_list_workers(session, status_filter, q)
+
+
+@router.post("/workers", response_model=ClaimCodeOut, status_code=status.HTTP_201_CREATED)
+async def admin_add_worker(
+    payload: AdminWorkerCreate, admin: User = Depends(require_platform_admin), session: AsyncSession = Depends(get_db)
+) -> ClaimCodeOut:
+    """Add a real local worker; give them the returned one-time code so they can claim the profile."""
+    return await run_worker_action(worker_service.admin_create_worker(session, admin, payload))
+
+
+@router.post("/workers/{worker_id}/claim-code", response_model=ClaimCodeOut)
+async def admin_worker_code(
+    worker_id: UUID, admin: User = Depends(require_platform_admin), session: AsyncSession = Depends(get_db)
+) -> ClaimCodeOut:
+    """Issue a fresh claim code (the old one stops working)."""
+    return await run_worker_action(worker_service.admin_new_claim_code(session, admin, worker_id))
+
+
+@router.post("/workers/{worker_id}/block")
+async def admin_block_worker(
+    worker_id: UUID, payload: BlockProfilePayload, admin: User = Depends(require_platform_admin), session: AsyncSession = Depends(get_db)
+) -> dict[str, str]:
+    await run_worker_action(worker_service.admin_moderate_worker(session, admin, worker_id, "block", payload.reason))
+    return {"status": "blocked"}
+
+
+@router.post("/workers/{worker_id}/{action}")
+async def admin_change_worker(
+    worker_id: UUID,
+    action: Literal["unblock", "delete", "restore"],
+    admin: User = Depends(require_platform_admin),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    await run_worker_action(worker_service.admin_moderate_worker(session, admin, worker_id, action, None))
+    return {"status": action}
+
+
 # ---------- Accounts ----------
 
 
 @router.get("/users", response_model=list[AdminUser])
 async def users(
     status_filter: str = Query(default="active", alias="status", pattern="^(active|blocked|deleted|all)$"),
-    role: str | None = Query(default=None, pattern="^(customer|expert|company_admin|platform_admin)$"),
+    role: str | None = Query(default=None, pattern="^(customer|expert|company_admin|platform_admin|worker)$"),
     q: str | None = Query(default=None, max_length=120),
     _: User = Depends(require_platform_admin),
     session: AsyncSession = Depends(get_db),

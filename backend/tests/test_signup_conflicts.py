@@ -45,6 +45,7 @@ class Role(StrEnum):
     CUSTOMER = "customer"
     EXPERT = "expert"
     COMPANY_ADMIN = "company_admin"
+    WORKER = "worker"
 
 
 class FakeIntegrityError(Exception):
@@ -84,7 +85,7 @@ class SignupConflictTests(unittest.IsolatedAsyncioTestCase):
         })
         self.payload = SimpleNamespace(
             full_name="Same Name", email="new@example.com", phone="+919876543210", role="customer",
-            interest=None, interests=[], city=None,
+            interest=None, interests=[], city=None, pincode=None,
         )
 
     async def create(self):

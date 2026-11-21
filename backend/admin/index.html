@@ -72,15 +72,17 @@
     <button data-section="overview" class="active">Overview</button>
     <button data-section="profiles">Profiles</button>
     <button data-section="claims">Claims<span class="count" id="claims-count" hidden></span></button>
+    <button data-section="workers">Workers</button>
     <button data-section="users">Accounts</button>
     <button data-section="disputes">Disputes<span class="count" id="disputes-count" hidden></span></button>
     <button data-section="activity">Activity log</button>
     <button type="button" id="add-business" class="add-business">+ Add business</button>
+    <button type="button" id="add-worker" class="add-business" style="margin-left:0">+ Add worker</button>
   </nav>
   <main>
     <div class="toolbar" id="toolbar" hidden>
       <div class="pills" id="filters"></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><select id="role-filter" hidden><option value="">All roles</option><option value="customer">Customers</option><option value="expert">Experts</option><option value="company_admin">Company admins</option><option value="platform_admin">Platform admins</option></select><input id="search" type="search" placeholder="Search name, email or phone…"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><select id="role-filter" hidden><option value="">All roles</option><option value="customer">Customers</option><option value="expert">Experts</option><option value="company_admin">Company admins</option><option value="worker">Workers</option><option value="platform_admin">Platform admins</option></select><input id="search" type="search" placeholder="Search name, email or phone…"></div>
     </div>
     <div id="content"><p class="notice">Loading…</p></div>
   </main>
@@ -96,6 +98,31 @@
   </div>
   <div class="toast" id="toast" hidden></div>
 
+  <div class="modal wide" id="worker-modal" role="dialog" aria-modal="true" aria-labelledby="worker-title" hidden>
+    <h2 id="worker-title">Add a worker</h2>
+    <p>Add a real local worker (cook, driver, helper…) who isn't on RightConnect yet. You'll get a one-time code to give them in person or by phone; they enter it on the Workers page to take over the profile. Check their age and identity before adding.</p>
+    <form id="worker-form" novalidate>
+      <div class="grid2">
+        <div><label for="wk-name">Full name *</label><input id="wk-name" maxlength="120" required></div>
+        <div><label for="wk-headline">Main work *</label><input id="wk-headline" maxlength="120" required placeholder="Cook, Driver, Sales staff"></div>
+        <div><label for="wk-city">City *</label><input id="wk-city" maxlength="100" required></div>
+        <div><label for="wk-area">Area</label><input id="wk-area" maxlength="100"></div>
+        <div><label for="wk-pincode">PIN code *</label><input id="wk-pincode" inputmode="numeric" maxlength="7" placeholder="600042"></div>
+        <div><label for="wk-phone">Phone (private)</label><input id="wk-phone" type="tel" maxlength="30" placeholder="+91 98765 43210"></div>
+        <div><label for="wk-years">Years of experience</label><input id="wk-years" type="number" min="0" max="70"></div>
+      </div>
+      <div class="full"><label for="wk-skills">Skills (comma separated, shown as self-declared)</label><input id="wk-skills" maxlength="1200"></div>
+      <div class="full"><label for="wk-languages">Languages (comma separated)</label><input id="wk-languages" maxlength="300" placeholder="Tamil, English"></div>
+      <div class="full"><label style="display:flex;gap:8px;align-items:center;font-weight:700"><input id="wk-adult" type="checkbox" style="width:auto"> I checked this person is 18 or older</label></div>
+      <div class="error" id="worker-error"></div>
+      <div class="row"><button class="btn" type="button" id="worker-cancel">Cancel</button><button class="btn primary" type="submit" id="worker-save">Add worker</button></div>
+    </form>
+    <div id="worker-code-box" hidden>
+      <p>Give this code to <b id="worker-code-name"></b>. It works once and expires on <span id="worker-code-expiry"></span>. It won't be shown again; you can issue a new one from the Workers tab.</p>
+      <p style="font:800 28px/1.2 'DM Mono',monospace;letter-spacing:.08em;color:var(--ink);text-align:center;margin:10px 0" id="worker-code"></p>
+      <div class="row"><button class="btn" type="button" id="worker-code-copy">Copy</button><button class="btn primary" type="button" id="worker-code-done">Done</button></div>
+    </div>
+  </div>
   <div class="modal wide" id="business-modal" role="dialog" aria-modal="true" aria-labelledby="business-title" hidden>
     <h2 id="business-title">Add a business</h2>
     <p>Add a real local shop or consultancy. It appears in Discover as <b>Unclaimed</b> and can't receive requests until its owner claims it. Contact email and phone are only visible to admins and help match the owner's claim.</p>
@@ -104,6 +131,7 @@
       <div class="grid2">
         <div><label for="biz-service">Main service *</label><input id="biz-service" maxlength="120" required placeholder="e.g. Tax consultant, Mobile shop"></div>
         <div><label for="biz-city">City / area *</label><input id="biz-city" maxlength="100" required></div>
+        <div><label for="biz-pincode">PIN code *</label><input id="biz-pincode" inputmode="numeric" maxlength="7" placeholder="600042"></div>
         <div><label for="biz-email">Business email</label><input id="biz-email" type="email" maxlength="254"></div>
         <div><label for="biz-phone">Business phone</label><input id="biz-phone" type="tel" maxlength="30" placeholder="+91 98765 43210"></div>
       </div>
@@ -123,10 +151,11 @@
     const roleFilter = document.querySelector('#role-filter');
     let accessToken = null;
     let section = 'overview';
-    const filterState = { profiles: 'pending', users: 'active', claims: 'pending' };
+    const filterState = { profiles: 'pending', users: 'active', claims: 'pending', workers: 'all' };
     const FILTERS = {
       profiles: [['pending', 'Pending'], ['verified', 'Verified'], ['rejected', 'Rejected'], ['unclaimed', 'Unclaimed'], ['blocked', 'Blocked'], ['deleted', 'Deleted'], ['all', 'All']],
       claims: [['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['all', 'All']],
+      workers: [['all', 'All'], ['unclaimed', 'Unclaimed'], ['claimed', 'Claimed'], ['blocked', 'Blocked'], ['deleted', 'Deleted']],
       users: [['active', 'Active'], ['blocked', 'Blocked'], ['deleted', 'Deleted'], ['all', 'All']],
     };
 
@@ -242,6 +271,11 @@
           if (searchInput.value.trim()) params.set('q', searchInput.value.trim());
           return renderList(await api(`/admin/profiles?${params}`), renderProfileCard, 'profiles');
         }
+        if (section === 'workers') {
+          const params = new URLSearchParams({ status: filterState.workers });
+          if (searchInput.value.trim()) params.set('q', searchInput.value.trim());
+          return renderList(await api(`/admin/workers?${params}`), renderWorkerCard, 'workers');
+        }
         if (section === 'claims') return renderList(await api(`/admin/claims?status=${filterState.claims}`), renderClaimCard, `${filterState.claims === 'all' ? '' : filterState.claims + ' '}claims`);
         if (section === 'users') {
           const params = new URLSearchParams({ status: filterState.users });
@@ -272,6 +306,8 @@
         ['Pending claims', stats.claims_pending, 'claims', 'pending', stats.claims_pending > 0],
         ['Open disputes', stats.disputes_open, 'disputes', null, stats.disputes_open > 0],
         ['Unclaimed businesses', stats.companies_unclaimed, 'profiles', 'unclaimed'],
+        ['Live workers', stats.workers_live, 'workers', 'all'],
+        ['Unclaimed workers', stats.workers_unclaimed, 'workers', 'unclaimed'],
         ['Active accounts', stats.users_total, 'users', 'active'],
         ['New accounts (7 days)', stats.users_new_7d, 'users', 'active'],
         ['Live experts', stats.experts_live, 'profiles', 'verified'],
@@ -391,6 +427,86 @@
       try { const stats = await api('/admin/stats'); setDisputeCount(stats.disputes_open); setClaimCount(stats.claims_pending); } catch (_) { /* counts are a convenience */ }
     }
 
+    // ---------- workers ----------
+    function renderWorkerCard(worker) {
+      const deleted = Boolean(worker.deleted_at);
+      const blocked = Boolean(worker.blocked_at);
+      const unclaimed = worker.claim_status === 'unclaimed';
+      const buttons = deleted ? [['restore', 'Restore', 'primary']] : [
+        ...(unclaimed ? [['code', 'New claim code', 'primary']] : []),
+        blocked ? ['unblock', 'Unblock'] : ['block', 'Block'],
+        ['delete', 'Delete', 'danger'],
+      ];
+      const element = card(`
+        <strong>${escapeHtml(worker.display_name)}<span class="badge ${unclaimed ? 'unclaimed' : 'verified'}">${escapeHtml(worker.claim_status)}</span>${blocked ? '<span class="badge blocked">blocked</span>' : ''}${deleted ? '<span class="badge deleted">deleted</span>' : ''}</strong>
+        <small>${escapeHtml(worker.headline)} · 📍 ${escapeHtml([worker.area, worker.city, worker.pincode].filter(Boolean).join(', ') || 'no location')} · ${escapeHtml(worker.availability)}</small>
+        <div class="meta">${worker.owner_email ? escapeHtml(worker.owner_email) : 'Not claimed yet'}${worker.contact_phone ? ' · ' + escapeHtml(worker.contact_phone) : ''} · ${worker.review_count} review${worker.review_count === 1 ? '' : 's'} · added ${formatDate(worker.created_at)}</div>
+        ${blocked && worker.blocked_reason ? `<div class="reason">Blocked: ${escapeHtml(worker.blocked_reason)}</div>` : ''}`, buttons);
+      element.querySelectorAll('[data-action]').forEach((button) => button.addEventListener('click', () => workerAction(worker, button.dataset.action)));
+      return element;
+    }
+    function workerAction(worker, action) {
+      const name = worker.display_name;
+      const base = `/admin/workers/${worker.id}`;
+      const done = (text) => { showToast(text, 'success'); load(); };
+      if (action === 'code') {
+        return openConfirm({ title: `New claim code for ${name}?`, text: 'Any earlier code for this profile stops working.', okLabel: 'Create code', danger: false,
+          onConfirm: async () => { showWorkerCode(await api(`${base}/claim-code`, { method: 'POST' })); } });
+      }
+      if (action === 'block') {
+        return openConfirm({ title: `Block ${name}?`, text: 'Their worker profile disappears from search and they can\'t apply to jobs.', needsReason: true, okLabel: 'Block',
+          onConfirm: async (reason) => { await api(`${base}/block`, { method: 'POST', body: JSON.stringify({ reason }) }); done(`${name} blocked.`); } });
+      }
+      const texts = { unblock: ['Unblock', 'The profile is visible again.'], delete: ['Delete', 'Soft delete: hidden everywhere; restore from the Deleted filter.'], restore: ['Restore', 'The profile comes back as it was.'] };
+      openConfirm({ title: `${texts[action][0]} ${name}?`, text: texts[action][1], okLabel: texts[action][0], danger: action === 'delete',
+        onConfirm: async () => { await api(`${base}/${action}`, { method: 'POST' }); done(`${name}: ${action} done.`); } });
+    }
+    const workerModal = document.querySelector('#worker-modal');
+    const workerForm = document.querySelector('#worker-form');
+    function closeWorkerModal() { workerModal.hidden = true; document.querySelector('#modal-scrim').hidden = true; }
+    function showWorkerCode(result) {
+      workerForm.hidden = true;
+      document.querySelector('#worker-code-box').hidden = false;
+      document.querySelector('#worker-code-name').textContent = result.display_name;
+      document.querySelector('#worker-code').textContent = result.claim_code;
+      document.querySelector('#worker-code-expiry').textContent = new Date(result.expires_at).toLocaleDateString();
+      document.querySelector('#modal-scrim').hidden = false;
+      workerModal.hidden = false;
+    }
+    document.querySelector('#add-worker').addEventListener('click', () => {
+      workerForm.reset();
+      workerForm.hidden = false;
+      document.querySelector('#worker-code-box').hidden = true;
+      document.querySelector('#worker-error').textContent = '';
+      document.querySelector('#modal-scrim').hidden = false;
+      workerModal.hidden = false;
+      document.querySelector('#wk-name').focus();
+    });
+    document.querySelector('#worker-cancel').addEventListener('click', closeWorkerModal);
+    document.querySelector('#worker-code-done').addEventListener('click', () => { closeWorkerModal(); if (section === 'workers') load(); else switchSection('workers', 'unclaimed'); });
+    document.querySelector('#worker-code-copy').addEventListener('click', () => { navigator.clipboard?.writeText(document.querySelector('#worker-code').textContent).then(() => showToast('Code copied.', 'success')); });
+    document.querySelector('#modal-scrim').addEventListener('click', () => { if (!workerModal.hidden) closeWorkerModal(); });
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !workerModal.hidden) closeWorkerModal(); });
+    workerForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const value = (id) => document.querySelector(id).value.trim();
+      const split = (text) => text.split(',').map((item) => item.trim()).filter(Boolean);
+      const errorBox = document.querySelector('#worker-error');
+      if (value('#wk-name').length < 2 || value('#wk-headline').length < 2 || value('#wk-city').length < 2) { errorBox.textContent = 'Name, main work and city are required.'; return; }
+      if (!/^[1-9][0-9]{5}$/.test(value('#wk-pincode').replace(/\s/g, ''))) { errorBox.textContent = 'Enter the worker\'s 6-digit PIN code.'; return; }
+      if (!document.querySelector('#wk-adult').checked) { errorBox.textContent = 'Confirm the worker is 18 or older.'; return; }
+      const save = document.querySelector('#worker-save');
+      save.disabled = true;
+      try {
+        showWorkerCode(await api('/admin/workers', { method: 'POST', body: JSON.stringify({
+          full_name: value('#wk-name'), headline: value('#wk-headline'), city: value('#wk-city'), area: value('#wk-area') || null, pincode: value('#wk-pincode').replace(/\s/g, ''),
+          contact_phone: value('#wk-phone') || null, years_experience: value('#wk-years') === '' ? null : Number(value('#wk-years')),
+          skills: split(value('#wk-skills')), languages: split(value('#wk-languages')), adult_confirmed: true,
+        }) }));
+      } catch (error) { errorBox.textContent = error.message; }
+      finally { save.disabled = false; }
+    });
+
     // ---------- add business ----------
     const businessModal = document.querySelector('#business-modal');
     const businessForm = document.querySelector('#business-form');
@@ -410,13 +526,14 @@
       const value = (id) => document.querySelector(id).value.trim();
       const errorBox = document.querySelector('#business-error');
       if (value('#biz-name').length < 2 || value('#biz-service').length < 2 || value('#biz-city').length < 2) { errorBox.textContent = 'Name, main service and city are required.'; return; }
+      if (!/^[1-9][0-9]{5}$/.test(value('#biz-pincode').replace(/\s/g, ''))) { errorBox.textContent = 'Enter the 6-digit PIN code of the business.'; return; }
       if (value('#biz-email') && !document.querySelector('#biz-email').checkValidity()) { errorBox.textContent = 'Enter a valid business email or leave it empty.'; return; }
       const save = document.querySelector('#business-save');
       save.disabled = true;
       save.textContent = 'Adding…';
       try {
         const created = await api('/admin/companies', { method: 'POST', body: JSON.stringify({
-          company_name: value('#biz-name'), primary_service: value('#biz-service'), city: value('#biz-city'),
+          company_name: value('#biz-name'), primary_service: value('#biz-service'), city: value('#biz-city'), pincode: value('#biz-pincode').replace(/\s/g, ''),
           contact_email: value('#biz-email') || null, contact_phone: value('#biz-phone') || null,
           website: value('#biz-website') || null, description: value('#biz-description') || null,
         }) });
@@ -432,7 +549,7 @@
     });
 
     // ---------- accounts ----------
-    const ROLE_LABELS = { customer: 'customer', expert: 'expert', company_admin: 'company admin', platform_admin: 'platform admin' };
+    const ROLE_LABELS = { customer: 'customer', expert: 'expert', company_admin: 'company admin', platform_admin: 'platform admin', worker: 'worker' };
     function renderUserCard(user) {
       const deleted = Boolean(user.deleted_at);
       const blocked = Boolean(user.blocked_at);

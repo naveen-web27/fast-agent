@@ -15,6 +15,8 @@ class UserRole(StrEnum):
     EXPERT = "expert"
     COMPANY_ADMIN = "company_admin"
     PLATFORM_ADMIN = "platform_admin"
+    # Local workforce: service partners such as cooks, drivers, sales staff and helpers.
+    WORKER = "worker"
 
 
 class SubscriptionTier(StrEnum):
@@ -40,6 +42,8 @@ class User(Base):
     # Light public profile, shown to experts/companies the customer sent a request to.
     bio: Mapped[str | None] = mapped_column(Text)
     city: Mapped[str | None] = mapped_column(String)
+    # 6-digit Indian PIN code; drives "nearest first" ranking (see app/core/location.py).
+    pincode: Mapped[str | None] = mapped_column(String)
     avatar_url: Mapped[str | None] = mapped_column(String)
     role: Mapped[UserRole] = mapped_column(
         Enum(

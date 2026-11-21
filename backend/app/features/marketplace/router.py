@@ -44,11 +44,14 @@ async def list_profiles(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=12, ge=1, le=50),
     exclude_q: str | None = Query(default=None, max_length=200, description="Return only profiles that do NOT match this search"),
+    near: str | None = Query(default=None, pattern=r"^[1-9][0-9]{5}$", description="Searcher's PIN code: nearest profiles first"),
+    near_city: str | None = Query(default=None, max_length=100, description="Searcher's city, used when there is no PIN code"),
     session: AsyncSession = Depends(get_db),
 ) -> ProfileListResponse:
-    """Search verified experts and companies stored in the database."""
+    """Search verified experts and companies stored in the database, nearest first when the searcher's location is known."""
     return await search_profiles(
-        session, query=q, city=city, kind=kind, page=page, page_size=page_size, exclude_query=exclude_q
+        session, query=q, city=city, kind=kind, page=page, page_size=page_size, exclude_query=exclude_q,
+        near_pincode=near, near_city=near_city,
     )
 
 
