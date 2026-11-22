@@ -92,7 +92,7 @@ Run `db/migrations/003_multi_role_identities.sql` against an existing database (
 
 ## Location (PIN codes)
 
-People pick their location by place name (`/api/v1/locations/search`, India Post directory loaded with `PYTHONPATH=backend python3 db/scripts/import_pincodes.py` after migration 026). Lists rank nearest first using 6-digit PIN codes (same area, district, state, region) via `near`/`near_city` query params; logic is in `app/core/location.py`. Apply `db/migrations/025_location_pincodes.sql` before deploying. Run `PYTHONPATH=backend python3 -B -m unittest discover -s backend/tests -p 'test_location.py' -v`. Details: [location](../docs/features/13-location.md).
+People pick their location by place name (`/api/v1/locations/search`, India Post directory loaded automatically at startup after migration 026; refresh with `PYTHONPATH=backend python3 db/scripts/import_pincodes.py`). Lists rank nearest first using 6-digit PIN codes (same area, district, state, region) via `near`/`near_city` query params; logic is in `app/core/location.py`. Apply `db/migrations/025_location_pincodes.sql` before deploying. Run `PYTHONPATH=backend python3 -B -m unittest discover -s backend/tests -p 'test_location.py' -v`. Details: [location](../docs/features/13-location.md).
 
 ## Workforce hub (workers / service partners)
 

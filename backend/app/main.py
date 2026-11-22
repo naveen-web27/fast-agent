@@ -1,4 +1,5 @@
 """RightConnect FastAPI application entry point."""
+import asyncio
 import secrets
 from pathlib import Path
 
@@ -9,6 +10,8 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import get_settings
+from app.db.session import engine
+from app.features.locations.loader import ensure_directory_loaded
 from app.features.router import feature_router
 
 settings = get_settings()
@@ -22,6 +25,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(feature_router, prefix=settings.api_prefix)
+
+
+@app.on_event("startup")
+async def load_reference_data() -> None:
+    # Runs in the background so the server starts answering immediately.
+    asyncio.get_running_loop().create_task(ensure_directory_loaded(engine))
 
 admin_page = Path(__file__).resolve().parents[1] / "admin" / "index.html"
 admin_basic = HTTPBasic(realm="RightConnect admin")

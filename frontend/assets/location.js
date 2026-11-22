@@ -63,7 +63,7 @@
     if (!place) return '';
     const parts = [place.area, place.district].filter(Boolean);
     const unique = parts.filter((part, index) => parts.findIndex((other) => other.toLowerCase() === part.toLowerCase()) === index);
-    return unique.join(', ') || place.pincode || '';
+    return unique.join(', ') || (place.pincode ? `PIN ${place.pincode}` : '');
   }
 
   async function search(query) {
