@@ -3,7 +3,7 @@ from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 from app.core.location import normalize_pincode
 from app.features.auth.schemas import normalize_phone
@@ -144,6 +144,12 @@ class AdminWorkerCreate(WorkerCreate):
     """An admin adding a real local worker who isn't on RightConnect yet; adult_confirmed is the admin's check."""
 
     full_name: str = Field(min_length=2, max_length=120)
+    contact_email: EmailStr | None = None
+
+    @field_validator("contact_email", mode="before")
+    @classmethod
+    def _blank_email(cls, value):
+        return blank_to_none(value)
 
 
 class ClaimCodeOut(BaseModel):
@@ -227,6 +233,7 @@ class WorkerDetail(WorkerSummary):
 
 class MyWorkerProfile(WorkerDetail):
     contact_phone: str | None
+    contact_email: str | None = None
     show_contact: bool = False
     self_skills: list[str]
 
@@ -434,7 +441,81 @@ class DirectContact(BaseModel):
     """A phone number to call or WhatsApp; only returned to signed-in users when the owner allows it."""
 
     name: str
-    phone: str
+    phone: str | None
+    email: str | None = None
+    # Worker contacts only: the viewer's daily limit of new contacts and how many are left today (None = no limit).
+    daily_limit: int | None = None
+    left_today: int | None = None
+
+
+class ContactViewOut(BaseModel):
+    """Someone who viewed the worker's number, shown to the worker so they know who may call."""
+
+    id: UUID
+    viewer_name: str
+    company_name: str | None
+    first_viewed_at: datetime
+    last_viewed_at: datetime
+    view_count: int
+    reported: bool
+
+
+class ContactReport(BaseModel):
+    reason: str = Field(min_length=3, max_length=500)
+
+    @field_validator("reason")
+    @classmethod
+    def _collapse(cls, value: str) -> str:
+        value = " ".join(value.split())
+        if len(value) < 3:
+            raise ValueError("Tell us briefly what happened")
+        return value
+
+
+class AdminContactReportOut(BaseModel):
+    id: UUID
+    worker_id: UUID
+    worker_name: str
+    viewer_user_id: UUID
+    viewer_name: str
+    viewer_email: str
+    viewer_blocked: bool
+    view_count: int
+    first_viewed_at: datetime
+    reported_at: datetime
+    report_reason: str | None
+    # How many different workers reported this viewer.
+    report_count: int = 1
+
+
+class WorkerMerge(BaseModel):
+    """Merge an admin-made worker profile into the worker's own account profile."""
+
+    into_worker_id: UUID
+
+
+class WorkerLinkOut(BaseModel):
+    """A new personal link key, shown to the admin once so it can be sent to the worker."""
+
+    worker_id: UUID
+    display_name: str
+    key: str
+    contact_phone: str | None
+
+
+class LinkProfile(BaseModel):
+    """What a worker sees on their personal link page."""
+
+    display_name: str
+    headline: str
+    city: str | None
+    area: str | None
+    availability: AvailabilityValue
+    busy_until: date | None
+    # True once the profile is attached to a Google/email account.
+    connected: bool
+    hires: list[HireOut]
+    contact_views: list[ContactViewOut] = []
 
 
 class AdminWorkerOut(BaseModel):
@@ -453,3 +534,10 @@ class AdminWorkerOut(BaseModel):
     blocked_reason: str | None
     deleted_at: datetime | None
     created_at: datetime
+    has_link: bool = False
+    # Another live worker profile uses the same phone number (e.g. the worker also signed up on their own).
+    possible_duplicate: bool = False
+    contact_email: str | None = None
+    # For an admin-made profile: the worker's own account profile with the same phone, which it can be merged into.
+    merge_into_id: UUID | None = None
+    merge_into_email: str | None = None

@@ -15,6 +15,8 @@ TEAM_SEAT_LIMIT = 10
 SOCIAL_LINK_LIMIT = {False: 5, True: 10}
 CREDENTIAL_LIMIT = {False: 1, True: 10}
 OFFERING_LIMIT = 20
+# New worker contacts ("View contact") a signed-in user can open per day (India time); re-opening one doesn't count.
+CONTACT_DAILY_LIMIT = {SubscriptionTier.FREE: 10, SubscriptionTier.PRO: 20, SubscriptionTier.ENTERPRISE: 30}
 
 
 class PlanRequiredError(Exception):

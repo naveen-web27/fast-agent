@@ -26,7 +26,7 @@ from app.features.auth.schemas import (
 )
 from app.features.marketplace.service import count_resolved_clients
 from app.features.workers.schemas import WorkerCreate
-from app.features.workers.service import effective_availability, new_worker_for_user
+from app.features.workers.service import attach_worker, effective_availability, new_worker_for_user, worker_for_link_key
 from app.models.email_verification import EmailVerification
 from app.models.organization_invite import OrganizationInvite
 from app.models.organization_member import MemberRole, OrganizationMember
@@ -179,6 +179,15 @@ async def create_user_profile(
                 verification=VerificationStatus.PENDING,
             )
         )
+    elif role is UserRole.WORKER and payload.worker_key:
+        # Opened from their personal link: keep the profile RightConnect made instead of creating a second one.
+        linked = await worker_for_link_key(session, payload.worker_key)
+        if linked is None:
+            raise SignupFieldConflictError(
+                "worker_key",
+                "Your worker link no longer works or is already connected. Ask RightConnect for a new link.",
+            )
+        attach_worker(linked, user)
     elif role is UserRole.WORKER:
         session.add(
             new_worker_for_user(

@@ -44,7 +44,14 @@ from app.features.claims.schemas import AdminClaimOut, ClaimRejection, Unclaimed
 from app.features.claims.service import approve_claim, create_unclaimed_listing, list_claims_for_admin, reject_claim
 from app.features.workers import service as worker_service
 from app.features.workers.router import run_worker_action
-from app.features.workers.schemas import AdminWorkerCreate, AdminWorkerOut, ClaimCodeOut
+from app.features.workers.schemas import (
+    AdminContactReportOut,
+    AdminWorkerCreate,
+    AdminWorkerOut,
+    ClaimCodeOut,
+    WorkerLinkOut,
+    WorkerMerge,
+)
 from app.models.profile import VerificationStatus
 from app.models.user import User, UserRole, active_user_by_auth_id
 from app.security.dependencies import get_current_auth_user_id
@@ -201,7 +208,7 @@ async def reject(
 
 @router.get("/workers", response_model=list[AdminWorkerOut])
 async def admin_workers(
-    status_filter: str = Query(default="all", alias="status", pattern="^(unclaimed|claimed|blocked|deleted|all)$"),
+    status_filter: str = Query(default="all", alias="status", pattern="^(unclaimed|claimed|duplicates|blocked|deleted|all)$"),
     q: str | None = Query(default=None, max_length=120),
     _: User = Depends(require_platform_admin),
     session: AsyncSession = Depends(get_db),
@@ -225,12 +232,51 @@ async def admin_worker_code(
     return await run_worker_action(worker_service.admin_new_claim_code(session, admin, worker_id))
 
 
+@router.post("/workers/{worker_id}/access-link", response_model=WorkerLinkOut)
+async def admin_worker_link(
+    worker_id: UUID, admin: User = Depends(require_platform_admin), session: AsyncSession = Depends(get_db)
+) -> WorkerLinkOut:
+    """Create or reset the worker's personal link (the key is shown once; earlier links stop working)."""
+    return await run_worker_action(worker_service.admin_worker_link(session, admin, worker_id))
+
+
+@router.delete("/workers/{worker_id}/access-link", status_code=status.HTTP_204_NO_CONTENT)
+async def admin_worker_link_off(
+    worker_id: UUID, admin: User = Depends(require_platform_admin), session: AsyncSession = Depends(get_db)
+) -> None:
+    await run_worker_action(worker_service.admin_revoke_worker_link(session, admin, worker_id))
+
+
 @router.post("/workers/{worker_id}/block")
 async def admin_block_worker(
     worker_id: UUID, payload: BlockProfilePayload, admin: User = Depends(require_platform_admin), session: AsyncSession = Depends(get_db)
 ) -> dict[str, str]:
     await run_worker_action(worker_service.admin_moderate_worker(session, admin, worker_id, "block", payload.reason))
     return {"status": "blocked"}
+
+
+@router.post("/workers/{worker_id}/merge")
+async def admin_merge_worker(
+    worker_id: UUID, payload: WorkerMerge, admin: User = Depends(require_platform_admin), session: AsyncSession = Depends(get_db)
+) -> dict[str, str]:
+    """Move an admin-made profile into the worker's own account profile (same phone) and delete the copy."""
+    await run_worker_action(worker_service.admin_merge_worker(session, admin, worker_id, payload.into_worker_id))
+    return {"status": "merged"}
+
+
+@router.get("/contact-reports", response_model=list[AdminContactReportOut])
+async def contact_reports(
+    _: User = Depends(require_platform_admin), session: AsyncSession = Depends(get_db)
+) -> list[AdminContactReportOut]:
+    """Callers that workers reported after viewing their number."""
+    return await worker_service.admin_contact_reports(session)
+
+
+@router.post("/contact-reports/{view_id}/dismiss", status_code=status.HTTP_204_NO_CONTENT)
+async def dismiss_contact_report(
+    view_id: UUID, admin: User = Depends(require_platform_admin), session: AsyncSession = Depends(get_db)
+) -> None:
+    await run_worker_action(worker_service.admin_dismiss_contact_report(session, admin, view_id))
 
 
 @router.post("/workers/{worker_id}/{action}")

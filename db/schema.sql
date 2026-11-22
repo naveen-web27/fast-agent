@@ -462,10 +462,15 @@ CREATE TABLE worker_profiles (
     busy_until DATE,
     availability_updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     contact_phone TEXT,
+    -- Email shown with the phone on "View contact" (admin-collected; self-signed workers use their account email).
+    contact_email TEXT,
     avatar_url TEXT,
     claim_status TEXT NOT NULL DEFAULT 'claimed' CHECK (claim_status IN ('unclaimed', 'claimed')),
     claim_code_hash TEXT,
     claim_code_expires_at TIMESTAMPTZ,
+    -- Personal worker link (hash only) for workers who can't use Google/email sign-in.
+    access_key_hash TEXT,
+    access_key_created_at TIMESTAMPTZ,
     claimed_at TIMESTAMPTZ,
     adult_confirmed_at TIMESTAMPTZ,
     created_by UUID REFERENCES users(id) ON DELETE SET NULL,
@@ -478,6 +483,7 @@ CREATE TABLE worker_profiles (
     CONSTRAINT worker_profiles_rate_range_check CHECK (rate_max IS NULL OR (rate_amount IS NOT NULL AND rate_max >= rate_amount))
 );
 CREATE UNIQUE INDEX worker_profiles_user_active_idx ON worker_profiles(user_id) WHERE user_id IS NOT NULL AND deleted_at IS NULL;
+CREATE UNIQUE INDEX worker_profiles_access_key_idx ON worker_profiles(access_key_hash) WHERE access_key_hash IS NOT NULL;
 CREATE UNIQUE INDEX worker_profiles_claim_code_idx ON worker_profiles(claim_code_hash) WHERE claim_code_hash IS NOT NULL;
 CREATE INDEX worker_profiles_search_idx ON worker_profiles(city, availability) WHERE deleted_at IS NULL AND blocked_at IS NULL;
 CREATE INDEX worker_profiles_pincode_idx ON worker_profiles(pincode) WHERE deleted_at IS NULL;
@@ -559,8 +565,24 @@ CREATE TABLE worker_reviews (
 );
 CREATE INDEX worker_reviews_worker_idx ON worker_reviews(worker_id, created_at DESC);
 
-REVOKE ALL ON worker_profiles, job_posts, worker_hires, worker_experiences, worker_reviews FROM anon, authenticated;
-GRANT ALL ON worker_profiles, job_posts, worker_hires, worker_experiences, worker_reviews TO service_role;
+-- Who viewed a worker's phone/email (migration 030): one row per (worker, viewer); new rows count toward the
+-- viewer's daily contact limit. Workers can report a caller; admins review the reports.
+CREATE TABLE worker_contact_views (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    worker_id UUID NOT NULL REFERENCES worker_profiles(id) ON DELETE CASCADE,
+    viewer_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    first_viewed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_viewed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    view_count INTEGER NOT NULL DEFAULT 1,
+    reported_at TIMESTAMPTZ,
+    report_reason TEXT,
+    CONSTRAINT worker_contact_views_once UNIQUE (worker_id, viewer_user_id)
+);
+CREATE INDEX worker_contact_views_viewer_idx ON worker_contact_views(viewer_user_id, first_viewed_at DESC);
+CREATE INDEX worker_contact_views_reported_idx ON worker_contact_views(reported_at DESC) WHERE reported_at IS NOT NULL;
+
+REVOKE ALL ON worker_profiles, job_posts, worker_hires, worker_experiences, worker_reviews, worker_contact_views FROM anon, authenticated;
+GRANT ALL ON worker_profiles, job_posts, worker_hires, worker_experiences, worker_reviews, worker_contact_views TO service_role;
 
 -- PIN code directory (migration 026); rows loaded by db/scripts/import_pincodes.py.
 CREATE EXTENSION IF NOT EXISTS pg_trgm;

@@ -108,19 +108,28 @@
         <div><label for="wk-city">City *</label><input id="wk-city" maxlength="100" required></div>
         <div><label for="wk-area">Area</label><input id="wk-area" maxlength="100"></div>
         <div><label for="wk-pincode">PIN code *</label><input id="wk-pincode" inputmode="numeric" maxlength="7" placeholder="600042"></div>
-        <div><label for="wk-phone">Phone (private)</label><input id="wk-phone" type="tel" maxlength="30" placeholder="+91 98765 43210"></div>
+        <div><label for="wk-phone">Phone / WhatsApp</label><input id="wk-phone" type="tel" maxlength="30" placeholder="+91 98765 43210"></div>
+        <div><label for="wk-email">Email (optional)</label><input id="wk-email" type="email" maxlength="254" placeholder="name@gmail.com"></div>
         <div><label for="wk-years">Years of experience</label><input id="wk-years" type="number" min="0" max="70"></div>
       </div>
       <div class="full"><label for="wk-skills">Skills (comma separated, shown as self-declared)</label><input id="wk-skills" maxlength="1200"></div>
       <div class="full"><label for="wk-languages">Languages (comma separated)</label><input id="wk-languages" maxlength="300" placeholder="Tamil, English"></div>
       <div class="full"><label style="display:flex;gap:8px;align-items:center;font-weight:700"><input id="wk-adult" type="checkbox" style="width:auto"> I checked this person is 18 or older</label></div>
+      <div class="full"><label style="display:flex;gap:8px;align-items:center;font-weight:700"><input id="wk-show-contact" type="checkbox" style="width:auto" checked> They agreed signed-in employers may view this phone/email ("View contact"; each view is logged)</label></div>
       <div class="error" id="worker-error"></div>
       <div class="row"><button class="btn" type="button" id="worker-cancel">Cancel</button><button class="btn primary" type="submit" id="worker-save">Add worker</button></div>
     </form>
     <div id="worker-code-box" hidden>
       <p>Give this code to <b id="worker-code-name"></b>. It works once and expires on <span id="worker-code-expiry"></span>. It won't be shown again; you can issue a new one from the Workers tab.</p>
       <p style="font:800 28px/1.2 'DM Mono',monospace;letter-spacing:.08em;color:var(--ink);text-align:center;margin:10px 0" id="worker-code"></p>
-      <div class="row"><button class="btn" type="button" id="worker-code-copy">Copy</button><button class="btn primary" type="button" id="worker-code-done">Done</button></div>
+      <p>No Google account? Send them a <b>worker link</b> instead: they open it on their phone to set when they're free and answer job requests, with no sign-in.</p>
+      <div class="row"><button class="btn" type="button" id="worker-code-copy">Copy code</button><button class="btn" type="button" id="worker-code-link">Create worker link</button><button class="btn primary" type="button" id="worker-code-done">Done</button></div>
+    </div>
+    <div id="worker-link-box" hidden>
+      <p>Send this private link to <b id="worker-link-name"></b>. Opening it lets them set when they're free and accept or decline job requests, without signing in. Anyone with the link can do that, so send it only to them. It is shown once; <b>Reset link</b> on the Workers tab makes a new one and stops this one.</p>
+      <p style="padding:10px;border-radius:8px;background:#f5f7fb;font:700 13px/1.4 'DM Mono',monospace;word-break:break-all" id="worker-link-url"></p>
+      <p class="meta" id="worker-link-phone"></p>
+      <div class="row"><button class="btn" type="button" id="worker-link-copy">Copy link</button><a class="btn primary" id="worker-link-wa" target="_blank" rel="noopener" style="text-decoration:none;background:#128c4a;border-color:#128c4a">Send on WhatsApp</a><button class="btn" type="button" id="worker-link-done">Done</button></div>
     </div>
   </div>
   <div class="modal wide" id="business-modal" role="dialog" aria-modal="true" aria-labelledby="business-title" hidden>
@@ -155,7 +164,7 @@
     const FILTERS = {
       profiles: [['pending', 'Pending'], ['verified', 'Verified'], ['rejected', 'Rejected'], ['unclaimed', 'Unclaimed'], ['blocked', 'Blocked'], ['deleted', 'Deleted'], ['all', 'All']],
       claims: [['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['all', 'All']],
-      workers: [['all', 'All'], ['unclaimed', 'Unclaimed'], ['claimed', 'Claimed'], ['blocked', 'Blocked'], ['deleted', 'Deleted']],
+      workers: [['all', 'All'], ['unclaimed', 'Unclaimed'], ['claimed', 'Claimed'], ['duplicates', 'To merge'], ['reported', 'Reported callers'], ['blocked', 'Blocked'], ['deleted', 'Deleted']],
       users: [['active', 'Active'], ['blocked', 'Blocked'], ['deleted', 'Deleted'], ['all', 'All']],
     };
 
@@ -271,6 +280,7 @@
           if (searchInput.value.trim()) params.set('q', searchInput.value.trim());
           return renderList(await api(`/admin/profiles?${params}`), renderProfileCard, 'profiles');
         }
+        if (section === 'workers' && filterState.workers === 'reported') return renderList(await api('/admin/contact-reports'), renderReportCard, 'reported callers');
         if (section === 'workers') {
           const params = new URLSearchParams({ status: filterState.workers });
           if (searchInput.value.trim()) params.set('q', searchInput.value.trim());
@@ -433,14 +443,18 @@
       const blocked = Boolean(worker.blocked_at);
       const unclaimed = worker.claim_status === 'unclaimed';
       const buttons = deleted ? [['restore', 'Restore', 'primary']] : [
-        ...(unclaimed ? [['code', 'New claim code', 'primary']] : []),
+        ...(worker.merge_into_id ? [['merge', 'Merge into account', 'primary']] : []),
+        ['link', worker.has_link ? 'Reset link' : 'Worker link', 'primary'],
+        ...(worker.has_link ? [['link-off', 'Turn off link']] : []),
+        ...(unclaimed ? [['code', 'New claim code']] : []),
         blocked ? ['unblock', 'Unblock'] : ['block', 'Block'],
         ['delete', 'Delete', 'danger'],
       ];
       const element = card(`
-        <strong>${escapeHtml(worker.display_name)}<span class="badge ${unclaimed ? 'unclaimed' : 'verified'}">${escapeHtml(worker.claim_status)}</span>${blocked ? '<span class="badge blocked">blocked</span>' : ''}${deleted ? '<span class="badge deleted">deleted</span>' : ''}</strong>
+        <strong>${escapeHtml(worker.display_name)}<span class="badge ${unclaimed ? 'unclaimed' : 'verified'}">${escapeHtml(worker.claim_status)}</span>${worker.has_link ? '<span class="badge verified">link on</span>' : ''}${worker.possible_duplicate ? '<span class="badge blocked" title="Another worker profile uses the same phone number">possible duplicate</span>' : ''}${blocked ? '<span class="badge blocked">blocked</span>' : ''}${deleted ? '<span class="badge deleted">deleted</span>' : ''}</strong>
         <small>${escapeHtml(worker.headline)} · 📍 ${escapeHtml([worker.area, worker.city, worker.pincode].filter(Boolean).join(', ') || 'no location')} · ${escapeHtml(worker.availability)}</small>
-        <div class="meta">${worker.owner_email ? escapeHtml(worker.owner_email) : 'Not claimed yet'}${worker.contact_phone ? ' · ' + escapeHtml(worker.contact_phone) : ''} · ${worker.review_count} review${worker.review_count === 1 ? '' : 's'} · added ${formatDate(worker.created_at)}</div>
+        <div class="meta">${worker.owner_email ? escapeHtml(worker.owner_email) : 'Not claimed yet'}${worker.contact_phone ? ' · ' + escapeHtml(worker.contact_phone) : ''}${worker.contact_email ? ' · ' + escapeHtml(worker.contact_email) : ''} · ${worker.review_count} review${worker.review_count === 1 ? '' : 's'} · added ${formatDate(worker.created_at)}</div>
+        ${worker.merge_into_id ? `<div class="reason">Same phone as ${escapeHtml(worker.merge_into_email)}'s own worker account. Merge moves this profile's jobs, reviews, work history and link into that account.</div>` : ''}
         ${blocked && worker.blocked_reason ? `<div class="reason">Blocked: ${escapeHtml(worker.blocked_reason)}</div>` : ''}`, buttons);
       element.querySelectorAll('[data-action]').forEach((button) => button.addEventListener('click', () => workerAction(worker, button.dataset.action)));
       return element;
@@ -453,6 +467,22 @@
         return openConfirm({ title: `New claim code for ${name}?`, text: 'Any earlier code for this profile stops working.', okLabel: 'Create code', danger: false,
           onConfirm: async () => { showWorkerCode(await api(`${base}/claim-code`, { method: 'POST' })); } });
       }
+      if (action === 'link') {
+        return openConfirm({ title: worker.has_link ? `Reset ${name}'s link?` : `Create a worker link for ${name}?`,
+          text: worker.has_link ? 'Their current link stops working. Send them the new one.' : 'They can open it on their phone to set when they are free and answer job requests, without signing in.',
+          okLabel: worker.has_link ? 'Reset link' : 'Create link', danger: false,
+          onConfirm: async () => { showWorkerLink(await api(`${base}/access-link`, { method: 'POST' })); load(); } });
+      }
+      if (action === 'merge') {
+        return openConfirm({ title: `Merge ${name} into ${worker.merge_into_email}?`,
+          text: 'Their jobs, reviews, work history, worker link and contact log move to the account the worker signed up with. This admin-made copy is then deleted. Both use the same phone number.',
+          okLabel: 'Merge', danger: false,
+          onConfirm: async () => { await api(`${base}/merge`, { method: 'POST', body: JSON.stringify({ into_worker_id: worker.merge_into_id }) }); done(`${name} merged.`); } });
+      }
+      if (action === 'link-off') {
+        return openConfirm({ title: `Turn off ${name}'s link?`, text: 'The link stops working. If they have no Google account, they cannot answer requests until you create a new link.', okLabel: 'Turn off',
+          onConfirm: async () => { await api(`${base}/access-link`, { method: 'DELETE' }); done('Link turned off.'); } });
+      }
       if (action === 'block') {
         return openConfirm({ title: `Block ${name}?`, text: 'Their worker profile disappears from search and they can\'t apply to jobs.', needsReason: true, okLabel: 'Block',
           onConfirm: async (reason) => { await api(`${base}/block`, { method: 'POST', body: JSON.stringify({ reason }) }); done(`${name} blocked.`); } });
@@ -461,11 +491,56 @@
       openConfirm({ title: `${texts[action][0]} ${name}?`, text: texts[action][1], okLabel: texts[action][0], danger: action === 'delete',
         onConfirm: async () => { await api(`${base}/${action}`, { method: 'POST' }); done(`${name}: ${action} done.`); } });
     }
+    function renderReportCard(report) {
+      const element = card(`
+        <strong>${escapeHtml(report.viewer_name)}${report.viewer_blocked ? '<span class="badge blocked">blocked</span>' : ''}${report.report_count > 1 ? `<span class="badge blocked">${report.report_count} reports</span>` : ''}</strong>
+        <small>${escapeHtml(report.viewer_email)} · reported by worker ${escapeHtml(report.worker_name)} · ${formatDate(report.reported_at)}</small>
+        <div class="meta">Viewed the number ${report.view_count} time${report.view_count === 1 ? '' : 's'}, first on ${formatDate(report.first_viewed_at)}</div>
+        ${report.report_reason ? `<div class="reason">“${escapeHtml(report.report_reason)}”</div>` : ''}`,
+        [...(report.viewer_blocked ? [] : [['block', 'Block this account', 'danger']]), ['dismiss', 'Dismiss']]);
+      element.querySelectorAll('[data-action]').forEach((button) => button.addEventListener('click', () => {
+        const done = (text) => { showToast(text, 'success'); load(); };
+        if (button.dataset.action === 'block') {
+          return openConfirm({ title: `Block ${report.viewer_name}?`, text: 'Their account is suspended and all their profiles are hidden.', needsReason: true, okLabel: 'Block',
+            onConfirm: async (reason) => { await api(`/admin/users/${report.viewer_user_id}/block`, { method: 'POST', body: JSON.stringify({ reason }) }); done(`${report.viewer_name} blocked.`); } });
+        }
+        openConfirm({ title: 'Dismiss this report?', text: 'Use this when the report was a mistake. The view stays in the worker\'s list.', okLabel: 'Dismiss', danger: false,
+          onConfirm: async () => { await api(`/admin/contact-reports/${report.id}/dismiss`, { method: 'POST' }); done('Report dismissed.'); } });
+      }));
+      return element;
+    }
     const workerModal = document.querySelector('#worker-modal');
     const workerForm = document.querySelector('#worker-form');
     function closeWorkerModal() { workerModal.hidden = true; document.querySelector('#modal-scrim').hidden = true; }
-    function showWorkerCode(result) {
+    let codeWorkerId = null;
+    function showWorkerLink(result) {
+      const url = `${location.origin}/pages/worker.html#k=${encodeURIComponent(result.key)}`;
+      const digits = String(result.contact_phone || '').replace(/\D/g, '');
+      const text = `Hi ${result.display_name}, this is your RightConnect work link. Open it to say when you're free for work and to accept job requests. Keep it private:\n${url}`;
       workerForm.hidden = true;
+      document.querySelector('#worker-code-box').hidden = true;
+      document.querySelector('#worker-link-box').hidden = false;
+      document.querySelector('#worker-link-name').textContent = result.display_name;
+      document.querySelector('#worker-link-url').textContent = url;
+      document.querySelector('#worker-link-phone').textContent = digits ? `WhatsApp will open a chat with ${result.contact_phone}.` : 'No phone number on file: copy the link and send it yourself.';
+      const wa = document.querySelector('#worker-link-wa');
+      wa.href = digits ? `https://wa.me/${digits}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`;
+      document.querySelector('#modal-scrim').hidden = false;
+      workerModal.hidden = false;
+    }
+    document.querySelector('#worker-link-copy').addEventListener('click', () => { navigator.clipboard?.writeText(document.querySelector('#worker-link-url').textContent).then(() => showToast('Link copied.', 'success')); });
+    document.querySelector('#worker-link-done').addEventListener('click', () => { closeWorkerModal(); load(); });
+    document.querySelector('#worker-code-link').addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      try { showWorkerLink(await api(`/admin/workers/${codeWorkerId}/access-link`, { method: 'POST' })); }
+      catch (error) { showToast(error.message, 'error'); }
+      finally { button.disabled = false; }
+    });
+    function showWorkerCode(result) {
+      codeWorkerId = result.worker_id;
+      workerForm.hidden = true;
+      document.querySelector('#worker-link-box').hidden = true;
       document.querySelector('#worker-code-box').hidden = false;
       document.querySelector('#worker-code-name').textContent = result.display_name;
       document.querySelector('#worker-code').textContent = result.claim_code;
@@ -477,6 +552,7 @@
       workerForm.reset();
       workerForm.hidden = false;
       document.querySelector('#worker-code-box').hidden = true;
+      document.querySelector('#worker-link-box').hidden = true;
       document.querySelector('#worker-error').textContent = '';
       document.querySelector('#modal-scrim').hidden = false;
       workerModal.hidden = false;
@@ -500,8 +576,9 @@
       try {
         showWorkerCode(await api('/admin/workers', { method: 'POST', body: JSON.stringify({
           full_name: value('#wk-name'), headline: value('#wk-headline'), city: value('#wk-city'), area: value('#wk-area') || null, pincode: value('#wk-pincode').replace(/\s/g, ''),
-          contact_phone: value('#wk-phone') || null, years_experience: value('#wk-years') === '' ? null : Number(value('#wk-years')),
+          contact_phone: value('#wk-phone') || null, contact_email: value('#wk-email') || null, years_experience: value('#wk-years') === '' ? null : Number(value('#wk-years')),
           skills: split(value('#wk-skills')), languages: split(value('#wk-languages')), adult_confirmed: true,
+          show_contact: document.querySelector('#wk-show-contact').checked,
         }) }));
       } catch (error) { errorBox.textContent = error.message; }
       finally { save.disabled = false; }

@@ -3,7 +3,7 @@ from collections.abc import Awaitable
 from typing import Literal, TypeVar
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
@@ -12,6 +12,8 @@ from app.features.workers.schemas import (
     AvailabilityUpdate,
     ClaimWorkerPayload,
     CompanyOption,
+    ContactReport,
+    ContactViewOut,
     DirectContact,
     EmployerExperienceCreate,
     ExperienceConfirm,
@@ -22,6 +24,7 @@ from app.features.workers.schemas import (
     JobApply,
     JobCreate,
     JobOut,
+    LinkProfile,
     LocationUpdate,
     MyWorkerProfile,
     ReviewCreate,
@@ -41,6 +44,7 @@ ERROR_STATUS = {
     service.WorkerIdentityError: status.HTTP_404_NOT_FOUND,
     service.WorkerAccessError: status.HTTP_403_FORBIDDEN,
     service.WorkerConflictError: status.HTTP_409_CONFLICT,
+    service.WorkerLimitError: status.HTTP_429_TOO_MANY_REQUESTS,
 }
 
 
@@ -123,6 +127,67 @@ async def remove_experience(
     experience_id: UUID, auth_user_id: UUID = Depends(get_current_auth_user_id), session: AsyncSession = Depends(get_db)
 ) -> MyWorkerProfile:
     return await run_worker_action(service.delete_my_experience(session, auth_user_id, experience_id))
+
+
+@router.get("/me/contact-views", response_model=list[ContactViewOut])
+async def my_contact_views(
+    auth_user_id: UUID = Depends(get_current_auth_user_id), session: AsyncSession = Depends(get_db)
+) -> list[ContactViewOut]:
+    """Who viewed my phone number, newest first."""
+    return await run_worker_action(service.my_contact_views(session, auth_user_id))
+
+
+@router.post("/me/contact-views/{view_id}/report", response_model=list[ContactViewOut])
+async def report_contact_view(
+    view_id: UUID,
+    payload: ContactReport,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> list[ContactViewOut]:
+    """Report someone who misused my number; RightConnect reviews it."""
+    return await run_worker_action(service.report_my_contact_view(session, auth_user_id, view_id, payload.reason))
+
+
+def link_key(x_worker_key: str = Header(min_length=16, max_length=64, description="Key from the worker's personal link")) -> str:
+    return x_worker_key
+
+
+@router.get("/link/me", response_model=LinkProfile)
+async def link_me(key: str = Depends(link_key), session: AsyncSession = Depends(get_db)) -> LinkProfile:
+    """The worker's own page, opened from their personal link (no Google/email sign-in)."""
+    return await run_worker_action(service.link_profile(session, key))
+
+
+@router.put("/link/me/availability", response_model=LinkProfile)
+async def link_availability(
+    payload: AvailabilityUpdate, key: str = Depends(link_key), session: AsyncSession = Depends(get_db)
+) -> LinkProfile:
+    return await run_worker_action(service.link_set_availability(session, key, payload))
+
+
+@router.post("/link/me/hires/{hire_id}/{action}", response_model=LinkProfile)
+async def link_hire(
+    hire_id: UUID,
+    action: Literal["accept", "decline", "cancel"],
+    key: str = Depends(link_key),
+    session: AsyncSession = Depends(get_db),
+) -> LinkProfile:
+    return await run_worker_action(service.link_hire_action(session, key, hire_id, action))
+
+
+@router.post("/link/me/contact-views/{view_id}/report", response_model=LinkProfile)
+async def link_report(
+    view_id: UUID, payload: ContactReport, key: str = Depends(link_key), session: AsyncSession = Depends(get_db)
+) -> LinkProfile:
+    return await run_worker_action(service.link_report_contact_view(session, key, view_id, payload.reason))
+
+
+@router.post("/link/connect", response_model=MyWorkerProfile)
+async def link_connect(
+    key: str = Depends(link_key), auth_user_id: UUID = Depends(get_current_auth_user_id), session: AsyncSession = Depends(get_db)
+) -> MyWorkerProfile:
+    """Attach the link's profile to the signed-in Google/email account (no second profile is made)."""
+    return await run_worker_action(service.link_connect_account(session, auth_user_id, key))
 
 
 @router.post("/claim", response_model=MyWorkerProfile)
@@ -236,11 +301,11 @@ async def worker_detail(worker_id: UUID, session: AsyncSession = Depends(get_db)
     return await run_worker_action(service.get_worker(session, worker_id))
 
 
-@router.get("/{worker_id}/contact", response_model=DirectContact)
+@router.post("/{worker_id}/contact", response_model=DirectContact)
 async def contact_worker(
     worker_id: UUID, auth_user_id: UUID = Depends(get_current_auth_user_id), session: AsyncSession = Depends(get_db)
 ) -> DirectContact:
-    """The worker's number to call or WhatsApp (signed-in users, when the worker allows direct contact)."""
+    """View the worker's phone/WhatsApp/email. Logged for the worker; new workers count toward the daily limit."""
     return await run_worker_action(service.worker_contact(session, auth_user_id, worker_id))
 
 

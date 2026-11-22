@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f5c47">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+  <title>My work page | RightConnect</title>
+  <style>
+    :root { --ink:#142928; --muted:#536665; --line:#d8e6df; --ok:#1f9d55; --busy:#d89614; --off:#8a9796; --green:#0f5c47; --danger:#b64747; }
+    * { box-sizing:border-box; } [hidden] { display:none !important; }
+    body { margin:0; color:var(--ink); background:#f2f7f3; font:16px/1.45 Manrope,system-ui,sans-serif; }
+    header { display:flex; align-items:center; gap:10px; padding:14px 18px; background:#fff; border-bottom:1px solid var(--line); font-weight:800; }
+    header img { width:30px; height:30px; }
+    main { max-width:560px; margin:0 auto; padding:18px 16px 60px; }
+    h1 { margin:6px 0 2px; font-size:26px; line-height:1.2; }
+    .sub { margin:0 0 18px; color:var(--muted); }
+    .card { margin-bottom:16px; padding:18px; border:1px solid var(--line); border-radius:16px; background:#fff; }
+    .card h2 { margin:0 0 12px; font-size:19px; }
+    .lights { display:grid; gap:10px; }
+    .light { display:flex; align-items:center; gap:14px; width:100%; min-height:64px; padding:0 18px; border:3px solid var(--line); border-radius:14px; background:#fff; color:var(--ink); font:800 19px Manrope,system-ui,sans-serif; text-align:left; cursor:pointer; }
+    .light i { width:22px; height:22px; border-radius:50%; flex:none; }
+    .light.available i { background:var(--ok); } .light.busy i { background:var(--busy); } .light.offline i { background:var(--off); }
+    .light.on.available { border-color:var(--ok); background:#e6f6ec; } .light.on.busy { border-color:var(--busy); background:#fff6e2; } .light.on.offline { border-color:var(--off); background:#f1f3f3; }
+    .light.on::after { content:'✓'; margin-left:auto; font-size:22px; }
+    .busy-date { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:12px; font-weight:700; }
+    .busy-date input { min-height:48px; padding:0 12px; border:2px solid var(--line); border-radius:10px; font:inherit; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:52px; padding:0 18px; border:0; border-radius:12px; font:800 17px Manrope,system-ui,sans-serif; text-decoration:none; cursor:pointer; }
+    .btn:disabled { opacity:.6; }
+    .btn.green { color:#fff; background:var(--green); } .btn.red { color:var(--danger); background:#fff; border:2px solid #f0c4bd; }
+    .btn.wa { color:#fff; background:#128c4a; } .btn.call { color:var(--ink); background:#fff; border:2px solid var(--line); }
+    .btn.plain { min-height:44px; color:var(--ink); background:#fff; border:2px solid var(--line); font-size:15px; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+    .job { padding:14px 0; border-top:1px solid var(--line); } .job:first-of-type { border-top:0; padding-top:0; }
+    .job strong { display:block; font-size:18px; }
+    .job .meta { color:var(--muted); font-size:15px; }
+    .tag { display:inline-block; margin-top:6px; padding:3px 10px; border-radius:999px; font-size:13px; font-weight:800; }
+    .tag.pending { color:#7a5b00; background:#fff4d6; } .tag.accepted { color:#0b6b4f; background:#e1f6ee; } .tag.completed { color:#33507f; background:#e8eefb; } .tag.declined,.tag.cancelled { color:#6b7280; background:#eef0f2; }
+    .empty { color:var(--muted); }
+    .status { margin:0 0 16px; padding:14px 16px; border-radius:12px; background:#e1f3e8; color:#225449; font-weight:800; }
+    .status.error { background:#fff0ed; color:#922d2d; }
+    .note { color:var(--muted); font-size:14px; }
+    .center { padding:40px 10px; text-align:center; }
+  </style>
+</head>
+<body>
+  <header><img src="../assets/rightconnect-mark.svg" alt="">RightConnect · My work page</header>
+  <main>
+    <div class="status" id="status" role="status" aria-live="polite" hidden></div>
+    <div id="no-link" class="card center" hidden>
+      <h2>Open your link</h2>
+      <p class="note">Open the link RightConnect sent you on WhatsApp. If it doesn't work, ask RightConnect for a new one.</p>
+    </div>
+    <div id="page" hidden>
+      <h1 id="name"></h1>
+      <p class="sub" id="work"></p>
+
+      <section class="card">
+        <h2>Are you free for work?</h2>
+        <div class="lights">
+          <button class="light available" type="button" data-light="available"><i></i>I'm free now</button>
+          <button class="light busy" type="button" data-light="busy"><i></i>Busy</button>
+          <button class="light offline" type="button" data-light="offline"><i></i>Not working</button>
+        </div>
+        <div class="busy-date" id="busy-date" hidden>
+          <label for="busy-until">Free again from</label>
+          <input id="busy-until" type="date">
+          <button class="btn plain" type="button" id="busy-save">Save</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">Job requests</h2><button class="btn plain" type="button" id="refresh">↻ Refresh</button></div>
+        <div id="jobs" style="margin-top:14px"></div>
+      </section>
+
+      <section class="card">
+        <h2>Who saw your number</h2>
+        <p class="note" style="margin-top:0">People who opened your phone number on RightConnect. If someone troubles you, tap Report.</p>
+        <div id="viewers"></div>
+      </section>
+
+      <section class="card" id="connect-card">
+        <h2>Have a Google account? (optional)</h2>
+        <p class="note">Connect it to see your full profile, skills and work history. This page keeps working too.</p>
+        <button class="btn plain" type="button" id="connect">Connect Google account</button>
+      </section>
+      <p class="note">Keep this link private: anyone with it can change your status. If you lose your phone, ask RightConnect to reset it.</p>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const apiBase = '/api/v1';
+    const KEY_STORE = 'rightconnect-worker-key';
+    let key = null;
+    let authClient = null;
+    let data = null;
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+    function say(text, error = false) {
+      const box = document.querySelector('#status');
+      box.textContent = text;
+      box.classList.toggle('error', error);
+      box.hidden = !text;
+      if (text) window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    async function api(path, options = {}, token = null) {
+      let response;
+      try {
+        response = await fetch(`${apiBase}${path}`, { ...options, headers: { 'Content-Type': 'application/json', 'X-Worker-Key': key, ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+      } catch (_) { throw new Error('No internet. Check your connection and try again.'); }
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        const error = new Error(typeof body.detail === 'string' ? body.detail : 'Something went wrong. Please try again.');
+        error.status = response.status;
+        throw error;
+      }
+      return response.json();
+    }
+    const day = (text) => (text ? new Date(`${text}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '');
+    const whatsapp = (phone, text) => `https://wa.me/${String(phone).replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
+
+    function render() {
+      document.querySelector('#page').hidden = false;
+      document.querySelector('#name').textContent = `Hi ${data.display_name}`;
+      document.querySelector('#work').textContent = [data.headline, [data.area, data.city].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+      document.querySelectorAll('[data-light]').forEach((button) => button.classList.toggle('on', button.dataset.light === data.availability));
+      document.querySelector('#busy-date').hidden = data.availability !== 'busy';
+      document.querySelector('#busy-until').value = data.busy_until || '';
+      document.querySelector('#connect-card').hidden = data.connected;
+      renderViewers();
+      const jobs = document.querySelector('#jobs');
+      if (!data.hires.length) { jobs.innerHTML = '<p class="empty">No requests yet. Keep your status on "I\'m free" so employers nearby can find you.</p>'; return; }
+      const labels = { pending: 'Waiting for you', accepted: 'Accepted', completed: 'Done', declined: 'Declined', cancelled: 'Cancelled' };
+      jobs.innerHTML = data.hires.map((hire) => {
+        const from = hire.organization_name || hire.employer_name;
+        const needsAnswer = hire.status === 'pending' && hire.initiated_by === 'employer';
+        const contact = hire.counterpart_contact;
+        return `<div class="job">
+          <strong>${escapeHtml(hire.title)}</strong>
+          <div class="meta">From ${escapeHtml(from)}${hire.location ? ` · ${escapeHtml(hire.location)}` : ''}${hire.start_date ? ` · from ${day(hire.start_date)}` : ''}${hire.pay_offer ? ` · ${escapeHtml(hire.pay_offer)}` : ''}</div>
+          ${hire.details ? `<div class="meta">${escapeHtml(hire.details)}</div>` : ''}
+          <span class="tag ${escapeHtml(hire.status)}">${labels[hire.status] || escapeHtml(hire.status)}</span>
+          ${needsAnswer ? `<div class="row"><button class="btn green" type="button" data-act="accept" data-id="${escapeHtml(hire.id)}">✓ Accept</button><button class="btn red" type="button" data-act="decline" data-id="${escapeHtml(hire.id)}">✕ Decline</button></div>` : ''}
+          ${contact && contact.phone ? `<div class="row"><a class="btn call" href="tel:${escapeHtml(contact.phone)}">📞 Call</a><a class="btn wa" target="_blank" rel="noopener" href="${escapeHtml(whatsapp(contact.phone, `Hi ${contact.name}, this is ${data.display_name} from RightConnect about "${hire.title}".`))}">💬 WhatsApp</a></div>` : ''}
+        </div>`;
+      }).join('');
+      jobs.querySelectorAll('[data-act]').forEach((button) => button.addEventListener('click', async () => {
+        if (button.dataset.act === 'decline' && !confirm('Decline this job request?')) return;
+        jobs.querySelectorAll('[data-act]').forEach((other) => { other.disabled = true; });
+        try {
+          data = await api(`/workers/link/me/hires/${button.dataset.id}/${button.dataset.act}`, { method: 'POST' });
+          say(button.dataset.act === 'accept' ? 'Accepted. You can now call or WhatsApp the employer.' : 'Declined.');
+          render();
+        } catch (error) { say(error.message, true); render(); }
+      }));
+    }
+
+    const REPORT_REASONS = ['Calls too many times', 'Rude or abusive', 'Not about work'];
+    function renderViewers() {
+      const box = document.querySelector('#viewers');
+      const views = data.contact_views || [];
+      if (!views.length) { box.innerHTML = '<p class="empty">No one has opened your number yet.</p>'; return; }
+      box.innerHTML = views.map((view) => `<div class="job">
+          <strong>${escapeHtml(view.viewer_name)}${view.company_name ? ` · ${escapeHtml(view.company_name)}` : ''}</strong>
+          <div class="meta">Saw it on ${escapeHtml(new Date(view.last_viewed_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }))}${view.view_count > 1 ? ` · ${view.view_count} times` : ''}</div>
+          <div class="row" data-slot="${escapeHtml(view.id)}">${view.reported ? '<span class="tag declined">Reported</span>' : '<button class="btn red" type="button" data-report>⚠ Report</button>'}</div>
+        </div>`).join('');
+      box.querySelectorAll('[data-report]').forEach((button) => button.addEventListener('click', () => {
+        const slot = button.parentElement;
+        slot.innerHTML = `${REPORT_REASONS.map((reason) => `<button class="btn red" type="button" data-reason="${escapeHtml(reason)}">${escapeHtml(reason)}</button>`).join('')}<button class="btn plain" type="button" data-cancel>Cancel</button>`;
+        slot.querySelector('[data-cancel]').addEventListener('click', renderViewers);
+        slot.querySelectorAll('[data-reason]').forEach((choice) => choice.addEventListener('click', async () => {
+          slot.querySelectorAll('button').forEach((other) => { other.disabled = true; });
+          try {
+            data = await api(`/workers/link/me/contact-views/${slot.dataset.slot}/report`, { method: 'POST', body: JSON.stringify({ reason: choice.dataset.reason }) });
+            say('Thank you. RightConnect will check this.');
+            render();
+          } catch (error) { say(error.message, true); renderViewers(); }
+        }));
+      }));
+    }
+
+    async function setLight(availability, busyUntil = null) {
+      try {
+        data = await api('/workers/link/me/availability', { method: 'PUT', body: JSON.stringify({ availability, busy_until: busyUntil }) });
+        render();
+        say({ available: 'Employers now see you as free for work.', busy: 'Employers now see you as busy.', offline: 'Employers now see you are not working.' }[availability]);
+      } catch (error) { say(error.message, true); }
+    }
+    document.querySelectorAll('[data-light]').forEach((button) => button.addEventListener('click', () => setLight(button.dataset.light, button.dataset.light === 'busy' ? (document.querySelector('#busy-until').value || null) : null)));
+    document.querySelector('#busy-save').addEventListener('click', () => setLight('busy', document.querySelector('#busy-until').value || null));
+
+    async function load(quiet = false) {
+      try {
+        data = await api('/workers/link/me');
+        render();
+        if (!quiet) say('');
+      } catch (error) {
+        if (error.status === 403) { localStorage.removeItem(KEY_STORE); document.querySelector('#page').hidden = true; document.querySelector('#no-link').hidden = false; }
+        say(error.message, true);
+      }
+    }
+    document.querySelector('#refresh').addEventListener('click', () => load());
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && key) load(true); });
+
+    // Optional: attach this profile to a Google account. Sign-up reuses the profile instead of creating a second one.
+    async function connectIfSignedIn() {
+      sessionStorage.removeItem('rightconnect-auth-return');
+      const token = authClient ? (await authClient.auth.getSession()).data.session?.access_token : null;
+      if (!token || !sessionStorage.getItem('rightconnect-connect-worker')) return;
+      sessionStorage.removeItem('rightconnect-connect-worker');
+      try {
+        await api('/workers/link/connect', { method: 'POST' }, token);
+        say('Connected. You can also sign in with Google to manage your full profile.');
+        await load(true);
+      } catch (error) {
+        if (error.status === 404) say('Finish creating your account first, then open this page again.', true);
+        else say(error.message, true);
+      }
+    }
+    document.querySelector('#connect').addEventListener('click', async () => {
+      if (!authClient) { say('Sign-in is not available right now.', true); return; }
+      sessionStorage.setItem('rightconnect-connect-worker', '1');
+      sessionStorage.setItem('rightconnect-worker-key', key);
+      sessionStorage.setItem('rightconnect-auth-return', 'worker');
+      sessionStorage.setItem('rightconnect-role', 'worker');
+      sessionStorage.setItem('rightconnect-oauth-pending', '1');
+      const { error } = await authClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${location.origin}/pages/auth.html` } });
+      if (error) say(error.message, true);
+    });
+
+    // A new link opened while this page is already open only changes the #k= part, so start again with it.
+    window.addEventListener('hashchange', () => { if (new URLSearchParams(location.hash.slice(1)).get('k')) location.reload(); });
+
+    (async () => {
+      const fromLink = new URLSearchParams(location.hash.slice(1)).get('k');
+      if (fromLink) {
+        localStorage.setItem(KEY_STORE, fromLink);
+        // Remove the key from the address bar so it isn't shared in screenshots or bookmarks by accident.
+        history.replaceState(null, '', location.pathname);
+      }
+      key = localStorage.getItem(KEY_STORE);
+      if (!key) { document.querySelector('#no-link').hidden = false; return; }
+      await load();
+      try {
+        const config = await (await fetch(`${apiBase}/auth/provider-config`)).json();
+        if (config.supabase_url && config.supabase_publishable_key) authClient = window.supabase.createClient(config.supabase_url, config.supabase_publishable_key);
+      } catch (_) { /* Google connection is optional. */ }
+      await connectIfSignedIn();
+    })();
+  </script>
+</body>
+</html>

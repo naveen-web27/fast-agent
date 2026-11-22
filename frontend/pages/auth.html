@@ -136,7 +136,7 @@
     let authSession = null;
     const roleNames = { customer: 'Customer', expert: 'Expert', company: 'Company', worker: 'Worker (service partner)' };
     const apiBase = '/api/v1';
-    const AUTH_RETURNS = { plans: ['plans.html', 'Back to plans'], claim: ['claim.html', 'Continue claiming your business'], workers: ['workers.html', 'Back to workers'] };
+    const AUTH_RETURNS = { plans: ['plans.html', 'Back to plans'], claim: ['claim.html', 'Continue claiming your business'], workers: ['workers.html', 'Back to workers'], worker: ['worker.html', 'Back to my work page'] };
     function authReturnUrl() {
       const key = sessionStorage.getItem('rightconnect-auth-return');
       if (!AUTH_RETURNS[key]) return null;
@@ -449,6 +449,8 @@
         area: role === 'worker' ? (document.querySelector('#worker-area').value.trim() || null) : null,
         adult_confirmed: role === 'worker' && document.querySelector('#adult').checked,
         pincode: pickedPlace()?.pincode || null,
+        // Set when a worker connects Google from their personal link: sign-up keeps that profile.
+        worker_key: role === 'worker' ? (sessionStorage.getItem('rightconnect-worker-key') || null) : null,
         locality: pickedPlace()?.area || null,
         preferred_language: document.querySelector('#language').value || null,
         interest: null,
@@ -475,6 +477,7 @@
       if (response.status === 409) {
         const body = await response.clone().json().catch(() => ({}));
         if (body.detail?.field === 'phone') { showPhoneQuestion(body.detail.message); return; }
+        if (body.detail?.field === 'worker_key') sessionStorage.removeItem('rightconnect-worker-key');
         if (body.detail?.message) { showToast(body.detail.message, 'error'); return; }
         sessionStorage.setItem('rightconnect-user', JSON.stringify({ full_name: payload.full_name, email: payload.email, role: payload.role }));
         show('success-step');
@@ -490,6 +493,7 @@
         return;
       }
       const created = await response.json();
+      sessionStorage.removeItem('rightconnect-worker-key');
       sessionStorage.setItem('rightconnect-user', JSON.stringify(created));
       show('success-step');
     });

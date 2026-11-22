@@ -37,6 +37,8 @@
     .contact-row { display:flex; flex-wrap:wrap; gap:8px; }
     .btn.wa { border-color:#128c4a; background:#128c4a; color:#fff; } .btn.wa::before { content:'💬 '; } .btn.wa:hover:not(:disabled) { background:#0d6e3a; }
     .dlg .actions .contact-row { margin-right:auto; }
+    .link-btn { display:inline-flex; align-items:center; text-decoration:none; } .contact-left { align-self:center; }
+    .viewer { display:flex; justify-content:space-between; gap:10px; align-items:center; padding:10px 0; border-top:1px solid var(--line); } .viewer:first-child { border-top:0; }
     .pay-row { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) minmax(110px,.8fr); gap:8px; align-items:center; } .pay-row > span { color:var(--muted); font-size:12px; font-weight:700; }
     @media(max-width:520px) { .pay-row { grid-template-columns:1fr auto 1fr; } .pay-row select { grid-column:1/-1; } }
     .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
@@ -152,6 +154,7 @@
           <div class="row" id="busy-row" style="margin-top:10px" hidden><label class="field" for="busy-until" style="margin:0">Free again from</label><input id="busy-until" type="date" style="max-width:190px"><button class="btn small" type="button" id="busy-save">Save</button></div>
           <p class="hint" id="avail-note"></p>
         </div>
+        <div class="panel"><h2>Who viewed your number</h2><p class="sub">People who opened your phone or email from your profile. If someone misuses it, tap Report.</p><div id="me-viewers"></div></div>
         <div class="panel"><h2>Skills</h2><p class="sub">✓ skills were confirmed by a verified employer you worked for. Others are what you told us.</p><div class="chips" id="me-skills"></div></div>
         <div class="panel">
           <div class="row" style="justify-content:space-between"><div><h2>Work history</h2><p class="sub" style="margin:0">Add past jobs. If the employer is on RightConnect, they're asked to confirm it and its skills.</p></div><button class="btn" type="button" id="add-exp">+ Add a past job</button></div>
@@ -272,35 +275,41 @@
       const label = { available: 'Available now', busy: worker.busy_until ? `Busy · free from ${shortDate(worker.busy_until)}` : 'Busy', offline: 'Not looking for work' }[worker.availability];
       return `<span class="light ${worker.availability}"><i></i>${label}</span>${worker.availability_stale ? ' <span class="stale">(not updated recently)</span>' : ''}`;
     }
-    // ---------- direct contact: Call / WhatsApp ----------
+    // ---------- View contact: phone, WhatsApp and email (the worker sees who viewed it) ----------
+    const revealedContacts = new Map();
     function contactButtons(kind, id, small = true) {
-      const size = small ? ' small' : '';
-      return `<div class="contact-row"><button class="btn ghost${size}" type="button" data-contact="call" data-kind="${kind}" data-id="${escapeHtml(id)}">📞 Call</button><button class="btn wa${size}" type="button" data-contact="whatsapp" data-kind="${kind}" data-id="${escapeHtml(id)}">WhatsApp</button></div>`;
+      return `<div class="contact-row"><button class="btn${small ? ' small' : ''}" type="button" data-view-contact data-kind="${kind}" data-id="${escapeHtml(id)}">📇 View contact</button></div>`;
     }
     // WhatsApp needs digits with the country code; numbers are stored like +919876543210.
     function whatsappUrl(phone, text) { return `https://wa.me/${String(phone).replace(/\D/g, '')}?text=${encodeURIComponent(text)}`; }
-    function wireContact(root, { name, text }) {
-      root.querySelectorAll('[data-contact]').forEach((button) => button.addEventListener('click', async (event) => {
+    function contactDetailsHtml(contact, text) {
+      const links = [];
+      if (contact.phone) {
+        links.push(`<a class="btn ghost small link-btn" href="tel:${escapeHtml(contact.phone)}">📞 ${escapeHtml(contact.phone)}</a>`);
+        links.push(`<a class="btn wa small link-btn" href="${escapeHtml(whatsappUrl(contact.phone, text))}" target="_blank" rel="noopener">WhatsApp</a>`);
+      }
+      if (contact.email) links.push(`<a class="btn ghost small link-btn" href="mailto:${escapeHtml(contact.email)}">✉️ ${escapeHtml(contact.email)}</a>`);
+      const left = contact.daily_limit != null ? `<span class="hint contact-left">${contact.left_today} of ${contact.daily_limit} new contacts left today</span>` : '';
+      return links.join('') + left;
+    }
+    function wireContact(root, { text }) {
+      root.querySelectorAll('[data-view-contact]').forEach((button) => button.addEventListener('click', async (event) => {
         event.stopPropagation();
         if (!requireSignIn()) return;
-        const { contact: how, kind, id } = button.dataset;
-        // Open WhatsApp's tab now, while the click still counts, so pop-up blockers allow it.
-        const tab = how === 'whatsapp' ? window.open('', '_blank') : null;
+        const { kind, id } = button.dataset;
+        const cacheKey = `${kind}:${id}`;
         button.disabled = true;
         try {
-          const contact = await api(kind === 'job' ? `/workers/jobs/${id}/contact` : `/workers/${id}/contact`);
-          if (how === 'whatsapp') {
-            const url = whatsappUrl(contact.phone, text(contact.name));
-            if (tab) tab.location.href = url; else window.location.href = url;
-          } else {
-            window.location.href = `tel:${contact.phone}`;
-            message(`Calling ${contact.name} on ${contact.phone}.`);
-          }
+          const contact = revealedContacts.get(cacheKey)
+            || await api(kind === 'job' ? `/workers/jobs/${id}/contact` : `/workers/${id}/contact`, kind === 'job' ? {} : { method: 'POST' });
+          revealedContacts.set(cacheKey, contact);
+          button.closest('.contact-row').innerHTML = contactDetailsHtml(contact, text(contact.name));
         } catch (error) {
-          tab?.close();
-          message(error.message, true);
-        } finally {
           button.disabled = false;
+          // Shown next to the button so it's visible inside the worker dialog too.
+          const row = button.closest('.contact-row');
+          row.querySelector('.contact-error')?.remove();
+          row.insertAdjacentHTML('beforeend', `<span class="hint contact-error" style="color:var(--danger);flex-basis:100%">${escapeHtml(error.message)}${error.status === 429 ? ' <a href="plans.html" style="font-weight:800">See plans</a>' : ''}</span>`);
         }
       }));
     }
@@ -415,7 +424,8 @@
           <div class="section-title">Skills</div><div class="chips">${skillChips(worker.skills) || '<span class="meta">No skills listed yet.</span>'}</div>
           <div class="section-title">Work history</div>${worker.experiences.map((exp) => experienceHtml(exp, false)).join('') || '<p class="meta" style="color:var(--muted)">No work history yet.</p>'}
           <div class="section-title">Reviews</div>${worker.reviews.map((review) => `<div class="exp"><strong><span class="rating">★ ${review.rating}</span> ${escapeHtml(review.reviewer_name)}</strong>${review.body ? `<div class="meta">${escapeHtml(review.body)}</div>` : ''}</div>`).join('') || '<p class="meta" style="color:var(--muted)">No reviews yet. Reviews come only from employers after completed work.</p>'}
-          <div class="actions">${mine ? '' : `${adminCompanies.length ? '<button class="btn ghost" type="button" data-employer-exp>Add verified work history</button>' : ''}${worker.claimed ? `${worker.contact_available ? contactButtons('worker', worker.id, false) : '<span class="hint">Their number is shared after they accept your hire request.</span>'}<button class="btn" type="button" data-hire>Send hire request</button>` : '<span class="hint">This worker hasn\'t joined yet, so they can\'t receive requests.</span>'}`}</div>`;
+          <div class="actions">${mine ? '' : `${adminCompanies.length ? '<button class="btn ghost" type="button" data-employer-exp>Add verified work history</button>' : ''}${worker.contact_available ? contactButtons('worker', worker.id, false) : (worker.claimed ? '<span class="hint">Their number is shared after they accept your hire request.</span>' : '<span class="hint">This worker hasn\'t joined yet, so they can\'t receive requests.</span>')}${worker.claimed ? '<button class="btn" type="button" data-hire>Send hire request</button>' : ''}`}</div>
+          ${!mine && worker.contact_available ? '<p class="hint" style="margin-top:6px">The worker can see who viewed their number. Please call only about work.</p>' : ''}`;
         body.querySelector('[data-close-worker]').addEventListener('click', () => document.querySelector('#worker-dialog').close());
         body.querySelector('[data-hire]')?.addEventListener('click', () => openHire(worker));
         wireContact(body, { text: (name) => `Hi ${name}, I found your ${worker.headline} profile on RightConnect. Are you available for work?` });
@@ -758,7 +768,7 @@
         <div class="pay-row"><input id="${prefix}-rate" type="number" min="0" inputmode="numeric" placeholder="From, e.g. 500" value="${v('rate_amount')}" aria-label="Lowest pay"><span>to</span><input id="${prefix}-rate-max" type="number" min="0" inputmode="numeric" placeholder="To, e.g. 1000 (optional)" value="${v('rate_max')}" aria-label="Highest pay"><select id="${prefix}-unit" aria-label="Pay per"><option value="">per…</option>${['hour', 'day', 'month'].map((unit) => `<option value="${unit}"${worker?.rate_unit === unit ? ' selected' : ''}>per ${unit}</option>`).join('')}</select></div>
         <label class="check" style="margin-top:8px;white-space:normal"><input id="${prefix}-rate-hidden" type="checkbox"${worker?.rate_hidden ? ' checked' : ''}> Hide my pay — employers see "Pay: discuss" and talk to you about it</label>
         <label class="field" for="${prefix}-phone">Phone / WhatsApp number</label><input id="${prefix}-phone" type="tel" inputmode="tel" maxlength="30" value="${v('contact_phone')}" placeholder="+91 98765 43210 (blank = your account number)">
-        <label class="check" style="margin-top:8px;white-space:normal"><input id="${prefix}-show-contact" type="checkbox"${(worker?.show_contact ?? includeAdult) ? ' checked' : ''}> Let employers call or WhatsApp me directly (only signed-in users can see the number)</label>
+        <label class="check" style="margin-top:8px;white-space:normal"><input id="${prefix}-show-contact" type="checkbox"${(worker?.show_contact ?? includeAdult) ? ' checked' : ''}> Show my phone, WhatsApp and email to signed-in employers (you'll see who viewed it)</label>
         <label class="field" for="${prefix}-languages">Languages (comma separated)</label><input id="${prefix}-languages" maxlength="300" value="${escapeHtml((worker?.languages || []).join(', '))}" placeholder="Tamil, English">
         <label class="field" for="${prefix}-bio">About you</label><textarea id="${prefix}-bio" rows="3" maxlength="1500">${v('bio')}</textarea>
         ${includeAdult ? `<label class="check" style="margin-top:12px;white-space:normal"><input id="${prefix}-adult" type="checkbox"> I am 18 years or older.</label>` : ''}
@@ -812,6 +822,29 @@
       }));
       document.querySelector('#edit-form').innerHTML = profileFields('edit', myWorker, false);
       attachPlaceField('edit');
+      loadViewers();
+    }
+    async function loadViewers() {
+      const box = document.querySelector('#me-viewers');
+      box.innerHTML = '<p class="meta" style="color:var(--muted)">Loading…</p>';
+      const report = (id, reason) => api(`/workers/me/contact-views/${id}/report`, { method: 'POST', body: JSON.stringify({ reason }) });
+      try { renderViewers(box, await api('/workers/me/contact-views'), report); }
+      catch (error) { box.innerHTML = `<p class="meta">${escapeHtml(error.message)}</p>`; }
+    }
+    const REPORT_REASONS = ['Calls too many times', 'Rude or abusive', 'Not about work'];
+    function renderViewers(box, views, report) {
+      if (!views.length) { box.innerHTML = '<p class="meta" style="color:var(--muted)">No one has viewed your number yet.</p>'; return; }
+      box.innerHTML = views.map((view) => `<div class="viewer"><div><strong>${escapeHtml(view.viewer_name)}</strong>${view.company_name ? ` · ${escapeHtml(view.company_name)}` : ''}<div class="meta">Viewed ${escapeHtml(shortDate(view.last_viewed_at))}${view.view_count > 1 ? ` · ${view.view_count} times` : ''}</div></div><div class="row" style="justify-content:flex-end" data-slot="${escapeHtml(view.id)}">${view.reported ? '<span class="hint">Reported</span>' : '<button class="btn danger small" type="button" data-report>Report</button>'}</div></div>`).join('');
+      box.querySelectorAll('[data-report]').forEach((button) => button.addEventListener('click', () => {
+        const slot = button.parentElement;
+        slot.innerHTML = `<span class="hint">Why?</span>${REPORT_REASONS.map((reason) => `<button class="btn danger small" type="button" data-reason="${escapeHtml(reason)}">${escapeHtml(reason)}</button>`).join('')}<button class="btn ghost small" type="button" data-cancel>Cancel</button>`;
+        slot.querySelector('[data-cancel]').addEventListener('click', () => renderViewers(box, views, report));
+        slot.querySelectorAll('[data-reason]').forEach((choice) => choice.addEventListener('click', async () => {
+          slot.querySelectorAll('button').forEach((other) => { other.disabled = true; });
+          try { renderViewers(box, await report(slot.dataset.slot, choice.dataset.reason), report); message('Thanks. RightConnect will review this report.'); }
+          catch (error) { message(error.message, true); renderViewers(box, views, report); }
+        }));
+      }));
     }
     // Picking "Idappadi (637101)" fills the city and area boxes when they're empty.
     function attachPlaceField(prefix) {

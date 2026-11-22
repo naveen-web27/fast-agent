@@ -3,7 +3,7 @@ import uuid
 from datetime import date, datetime
 from enum import StrEnum
 
-from sqlalchemy import ARRAY, Boolean, Date, DateTime, ForeignKey, Integer, Numeric, SmallInteger, String, Text, func
+from sqlalchemy import ARRAY, Boolean, Date, DateTime, ForeignKey, Integer, Numeric, SmallInteger, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -58,17 +58,22 @@ class WorkerProfile(Base):
     rate_unit: Mapped[str | None] = mapped_column(String)
     # Hidden pay is shown only to the worker; everyone else sees "Pay: discuss".
     rate_hidden: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    # Lets signed-in users call/WhatsApp the worker without a hire request first.
+    # Lets signed-in users view the worker's phone/email ("View contact", logged in worker_contact_views).
     show_contact: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     availability: Mapped[str] = mapped_column(String, nullable=False, default=Availability.AVAILABLE.value)
     busy_until: Mapped[date | None] = mapped_column(Date)
     availability_updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     # Private: shared only with an employer whose hire the worker accepted.
     contact_phone: Mapped[str | None] = mapped_column(String)
+    # Collected by admins for workers without an account; self-signed workers use their account email.
+    contact_email: Mapped[str | None] = mapped_column(String)
     avatar_url: Mapped[str | None] = mapped_column(String)
     claim_status: Mapped[str] = mapped_column(String, nullable=False, default="claimed")
     claim_code_hash: Mapped[str | None] = mapped_column(String)
     claim_code_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Personal link for workers who can't use Google/email sign-in; only the key's hash is stored.
+    access_key_hash: Mapped[str | None] = mapped_column(String)
+    access_key_created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     adult_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"))
@@ -177,3 +182,23 @@ class WorkerReview(Base):
     rating: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     body: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class WorkerContactView(Base):
+    """Someone signed in viewed this worker's phone/email; new rows count toward their daily contact limit."""
+
+    __tablename__ = "worker_contact_views"
+    __table_args__ = (UniqueConstraint("worker_id", "viewer_user_id", name="worker_contact_views_once"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    worker_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("worker_profiles.id", ondelete="CASCADE"), nullable=False
+    )
+    viewer_user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    first_viewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    last_viewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    view_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    reported_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    report_reason: Mapped[str | None] = mapped_column(Text)

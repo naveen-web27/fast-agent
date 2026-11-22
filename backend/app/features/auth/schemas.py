@@ -52,6 +52,8 @@ class OnboardingRequest(BaseModel):
     pincode: str | None = Field(default=None, max_length=10)
     # Area name picked with the PIN, e.g. "Idappadi".
     locality: str | None = Field(default=None, max_length=120)
+    # Key from a worker's personal link: sign-up attaches that existing profile instead of making a new one.
+    worker_key: str | None = Field(default=None, min_length=16, max_length=64)
 
     @field_validator("pincode")
     @classmethod
