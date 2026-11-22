@@ -102,6 +102,27 @@ class AvailabilityUpdate(BaseModel):
         return self
 
 
+class LocationUpdate(BaseModel):
+    """Just the place, set from the location picker without resubmitting the whole profile."""
+
+    pincode: str
+    city: str | None = Field(default=None, max_length=100)
+    area: str | None = Field(default=None, max_length=100)
+
+    @field_validator("pincode")
+    @classmethod
+    def _pincode(cls, value: str) -> str:
+        normalized = normalize_pincode(value)
+        if normalized is None:
+            raise ValueError("Enter a valid 6-digit PIN code")
+        return normalized
+
+    @field_validator("city", "area", mode="before")
+    @classmethod
+    def _optional(cls, value):
+        return blank_to_none(value)
+
+
 class AdminWorkerCreate(WorkerCreate):
     """An admin adding a real local worker who isn't on RightConnect yet; adult_confirmed is the admin's check."""
 

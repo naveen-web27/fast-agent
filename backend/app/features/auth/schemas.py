@@ -50,6 +50,8 @@ class OnboardingRequest(BaseModel):
     area: str | None = Field(default=None, max_length=100)
     adult_confirmed: bool = False
     pincode: str | None = Field(default=None, max_length=10)
+    # Area name picked with the PIN, e.g. "Idappadi".
+    locality: str | None = Field(default=None, max_length=120)
 
     @field_validator("pincode")
     @classmethod
@@ -121,6 +123,7 @@ class UserResponse(BaseModel):
     bio: str | None = None
     city: str | None = None
     pincode: str | None = None
+    locality: str | None = None
     avatar_url: str | None = None
     member_since: datetime | None = None
 
@@ -132,6 +135,7 @@ class MyProfileUpdate(BaseModel):
     bio: str | None = Field(default=None, max_length=1000)
     city: str | None = Field(default=None, max_length=100)
     pincode: str | None = Field(default=None, max_length=10)
+    locality: str | None = Field(default=None, max_length=120)
     avatar_url: str | None = Field(default=None, max_length=500)
     interests: list[str] | None = Field(default=None, max_length=20)
 

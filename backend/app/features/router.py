@@ -8,6 +8,7 @@ from app.features.booking.router import router as booking_router
 from app.features.claims.router import router as claims_router
 from app.features.dashboard.router import router as dashboard_router
 from app.features.health.router import router as health_router
+from app.features.locations.router import router as locations_router
 from app.features.marketplace.router import router as marketplace_router
 from app.features.organizations.router import router as organizations_router
 from app.features.payments.router import router as payments_router
@@ -20,6 +21,7 @@ from app.features.workers.router import router as workers_router
 feature_router = APIRouter()
 feature_router.include_router(ai_reports_router)
 feature_router.include_router(health_router, tags=["health"])
+feature_router.include_router(locations_router, prefix="/locations", tags=["locations"])
 feature_router.include_router(auth_router, prefix="/auth", tags=["auth"])
 feature_router.include_router(marketplace_router, tags=["marketplace"])
 feature_router.include_router(profiles_router, tags=["profiles"])

@@ -28,7 +28,7 @@
     .panel { margin-bottom:16px; padding:18px; border:1px solid var(--line); border-radius:10px; background:var(--surface); box-shadow:0 9px 24px rgba(20,60,48,.04); }
     .panel h2 { margin:0 0 4px; font-size:17px; } .panel > p.sub { margin:0 0 14px; color:var(--muted); font-size:12px; }
     .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-    .search { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,.9fr) auto auto; gap:10px; align-items:center; }
+    .search { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto auto; gap:10px; align-items:center; }
     .pin-warn { margin-bottom:16px; padding:11px 14px; color:#5d4a12; border:1px solid #f2dfa7; border-radius:10px; background:#fffaf0; font-weight:700; }
     input,textarea,select { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:7px; background:#fff; color:var(--ink); }
     input:focus,textarea:focus,select:focus { outline:2px solid #9bd3c0; border-color:#74bba3; }
@@ -78,7 +78,7 @@
   </style>
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="marketplace.html"><img src="../assets/rightconnect-mark.svg" alt="">RightConnect</a><div class="top-actions"><a href="marketplace.html">← Marketplace</a><span id="who"></span><button class="btn small" type="button" id="sign-in" hidden>Sign in</button></div></header>
+  <header class="topbar"><a class="brand" href="marketplace.html"><img src="../assets/rightconnect-mark.svg" alt="">RightConnect</a><div class="top-actions"><span id="location-chip-slot"></span><a href="marketplace.html">← Marketplace</a><span id="who"></span><button class="btn small" type="button" id="sign-in" hidden>Sign in</button></div></header>
   <main>
     <div class="intro"><span class="eyebrow">Local workforce</span><h1>Workers &amp; jobs</h1><p>Find trusted workers near you, or find work. Skills marked ✓ were confirmed by a verified employer.</p></div>
     <nav class="tabs" role="tablist">
@@ -95,7 +95,6 @@
           <input id="find-q" type="search" placeholder="Work or skill: cook, driver, sales…" maxlength="200" aria-label="Work or skill">
           <input id="find-city" type="search" placeholder="City" maxlength="100" aria-label="City">
           <input id="find-area" type="search" placeholder="Area" maxlength="100" aria-label="Area">
-          <input id="find-near" inputmode="numeric" maxlength="7" placeholder="📍 Your PIN" aria-label="Your PIN code: nearby workers first">
           <label class="check"><input id="find-available" type="checkbox"> Available now</label>
           <button class="btn" type="submit">Search</button>
         </form>
@@ -109,10 +108,9 @@
     <section data-panel="jobs" hidden>
       <div class="panel">
         <div class="row" style="justify-content:space-between"><div><h2>Open jobs</h2><p class="sub" style="margin:0">Shops, hotels and homes looking for people.</p></div><button class="btn" type="button" id="post-job">+ Post a job</button></div>
-        <form class="search" id="jobs-form" style="margin-top:14px;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,.8fr) auto">
+        <form class="search" id="jobs-form" style="margin-top:14px;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto">
           <input id="jobs-q" type="search" placeholder="Job or skill" maxlength="200" aria-label="Job or skill">
           <input id="jobs-city" type="search" placeholder="City" maxlength="100" aria-label="City">
-          <input id="jobs-near" inputmode="numeric" maxlength="7" placeholder="📍 Your PIN" aria-label="Your PIN code: nearby jobs first">
           <button class="btn" type="submit">Search</button>
         </form>
       </div>
@@ -136,7 +134,7 @@
         <div class="panel"><h2>Did RightConnect add you already?</h2><p class="sub">If our team created a profile for you, enter the code they gave you.</p><form class="row" id="claim-form"><input id="claim-code" placeholder="ABCD-2345" maxlength="20" style="max-width:220px" autocomplete="one-time-code"><button class="btn" type="submit">Claim my profile</button></form></div>
       </div>
       <div id="me-profile" hidden>
-        <div class="pin-warn" id="me-pin-warn" hidden>📍 Your location is missing. Add your PIN code in Profile details below so employers near you find you first.</div>
+        <div class="pin-warn" id="me-pin-warn" hidden>📍 Your location is missing, so nearby employers can't find you first. <button class="btn small" type="button" id="me-set-location" style="margin-left:8px">Set location</button></div>
         <div class="panel">
           <div class="row" style="justify-content:space-between"><div><h2>Are you free for work?</h2><p class="sub" style="margin:0">Employers see your light. Update it whenever it changes.</p></div><button class="btn ghost small" type="button" id="view-public">View my public profile</button></div>
           <div class="avail-switch" style="margin-top:14px">
@@ -184,8 +182,8 @@
     <h2>Post a job</h2>
     <label class="field" for="job-title">Job title *</label><input id="job-title" maxlength="120" required placeholder="3 waiters for Saturday wedding">
     <div class="grid2"><div><label class="field" for="job-skill">Skill needed *</label><input id="job-skill" maxlength="80" required placeholder="Waiter"></div><div><label class="field" for="job-openings">People needed</label><input id="job-openings" type="number" min="1" max="500" value="1"></div></div>
+    <label class="field" for="job-pincode">Where is the work? * <span class="hint" style="font-weight:600">(workers nearby see the job first)</span></label><input id="job-pincode">
     <div class="grid2"><div><label class="field" for="job-city">City *</label><input id="job-city" maxlength="100" required></div><div><label class="field" for="job-area">Area</label><input id="job-area" maxlength="100"></div></div>
-    <label class="field" for="job-pincode">PIN code * <span class="hint" style="font-weight:600">(workers nearby see the job first)</span></label><input id="job-pincode" inputmode="numeric" maxlength="7" placeholder="600042" style="max-width:200px">
     <div class="grid2"><div><label class="field" for="job-pay">Pay</label><input id="job-pay" maxlength="80" placeholder="₹700/day"></div><div><label class="field" for="job-start">Starts on</label><input id="job-start" type="date"></div></div>
     <div id="job-org-wrap" hidden><label class="field" for="job-org">Post as</label><select id="job-org"></select></div>
     <label class="field" for="job-desc">Details</label><textarea id="job-desc" rows="3" maxlength="2000"></textarea>
@@ -219,6 +217,7 @@
     let myHires = { as_worker: [], as_employer: [] };
     let findPage = 1;
     let currentWorker = null;
+    let locationChip = null;
 
     // ---------- helpers ----------
     function escapeHtml(value) {
@@ -246,19 +245,16 @@
       return response.status === 204 ? null : response.json();
     }
     const value = (selector) => document.querySelector(selector).value.trim();
-    // Whose location ranks results: the worker profile, then the account, then this device.
-    function nearAccount() { return { pincode: myWorker?.pincode || account?.pincode || null, city: myWorker?.city || account?.city || null }; }
-    function syncNearInputs() { const pin = nearOverride || RCLocation.get(nearAccount()); document.querySelector('#find-near').value = pin; document.querySelector('#jobs-near').value = pin; }
-    function readNearInput(selector) {
-      const pin = RCLocation.clean(value(selector));
-      if (pin && !RCLocation.valid(pin)) { message('Enter a valid 6-digit PIN code.', true); return false; }
-      RCLocation.set(pin);
-      // A PIN typed in the search box wins for this visit, e.g. a worker looking for jobs in another area.
-      nearOverride = pin || null;
-      return true;
+    // Whose location ranks results: the account's place (or the worker profile's), else the one chosen on this device.
+    function nearAccount() {
+      if (!account) return null;
+      return {
+        pincode: account.pincode || myWorker?.pincode || null,
+        locality: account.locality || myWorker?.area || null,
+        city: account.city || myWorker?.city || null,
+      };
     }
-    let nearOverride = null;
-    function nearParams(params) { return RCLocation.apply(params, nearOverride ? { pincode: nearOverride, city: null } : nearAccount()); }
+    function nearParams(params) { return RCLocation.apply(params, nearAccount()); }
     const list = (text) => text.split(',').map((item) => item.trim()).filter(Boolean);
     function monthYear(dateText) { return dateText ? new Date(`${dateText}T00:00:00`).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : ''; }
     function shortDate(dateText) { return dateText ? new Date(dateText.length === 10 ? `${dateText}T00:00:00` : dateText).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''; }
@@ -339,8 +335,7 @@
         document.querySelector('#find-more').hidden = data.page * data.page_size >= data.total;
       } catch (error) { box.innerHTML = `<p class="empty">${escapeHtml(error.message)}</p>`; }
     }
-    document.querySelector('#find-form').addEventListener('submit', (event) => { event.preventDefault(); if (readNearInput('#find-near')) { syncNearInputs(); findWorkers(); } });
-    document.querySelector('#find-near').addEventListener('change', () => { if (readNearInput('#find-near')) { syncNearInputs(); findWorkers(); } });
+    document.querySelector('#find-form').addEventListener('submit', (event) => { event.preventDefault(); findWorkers(); });
     document.querySelector('#find-available').addEventListener('change', () => findWorkers());
     document.querySelector('#find-more').addEventListener('click', () => findWorkers(true));
 
@@ -522,11 +517,16 @@
         mine.forEach((job) => myBox.appendChild(jobCard(job, true)));
       } catch (error) { box.innerHTML = `<p class="empty">${escapeHtml(error.message)}</p>`; }
     }
-    document.querySelector('#jobs-form').addEventListener('submit', (event) => { event.preventDefault(); if (readNearInput('#jobs-near')) { syncNearInputs(); loadJobs(); } });
-    document.querySelector('#jobs-near').addEventListener('change', () => { if (readNearInput('#jobs-near')) { syncNearInputs(); loadJobs(); } });
+    document.querySelector('#jobs-form').addEventListener('submit', (event) => { event.preventDefault(); loadJobs(); });
+    RCLocation.attach(document.querySelector('#job-pincode'), { onPick: (place) => {
+      if (place.district && !value('#job-city')) document.querySelector('#job-city').value = place.district;
+      if (place.area && !value('#job-area')) document.querySelector('#job-area').value = place.area;
+    } });
     document.querySelector('#post-job').addEventListener('click', () => {
       if (!requireSignIn()) return;
       document.querySelector('#job-form').reset();
+      document.querySelector('#job-pincode').rcPlace = null;
+      document.querySelector('#job-pincode').parentNode.querySelector('.rc-auto-hint')?.setAttribute('hidden', '');
       document.querySelector('#job-error').textContent = '';
       orgOptions(document.querySelector('#job-org'), document.querySelector('#job-org-wrap'), true, 'Myself (personal)');
       document.querySelector('#job-dialog').showModal();
@@ -534,10 +534,11 @@
     document.querySelector('#job-form').addEventListener('submit', (event) => {
       event.preventDefault();
       if (value('#job-title').length < 3 || value('#job-skill').length < 2 || value('#job-city').length < 2) { document.querySelector('#job-error').textContent = 'Job title, skill and city are required.'; return; }
-      if (!RCLocation.valid(value('#job-pincode'))) { document.querySelector('#job-error').textContent = 'Enter the 6-digit PIN code where the work is.'; return; }
+      const jobPlace = RCLocation.picked(document.querySelector('#job-pincode'));
+      if (!jobPlace) { document.querySelector('#job-error').textContent = 'Pick the area of the work from the list, or type its 6-digit PIN code.'; return; }
       submitting(event.currentTarget, async () => {
         await api('/workers/jobs', { method: 'POST', body: JSON.stringify({
-          title: value('#job-title'), skill: value('#job-skill'), city: value('#job-city'), area: value('#job-area') || null, pincode: RCLocation.clean(value('#job-pincode')),
+          title: value('#job-title'), skill: value('#job-skill'), city: value('#job-city'), area: value('#job-area') || null, pincode: jobPlace.pincode,
           openings: Number(value('#job-openings')) || 1, pay: value('#job-pay') || null, starts_on: value('#job-start') || null,
           description: value('#job-desc') || null, organization_id: value('#job-org') || null,
         }) });
@@ -695,8 +696,8 @@
       return `
         <div class="grid2"><div><label class="field" for="${prefix}-headline">Main work *</label><input id="${prefix}-headline" maxlength="120" value="${v('headline')}" placeholder="Cook, Driver, Sales staff"></div>
         <div><label class="field" for="${prefix}-years">Years of experience</label><input id="${prefix}-years" type="number" min="0" max="70" value="${v('years_experience')}"></div></div>
+        <label class="field" for="${prefix}-pincode">Where do you work? * <span class="hint" style="font-weight:600">(employers near you see you first)</span></label><input id="${prefix}-pincode" value="${v('pincode')}">
         <div class="grid2"><div><label class="field" for="${prefix}-city">City *</label><input id="${prefix}-city" maxlength="100" value="${v('city')}"></div><div><label class="field" for="${prefix}-area">Area</label><input id="${prefix}-area" maxlength="100" value="${v('area')}"></div></div>
-        <label class="field" for="${prefix}-pincode">PIN code * <span class="hint" style="font-weight:600">(employers near you see you first)</span></label><input id="${prefix}-pincode" inputmode="numeric" maxlength="7" value="${v('pincode')}" placeholder="600042" style="max-width:200px">
         <label class="field" for="${prefix}-skills">Your skills (comma separated)</label><input id="${prefix}-skills" maxlength="1200" value="${escapeHtml((worker?.self_skills || []).join(', '))}" placeholder="Billing, Customer handling, South Indian cooking">
         <p class="hint">These show as self-declared. Employers you worked for can verify them.</p>
         <div class="grid2"><div><label class="field" for="${prefix}-rate">Expected pay (₹)</label><input id="${prefix}-rate" type="number" min="0" value="${v('rate_amount')}"></div>
@@ -711,7 +712,7 @@
       const rate = value(`#${prefix}-rate`);
       return {
         headline: value(`#${prefix}-headline`), city: value(`#${prefix}-city`), area: value(`#${prefix}-area`) || null,
-        pincode: RCLocation.clean(value(`#${prefix}-pincode`)) || null,
+        pincode: RCLocation.picked(document.querySelector(`#${prefix}-pincode`))?.pincode || null,
         years_experience: value(`#${prefix}-years`) === '' ? null : Number(value(`#${prefix}-years`)),
         skills: list(value(`#${prefix}-skills`)), languages: list(value(`#${prefix}-languages`)),
         rate_amount: rate === '' ? null : Number(rate), rate_unit: value(`#${prefix}-unit`) || null, bio: value(`#${prefix}-bio`) || null,
@@ -724,7 +725,8 @@
       document.querySelector('#me-create').hidden = signedOut || !account || Boolean(myWorker);
       document.querySelector('#me-profile').hidden = !myWorker;
       if (!signedOut && account && !myWorker && !document.querySelector('#create-form').children.length) {
-        document.querySelector('#create-form').innerHTML = profileFields('create', { city: account.city || '' }, true);
+        document.querySelector('#create-form').innerHTML = profileFields('create', { city: account.city || '', area: account.locality || '', pincode: account.pincode || '' }, true);
+        attachPlaceField('create');
       }
       if (!myWorker) return;
       document.querySelector('#me-pin-warn').hidden = Boolean(myWorker.pincode);
@@ -741,13 +743,23 @@
         catch (error) { message(error.message, true); }
       }));
       document.querySelector('#edit-form').innerHTML = profileFields('edit', myWorker, false);
+      attachPlaceField('edit');
+    }
+    // Picking "Idappadi (637101)" fills the city and area boxes when they're empty.
+    function attachPlaceField(prefix) {
+      RCLocation.attach(document.querySelector(`#${prefix}-pincode`), { onPick: (place) => {
+        const city = document.querySelector(`#${prefix}-city`);
+        const area = document.querySelector(`#${prefix}-area`);
+        if (place.district && !city.value.trim()) city.value = place.district;
+        if (place.area && !area.value.trim()) area.value = place.area;
+      } });
     }
     document.querySelector('#create-form').addEventListener('submit', (event) => {
       event.preventDefault();
       const errorBox = document.querySelector('#create-error');
       const payload = { ...readProfile('create'), adult_confirmed: document.querySelector('#create-adult').checked };
       if (payload.headline.length < 2 || payload.city.length < 2) { errorBox.textContent = 'Main work and city are required.'; return; }
-      if (!RCLocation.valid(payload.pincode)) { errorBox.textContent = 'Enter your 6-digit PIN code.'; return; }
+      if (!payload.pincode) { errorBox.textContent = 'Pick your area from the list, or type your 6-digit PIN code.'; return; }
       if (!payload.adult_confirmed) { errorBox.textContent = 'You must be 18 or older to work through RightConnect.'; return; }
       submitting(event.currentTarget, async () => {
         myWorker = await api('/workers/me', { method: 'POST', body: JSON.stringify(payload) });
@@ -759,7 +771,7 @@
       event.preventDefault();
       const payload = readProfile('edit');
       if (payload.headline.length < 2 || payload.city.length < 2) { document.querySelector('#edit-error').textContent = 'Main work and city are required.'; return; }
-      if (payload.pincode && !RCLocation.valid(payload.pincode)) { document.querySelector('#edit-error').textContent = 'Enter a valid 6-digit PIN code.'; return; }
+      if (value('#edit-pincode') && !payload.pincode) { document.querySelector('#edit-error').textContent = 'Pick your area from the list, or type your 6-digit PIN code.'; return; }
       submitting(event.currentTarget, async () => {
         myWorker = await api('/workers/me', { method: 'PUT', body: JSON.stringify(payload) });
         message('Profile saved.');
@@ -778,6 +790,15 @@
     }));
     document.querySelector('#busy-save').addEventListener('click', () => setAvailability('busy', value('#busy-until') || null));
     document.querySelector('#add-exp').addEventListener('click', () => openExperience({ mode: 'worker' }));
+    document.querySelector('#me-set-location').addEventListener('click', () => RCLocation.openPicker({
+      title: 'Where do you work?',
+      hint: 'Pick your area. Employers near it will see you first.',
+      onSave: async (place) => {
+        myWorker = await api('/workers/me/location', { method: 'PUT', body: JSON.stringify({ pincode: place.pincode, city: place.district || null, area: place.area || null }) });
+        message(`Location saved: ${RCLocation.label(place)}.`);
+        renderMe();
+      },
+    }));
     document.querySelector('#view-public').addEventListener('click', () => openWorker(myWorker.id));
     document.querySelector('#claim-form').addEventListener('submit', (event) => {
       event.preventDefault();
@@ -827,7 +848,16 @@
       document.querySelector('#sign-in').hidden = Boolean(token);
       const tab = ['find', 'jobs', 'hires', 'me'].includes(params.get('tab')) ? params.get('tab') : (myWorker ? 'me' : 'find');
       if (params.get('q')) document.querySelector('#find-q').value = params.get('q');
-      syncNearInputs();
+      locationChip = RCLocation.mountChip(document.querySelector('#location-chip-slot'), {
+        getAccount: nearAccount,
+        onChange: async (place) => {
+          if (token && account) {
+            account = { ...account, ...(await api('/auth/me', { method: 'PATCH', body: JSON.stringify({ pincode: place.pincode, locality: place.area || null, city: place.district || account.city || null }) })) };
+          }
+          findWorkers();
+          if (!document.querySelector('[data-panel="jobs"]').hidden) loadJobs();
+        },
+      });
       findWorkers();
       showTab(tab);
     })();

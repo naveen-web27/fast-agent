@@ -79,6 +79,7 @@ async def _to_summary(session: AsyncSession, profile: Profile) -> ProfileSummary
         headline=profile.headline,
         city=profile.city,
         pincode=profile.pincode,
+        locality=profile.locality,
         years_experience=profile.years_experience,
         languages=profile.languages,
         avatar_url=profile.avatar_url,

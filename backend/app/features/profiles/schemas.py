@@ -28,6 +28,7 @@ class ProfileUpdate(BaseModel):
     bio: str | None = Field(default=None, max_length=2000)
     city: str | None = Field(default=None, max_length=100)
     pincode: str | None = Field(default=None, max_length=10)
+    locality: str | None = Field(default=None, max_length=120)
     years_experience: int | None = Field(default=None, ge=0, le=80)
     languages: list[str] | None = Field(default=None, max_length=10)
     avatar_url: OptionalLink = None
@@ -186,6 +187,7 @@ class ManagedProfile(BaseModel):
     bio: str | None
     city: str | None
     pincode: str | None = None
+    locality: str | None = None
     years_experience: int | None
     languages: list[str]
     avatar_url: str | None

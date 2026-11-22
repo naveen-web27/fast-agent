@@ -85,7 +85,7 @@ class SignupConflictTests(unittest.IsolatedAsyncioTestCase):
         })
         self.payload = SimpleNamespace(
             full_name="Same Name", email="new@example.com", phone="+919876543210", role="customer",
-            interest=None, interests=[], city=None, pincode=None,
+            interest=None, interests=[], city=None, pincode=None, locality=None,
         )
 
     async def create(self):

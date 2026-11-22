@@ -101,6 +101,8 @@ class Profile(Base):
     city: Mapped[str | None] = mapped_column(String)
     # 6-digit Indian PIN code; drives "nearest first" ranking (see app/core/location.py).
     pincode: Mapped[str | None] = mapped_column(String)
+    # Area name chosen in the location picker, e.g. "Idappadi" (city holds the district, e.g. "Salem").
+    locality: Mapped[str | None] = mapped_column(String)
     years_experience: Mapped[int | None] = mapped_column(SmallInteger)
     languages: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False, default=list)
     # Owner-chosen search words; matched by search but not shown on the card.

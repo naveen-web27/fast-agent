@@ -110,9 +110,9 @@
           <div class="q" data-for="worker"><div class="q-head"><label for="work">What work do you do?</label><button type="button" class="info" aria-expanded="false" aria-controls="info-work" aria-label="About this question">i</button></div><p class="info-text" id="info-work" hidden>Your main work, shown on your profile. You can add more skills later.</p><input id="work" placeholder="Cook, Driver, Sales staff…" maxlength="120" minlength="2" required></div>
           <div class="q" data-for="company"><div class="q-head"><label for="company">Company name</label></div><input id="company" placeholder="Business name" autocomplete="organization" maxlength="160" required></div>
           <div class="q" data-for="expert company" data-optional><div class="q-head"><label for="city">Your city</label></div><input id="city" placeholder="Chennai" autocomplete="address-level2" maxlength="100"></div>
-          <div class="q" data-for="expert company"><div class="q-head"><label for="pincode">Your PIN code</label><button type="button" class="info" aria-expanded="false" aria-controls="info-pincode" aria-label="Why we ask">i</button></div><p class="info-text" id="info-pincode" hidden>Customers near you see you first. Use the PIN code of the area where you work.</p><input id="pincode" autocomplete="postal-code" required inputmode="numeric" maxlength="6" pattern="[1-9][0-9]{5}" title="6-digit PIN code, e.g. 600042" placeholder="600042"></div>
-          <div class="q" data-for="customer" data-optional><div class="q-head"><label for="customer-pincode">Your area PIN code</label><button type="button" class="info" aria-expanded="false" aria-controls="info-customer-pincode" aria-label="Why we ask">i</button></div><p class="info-text" id="info-customer-pincode" hidden>We show experts, companies and workers near you first. You can change it any time.</p><input id="customer-pincode" autocomplete="postal-code" inputmode="numeric" maxlength="6" pattern="[1-9][0-9]{5}" title="6-digit PIN code, e.g. 600042" placeholder="600042"></div>
-          <div class="q" data-for="worker"><div class="q-head"><label for="worker-city">Where do you work?</label></div><input id="worker-city" placeholder="City, e.g. Chennai" autocomplete="address-level2" maxlength="100" minlength="2" required><input id="worker-area" placeholder="Area (optional), e.g. Velachery" maxlength="100" style="margin-top:10px"><input id="worker-pincode" autocomplete="postal-code" required inputmode="numeric" maxlength="6" pattern="[1-9][0-9]{5}" title="6-digit PIN code, e.g. 600042" placeholder="PIN code, e.g. 600042" style="margin-top:10px"></div>
+          <div class="q" data-for="expert company"><div class="q-head"><label for="pincode">Where do you work?</label><button type="button" class="info" aria-expanded="false" aria-controls="info-pincode" aria-label="Why we ask">i</button></div><p class="info-text" id="info-pincode" hidden>Type your area or town (e.g. Edappadi) and pick it, or type the PIN code. Customers near you see you first.</p><input id="pincode" autocomplete="postal-code" required inputmode="numeric" maxlength="6" pattern="[1-9][0-9]{5}" title="6-digit PIN code, e.g. 600042" placeholder="600042"></div>
+          <div class="q" data-for="customer" data-optional><div class="q-head"><label for="customer-pincode">Where are you?</label><button type="button" class="info" aria-expanded="false" aria-controls="info-customer-pincode" aria-label="Why we ask">i</button></div><p class="info-text" id="info-customer-pincode" hidden>Type your area or town and pick it. We show experts, companies and workers near you first. You can change it any time.</p><input id="customer-pincode" autocomplete="postal-code" inputmode="numeric" maxlength="6" pattern="[1-9][0-9]{5}" title="6-digit PIN code, e.g. 600042" placeholder="600042"></div>
+          <div class="q" data-for="worker"><div class="q-head"><label for="worker-pincode">Where do you work?</label></div><input id="worker-pincode" required placeholder="Type your area or town"><input id="worker-city" placeholder="City / district (filled in for you)" autocomplete="address-level2" maxlength="100" minlength="2" required style="margin-top:10px"><input id="worker-area" placeholder="Area (optional)" maxlength="100" style="margin-top:10px"></div>
           <div class="q" data-for="expert worker" data-optional><div class="q-head"><label>Language</label></div><div class="choice-grid" id="language-choices"><button type="button" class="choice" data-language="English">English</button><button type="button" class="choice" data-language="Tamil">Tamil</button><button type="button" class="choice" data-language="Hindi">Hindi</button><button type="button" class="choice" data-language="Telugu">Telugu</button></div><input type="hidden" id="language" value=""></div>
           <div class="q" data-for="expert worker" data-optional><div class="q-head"><label for="experience">Years of experience</label></div><input id="experience" type="number" inputmode="numeric" min="0" max="80" placeholder="5"></div>
           <div class="q" data-for="company" data-optional><div class="q-head"><label for="website">Website</label></div><input id="website" inputmode="url" autocomplete="url" placeholder="yourcompany.com" maxlength="255"></div>
@@ -126,6 +126,7 @@
   <div class="loading-screen" id="loading-screen" role="status" aria-live="polite" hidden><img src="../assets/rightconnect-mark.svg" alt=""><span class="loading-dots" aria-hidden="true"><i></i><i></i><i></i></span><p id="loading-text">Signing you in…</p></div>
   <script src="../assets/mobile-install.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../assets/location.js"></script>
   <script>
     const steps = document.querySelectorAll('.step');
     const back = document.querySelector('#back');
@@ -382,8 +383,28 @@
       } catch (_) { /* Network hiccup: the final submit re-checks the number. */ }
       return true;
     }
+    // Location questions accept a typed area/town (picked from the list) or a 6-digit PIN code.
+    const placeInputs = { worker: '#worker-pincode', customer: '#customer-pincode', expert: '#pincode', company: '#pincode' };
+    function pickedPlace() { return RCLocation.picked(document.querySelector(placeInputs[role] || '#pincode')); }
+    RCLocation.attach(document.querySelector('#pincode'), { onPick: (place) => {
+      const city = document.querySelector('#city');
+      if (!city.value.trim() && place.district) city.value = place.district;
+    } });
+    RCLocation.attach(document.querySelector('#customer-pincode'));
+    RCLocation.attach(document.querySelector('#worker-pincode'), { onPick: (place) => {
+      const city = document.querySelector('#worker-city');
+      const area = document.querySelector('#worker-area');
+      if (!city.value.trim() && place.district) city.value = place.district;
+      if (!area.value.trim() && place.area) area.value = place.area;
+    } });
+
     async function currentQuestionValid() {
       const question = roleQuestions()[questionIndex];
+      const placeInput = question.querySelector('[data-rc-attached]');
+      if (placeInput) {
+        const typed = placeInput.value.trim();
+        placeInput.setCustomValidity(typed && !RCLocation.picked(placeInput) ? 'Pick your area from the list, or type your 6-digit PIN code.' : '');
+      }
       const phoneInput = question.querySelector('#phone-number');
       if (phoneInput) {
         const phone = validatedPhone();
@@ -424,10 +445,11 @@
         email: authSession.user.email,
         phone,
         role: role === 'company' ? 'company_admin' : role,
-        city: (role === 'worker' ? document.querySelector('#worker-city').value.trim() : document.querySelector('#city').value) || null,
+        city: (role === 'worker' ? document.querySelector('#worker-city').value.trim() : document.querySelector('#city').value) || pickedPlace()?.district || null,
         area: role === 'worker' ? (document.querySelector('#worker-area').value.trim() || null) : null,
         adult_confirmed: role === 'worker' && document.querySelector('#adult').checked,
-        pincode: document.querySelector({ worker: '#worker-pincode', customer: '#customer-pincode' }[role] || '#pincode').value.replace(/\s/g, '') || null,
+        pincode: pickedPlace()?.pincode || null,
+        locality: pickedPlace()?.area || null,
         preferred_language: document.querySelector('#language').value || null,
         interest: null,
         interests: role === 'customer' ? [...selectedInterests] : [],

@@ -31,6 +31,7 @@ from app.features.workers.schemas import (
     JobApply,
     JobCreate,
     JobOut,
+    LocationUpdate,
     MyWorkerProfile,
     ReviewCreate,
     SkillOut,
@@ -470,6 +471,17 @@ async def set_my_availability(session: AsyncSession, auth_user_id: UUID, payload
     worker.availability = payload.availability
     worker.busy_until = payload.busy_until
     worker.availability_updated_at = _now()
+    await session.commit()
+    return await _my_profile_out(session, worker, user)
+
+
+async def set_my_location(session: AsyncSession, auth_user_id: UUID, payload: LocationUpdate) -> MyWorkerProfile:
+    user, worker = await _require_my_worker(session, auth_user_id)
+    worker.pincode = payload.pincode
+    # A new place replaces the old area name; city is kept only when the picker didn't know it.
+    worker.area = payload.area
+    if payload.city:
+        worker.city = payload.city
     await session.commit()
     return await _my_profile_out(session, worker, user)
 

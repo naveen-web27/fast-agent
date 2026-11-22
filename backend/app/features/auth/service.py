@@ -109,6 +109,7 @@ async def get_user_profile(session: AsyncSession, auth_user_id: UUID) -> UserRes
         bio=user.bio,
         city=user.city,
         pincode=user.pincode,
+        locality=user.locality,
         avatar_url=user.avatar_url,
         member_since=user.created_at,
     )
@@ -121,7 +122,7 @@ async def update_my_profile(session: AsyncSession, auth_user_id: UUID, payload: 
     changes = payload.model_dump(exclude_unset=True)
     if changes.get("full_name"):
         user.full_name = changes["full_name"].strip()
-    for field in ("bio", "city", "pincode", "avatar_url"):
+    for field in ("bio", "city", "pincode", "locality", "avatar_url"):
         if field in changes:
             setattr(user, field, (changes[field] or "").strip() or None)
     if changes.get("interests") is not None:
@@ -158,6 +159,7 @@ async def create_user_profile(
         interests=interests,
         city=payload.city,
         pincode=payload.pincode,
+        locality=payload.locality,
     )
     session.add(user)
     await session.flush()
@@ -171,6 +173,7 @@ async def create_user_profile(
                 headline=payload.primary_service or "Independent expert",
                 city=payload.city,
                 pincode=payload.pincode,
+                locality=payload.locality,
                 years_experience=payload.years_experience,
                 languages=[payload.preferred_language] if payload.preferred_language else [],
                 verification=VerificationStatus.PENDING,
@@ -183,7 +186,7 @@ async def create_user_profile(
                 WorkerCreate(
                     headline=payload.primary_service,
                     city=payload.city,
-                    area=payload.area,
+                    area=payload.area or payload.locality,
                     pincode=payload.pincode,
                     languages=[payload.preferred_language] if payload.preferred_language else [],
                     years_experience=payload.years_experience,
@@ -210,6 +213,7 @@ async def create_user_profile(
                 headline="Company",
                 city=payload.city,
                 pincode=payload.pincode,
+                locality=payload.locality,
                 verification=VerificationStatus.PENDING,
             )
         )
@@ -350,6 +354,9 @@ async def get_identities(session: AsyncSession, auth_user_id: UUID) -> Identitie
             onboarding_status=onboarding_status,
             looking_for_help=user.looking_for_help,
             need_fulfilled_at=user.need_fulfilled_at,
+            city=user.city,
+            pincode=user.pincode,
+            locality=user.locality,
         ),
         expert_profile=expert_profile,
         companies=companies,

@@ -22,6 +22,7 @@ CREATE TABLE users (
     bio TEXT,
     city TEXT,
     pincode TEXT CONSTRAINT users_pincode_check CHECK (pincode ~ '^[1-9][0-9]{5}$'),
+    locality TEXT,
     avatar_url TEXT,
     subscription_tier subscription_tier NOT NULL DEFAULT 'free',
     subscription_expires_at TIMESTAMPTZ,
@@ -101,6 +102,7 @@ CREATE TABLE profiles (
     bio TEXT,
     city TEXT,
     pincode TEXT CONSTRAINT profiles_pincode_check CHECK (pincode ~ '^[1-9][0-9]{5}$'),
+    locality TEXT,
     years_experience SMALLINT,
     languages TEXT[] NOT NULL DEFAULT '{}',
     keywords TEXT[] NOT NULL DEFAULT '{}',
@@ -551,6 +553,25 @@ CREATE INDEX worker_reviews_worker_idx ON worker_reviews(worker_id, created_at D
 
 REVOKE ALL ON worker_profiles, job_posts, worker_hires, worker_experiences, worker_reviews FROM anon, authenticated;
 GRANT ALL ON worker_profiles, job_posts, worker_hires, worker_experiences, worker_reviews TO service_role;
+
+-- PIN code directory (migration 026); rows loaded by db/scripts/import_pincodes.py.
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+CREATE TABLE pincode_areas (
+    id SERIAL PRIMARY KEY,
+    pincode TEXT NOT NULL CHECK (pincode ~ '^[1-9][0-9]{5}$'),
+    area TEXT NOT NULL,
+    taluk TEXT NOT NULL DEFAULT '',
+    district TEXT NOT NULL,
+    state TEXT NOT NULL
+);
+CREATE INDEX pincode_areas_pincode_idx ON pincode_areas(pincode);
+CREATE INDEX pincode_areas_area_trgm ON pincode_areas USING gin (lower(area) gin_trgm_ops);
+CREATE INDEX pincode_areas_taluk_trgm ON pincode_areas USING gin (lower(taluk) gin_trgm_ops);
+CREATE INDEX pincode_areas_district_trgm ON pincode_areas USING gin (lower(district) gin_trgm_ops);
+REVOKE ALL ON pincode_areas FROM anon, authenticated;
+GRANT ALL ON pincode_areas TO service_role;
+
 
 -- Block Supabase's public REST API (anon key) from reading tables; the backend connects as owner and bypasses RLS.
 DO $$

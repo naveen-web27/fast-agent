@@ -58,9 +58,7 @@
     .tag button { border:0; background:transparent; color:#7c8aa5; cursor:pointer; font-size:13px; line-height:1; padding:0; }
     .tag button:hover { color:#c0392b; }
     .resolved-badge { display:inline-flex; align-items:center; gap:4px; margin-top:6px; color:var(--good); font-size:11px; font-weight:800; }
-    .near-field { display:flex; align-items:center; gap:6px; min-width:150px; padding:0 10px; border:1px solid var(--line); border-radius:8px; background:#fbfcfe; font-size:13px; }
-    .near-field input { width:110px; min-height:40px; border:0; outline:0; background:transparent; font:inherit; }
-    .near-field.missing { border-color:#f2dfa7; background:#fffaf0; }
+    @media (max-width:720px) { .topbar .crumb { display:none; } }
     .location-alert { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin-top:14px; padding:11px 14px; color:#5d4a12; border:1px solid #f2dfa7; border-radius:10px; background:#fffaf0; font-size:13px; }
     .location-alert button { min-height:32px; padding:0 12px; font-size:12px; }
     .other-profiles { margin-top:30px; }
@@ -328,11 +326,11 @@
       <div class="side-bottom" id="side-bottom" hidden><span class="section-tag">Signed in as</span><div class="profile-mini"><span class="avatar" id="sidebar-avatar">?</span><span id="sidebar-name"></span></div></div>
     </aside>
     <main class="main" data-install-banner-host>
-      <header class="topbar"><div class="top-actions"><button class="icon-button mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="crumb"><strong>RightConnect</strong> / Marketplace</div></div><div class="top-actions"><div class="bell-wrap" id="bell-wrap" hidden><button class="icon-button" id="notif-button" type="button" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="bell-count" id="notif-count" hidden>0</span></button><div class="notif-menu" id="notif-menu" hidden></div></div><a class="secondary" href="auth.html" id="sign-in-link">Sign in or join</a><a class="secondary" id="find-work-link" href="workers.html?tab=me">Find work</a><button class="secondary" id="request-expert">Become an expert</button><div class="user-chip" id="user-chip" hidden><button class="user-chip-button" id="user-menu-button"><span class="avatar" id="chip-avatar">?</span><span id="chip-name"></span></button><div class="user-menu" id="user-menu" hidden><button id="my-profile-button">My profile</button><button id="manage-interests-button">Interests</button><button id="profile-settings-button">Settings</button><button id="menu-support-button">Help</button><button id="sign-out-button">Sign out</button></div></div></div></header>
+      <header class="topbar"><div class="top-actions"><button class="icon-button mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="crumb"><strong>RightConnect</strong> / Marketplace</div><div id="location-chip-slot"></div></div><div class="top-actions"><div class="bell-wrap" id="bell-wrap" hidden><button class="icon-button" id="notif-button" type="button" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="bell-count" id="notif-count" hidden>0</span></button><div class="notif-menu" id="notif-menu" hidden></div></div><a class="secondary" href="auth.html" id="sign-in-link">Sign in or join</a><a class="secondary" id="find-work-link" href="workers.html?tab=me">Find work</a><button class="secondary" id="request-expert">Become an expert</button><div class="user-chip" id="user-chip" hidden><button class="user-chip-button" id="user-menu-button"><span class="avatar" id="chip-avatar">?</span><span id="chip-name"></span></button><div class="user-menu" id="user-menu" hidden><button id="my-profile-button">My profile</button><button id="manage-interests-button">Interests</button><button id="profile-settings-button">Settings</button><button id="menu-support-button">Help</button><button id="sign-out-button">Sign out</button></div></div></div></header>
       <div class="page">
         <section class="view active" id="discover">
           <div class="page-title"><div><h1>Find help</h1></div><button class="primary" id="match-button">✦ Get matched</button></div>
-          <div class="search-panel"><label class="search-field">⌕ <input id="search-input" placeholder="What do you need?"></label><label class="near-field" title="Your PIN code: people near you are shown first">📍 <input id="near-pin" inputmode="numeric" maxlength="7" placeholder="Your PIN code" aria-label="Your PIN code, to show people near you first"></label><div class="kind-toggle" id="kind-toggle" role="group" aria-label="Profile type filter"><button type="button" class="pill kind-pill selected" data-kind="expert">Experts</button><button type="button" class="pill kind-pill selected" data-kind="company">Companies</button><button type="button" class="pill kind-pill" id="kind-customer-pill" data-kind="customer" hidden>Customers</button></div><button class="primary" id="search-button">Search</button></div>
+          <div class="search-panel"><label class="search-field">⌕ <input id="search-input" placeholder="What do you need?"></label><div class="kind-toggle" id="kind-toggle" role="group" aria-label="Profile type filter"><button type="button" class="pill kind-pill selected" data-kind="expert">Experts</button><button type="button" class="pill kind-pill selected" data-kind="company">Companies</button><button type="button" class="pill kind-pill" id="kind-customer-pill" data-kind="customer" hidden>Customers</button></div><button class="primary" id="search-button">Search</button></div>
           <div class="location-alert" id="location-alert" hidden></div>
           <div class="dashboard-grid"><div><div class="filter-row"><h2 id="result-count">Loading profiles…</h2></div><div class="results" id="results"></div><div class="pagination" id="pagination" hidden><button class="secondary" id="page-prev" type="button">← Prev</button><span id="page-indicator">Page 1</span><button class="secondary" id="page-next" type="button">Next →</button></div><section class="other-profiles" id="other-profiles" aria-labelledby="other-profiles-title" hidden><div class="other-divider"><span id="other-profiles-title">Other profiles</span></div><p class="muted other-note">Not an exact match for your search, but they may still help.</p><div class="results" id="other-results"></div><div class="pagination" id="other-pagination" hidden><button class="secondary" id="other-more" type="button">Show more profiles</button></div></section></div><aside class="discover-side"><section class="showcase-discover showcase-side" aria-labelledby="showcase-strip-title"><div class="showcase-heading"><div><h2 id="showcase-strip-title">Video showcases</h2><p class="muted">Reels and Shorts from providers. Videos open on the original platform.</p></div><button class="secondary" type="button" data-view="showcases">View all</button></div><div class="showcase-strip showcase-vertical" id="showcase-strip" tabindex="0" role="region" aria-label="Video showcases, scroll vertically"><p class="muted">Loading showcases...</p></div></section><div class="insight-card"><span class="section-tag">Top picks</span><div class="match-list" id="match-list"></div></div><div class="stat-grid"><div class="stat"><small>Reviews</small><strong id="stat-reviews">–</strong></div><div class="stat"><small>Avg. reply</small><strong id="stat-response">–</strong></div></div></aside></div>
         </section>
@@ -399,7 +397,7 @@
     <form id="expert-form">
       <div class="field"><label for="expert-headline">Headline</label><input id="expert-headline" placeholder="e.g. Digital marketing consultant" required></div>
       <div class="field"><label for="expert-service">Primary service</label><input id="expert-service" placeholder="Digital marketing"></div>
-      <div class="field"><label for="expert-city">City</label><input id="expert-city" placeholder="Chennai"></div><div class="field"><label for="expert-pincode">PIN code</label><input id="expert-pincode" inputmode="numeric" maxlength="7" placeholder="600042"></div>
+      <div class="field"><label for="expert-city">City</label><input id="expert-city" placeholder="Chennai"></div><div class="field"><label for="expert-pincode">Where do you work?</label><input id="expert-pincode"></div>
       <div class="field"><label for="expert-experience">Years of experience</label><input id="expert-experience" type="number" min="0"></div>
       <div class="field"><label for="expert-bio">Short bio</label><textarea id="expert-bio" rows="3"></textarea></div>
       <div class="modal-actions"><button type="button" class="secondary" id="expert-cancel">Cancel</button><button type="submit" class="primary" id="expert-submit">Create expert profile</button></div>
@@ -412,7 +410,7 @@
       <div class="field"><label for="company-name-input">Company name</label><input id="company-name-input" required></div>
       <div class="field"><label for="company-work-email">Work email</label><input id="company-work-email" type="email" required></div>
       <div class="field"><label for="company-website">Website</label><input id="company-website" type="url" placeholder="https://"></div>
-      <div class="field"><label for="company-city">City</label><input id="company-city"></div><div class="field"><label for="company-pincode">PIN code</label><input id="company-pincode" inputmode="numeric" maxlength="7" placeholder="600042"></div>
+      <div class="field"><label for="company-city">City</label><input id="company-city"></div><div class="field"><label for="company-pincode">Business location</label><input id="company-pincode"></div>
       <div class="field"><label for="company-service">Main service offered</label><input id="company-service" maxlength="120" placeholder="e.g. Health insurance"></div>
       <div class="modal-actions"><button type="button" class="secondary" id="company-cancel">Cancel</button><button type="submit" class="primary" id="company-submit">Create company</button></div>
     </form>
@@ -2102,7 +2100,7 @@
         headline: document.querySelector('#expert-headline').value,
         primary_service: document.querySelector('#expert-service').value || null,
         city: document.querySelector('#expert-city').value || null,
-        pincode: RCLocation.clean(document.querySelector('#expert-pincode').value) || null,
+        pincode: RCLocation.picked(document.querySelector('#expert-pincode'))?.pincode || null,
         years_experience: Number(document.querySelector('#expert-experience').value) || null,
         bio: document.querySelector('#expert-bio').value || null,
         languages: [],
@@ -2127,7 +2125,7 @@
         work_email: workEmail,
         website: document.querySelector('#company-website').value || null,
         city: document.querySelector('#company-city').value || null,
-        pincode: RCLocation.clean(document.querySelector('#company-pincode').value) || null,
+        pincode: RCLocation.picked(document.querySelector('#company-pincode'))?.pincode || null,
         primary_service: document.querySelector('#company-service').value.trim() || null,
       };
       const submitButton = document.querySelector('#company-submit');
@@ -2209,52 +2207,78 @@
       showToast('Company email verified.', 'success');
     });
 
-    // ---------- location: the visitor's PIN code ranks nearby people first ----------
-    const nearInput = document.querySelector('#near-pin');
-    function syncNearField() {
-      const pin = RCLocation.get(currentUser);
-      nearInput.value = pin;
-      nearInput.closest('.near-field').classList.toggle('missing', !pin);
+    // ---------- location: a Zomato-style chip in the top bar; nearby people are listed first ----------
+    async function saveAccountPlace(place) {
+      if (!accessToken || !currentUser) return;
+      const response = await fetch(`${apiBase}/auth/me`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ pincode: place.pincode, locality: place.area || null, city: place.district || currentUser.city || null }),
+      });
+      if (!response.ok) throw new Error('Could not save your location. Please try again.');
+      currentUser = { ...currentUser, ...(await response.json()) };
     }
-    async function saveVisitorPincode(pin) {
-      RCLocation.set(pin);
-      if (!accessToken || !currentUser || currentUser.pincode === pin) return;
-      try {
-        const response = await fetch(`${apiBase}/auth/me`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ pincode: pin || null }) });
-        if (response.ok) currentUser = { ...currentUser, ...(await response.json()) };
-      } catch (_) { /* Kept on this device; the account copy is retried next time. */ }
-    }
-    nearInput.addEventListener('change', async () => {
-      const pin = RCLocation.clean(nearInput.value);
-      if (pin && !RCLocation.valid(pin)) { showToast('Enter a valid 6-digit PIN code.', 'error'); syncNearField(); return; }
-      await saveVisitorPincode(pin);
-      syncNearField();
+    function afterLocationChange() {
       renderLocationAlert();
       currentPage = 1;
       refreshDiscoverResults();
       window.refreshShowcaseSidebar?.(true);
-      if (pin) showToast('Showing people near you first.', 'success');
+    }
+    const locationChip = RCLocation.mountChip(document.querySelector('#location-chip-slot'), {
+      getAccount: () => currentUser,
+      onChange: async (place) => {
+        await saveAccountPlace(place);
+        afterLocationChange();
+        showToast(`Showing people near ${RCLocation.label(place)} first.`, 'success');
+      },
     });
-    nearInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); nearInput.blur(); } });
 
-    // Nudges anyone whose own listing or account has no PIN, since they can't be matched by distance.
+    for (const [placeId, cityId] of [['#expert-pincode', '#expert-city'], ['#company-pincode', '#company-city']]) {
+      RCLocation.attach(document.querySelector(placeId), { onPick: (place) => {
+        const city = document.querySelector(cityId);
+        if (place.district && !city.value.trim()) city.value = place.district;
+      } });
+    }
+
+    // Where each of the signer's own listings saves its place, without opening the full profile editor.
+    async function saveListingPlace(item, place) {
+      const body = item.kind === 'worker'
+        ? { pincode: place.pincode, city: place.district || null, area: place.area || null }
+        : { pincode: place.pincode, locality: place.area || null, city: place.district || null };
+      const path = item.kind === 'worker' ? '/workers/me/location' : `/profiles/${item.profileId}`;
+      const response = await fetch(`${apiBase}${path}`, { method: item.kind === 'worker' ? 'PUT' : 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(body) });
+      if (!response.ok) {
+        const detail = (await response.json().catch(() => ({}))).detail;
+        throw new Error(typeof detail === 'string' ? detail : 'Could not save the location. Please try again.');
+      }
+      await loadIdentities();
+      afterLocationChange();
+      showToast(`Location saved for ${item.label}.`, 'success');
+    }
+
+    // Nudges anyone whose own listing or account has no location, since they can't be matched by distance.
     function renderLocationAlert() {
       const alertBox = document.querySelector('#location-alert');
       const missing = [];
-      if (identities?.expert_profile?.location_missing) missing.push({ label: 'your expert profile', profileId: identities.expert_profile.id });
-      if (identities?.worker_profile?.location_missing) missing.push({ label: 'your worker profile', href: 'workers.html?tab=me' });
+      if (identities?.expert_profile?.location_missing) missing.push({ kind: 'expert', label: 'your expert profile', profileId: identities.expert_profile.id });
+      if (identities?.worker_profile?.location_missing) missing.push({ kind: 'worker', label: 'your worker profile' });
       (identities?.companies || []).filter((company) => company.member_role === 'admin' && company.location_missing && company.profile_id)
-        .forEach((company) => missing.push({ label: company.name, profileId: company.profile_id }));
+        .forEach((company) => missing.push({ kind: 'company', label: company.name, profileId: company.profile_id }));
       if (missing.length) {
-        alertBox.innerHTML = `<span>📍 <strong>Location missing</strong> on ${missing.map((item) => escapeHtml(item.label)).join(', ')}. Customers nearby see providers with a PIN code first.</span><span>${missing.map((item, index) => `<button class="secondary" type="button" data-fix-location="${index}">Add PIN code${missing.length > 1 ? ` (${escapeHtml(item.label)})` : ''}</button>`).join(' ')}</span>`;
+        alertBox.innerHTML = `<span>📍 <strong>Location missing</strong> on ${missing.map((item) => escapeHtml(item.label)).join(', ')}. Customers nearby find providers with a location first.</span><span>${missing.map((item, index) => `<button class="secondary" type="button" data-fix-location="${index}">Set location${missing.length > 1 ? ` · ${escapeHtml(item.label)}` : ''}</button>`).join(' ')}</span>`;
         alertBox.querySelectorAll('[data-fix-location]').forEach((button) => button.addEventListener('click', () => {
           const item = missing[Number(button.dataset.fixLocation)];
-          if (item.href) window.location.href = item.href; else openProfileEditor(item.profileId, 'basics');
+          RCLocation.openPicker({
+            title: `Where is ${item.label}?`,
+            hint: 'Pick the area where you work. Customers near it will see you first.',
+            current: RCLocation.place(currentUser),
+            onSave: (place) => saveListingPlace(item, place),
+          });
         }));
         alertBox.hidden = false;
       } else if (!RCLocation.get(currentUser)) {
-        alertBox.innerHTML = '<span>📍 Add your PIN code to see experts and companies near you first.</span><button class="secondary" type="button" data-focus-pin>Add PIN code</button>';
-        alertBox.querySelector('[data-focus-pin]').addEventListener('click', () => nearInput.focus());
+        alertBox.innerHTML = '<span>📍 Set your location to see experts, companies and workers near you first.</span><button class="secondary" type="button" data-set-location>Set location</button>';
+        alertBox.querySelector('[data-set-location]').addEventListener('click', () => locationChip.open());
         alertBox.hidden = false;
       } else {
         alertBox.hidden = true;
@@ -2276,9 +2300,10 @@
       sessionStorage.setItem('rightconnect-user', JSON.stringify(user));
       currentUser = user;
       currentInterests = user.interests || [];
-      // A PIN typed before signing in is saved to the account; an account PIN replaces the device one.
-      if (!user.pincode && RCLocation.get(null)) saveVisitorPincode(RCLocation.get(null));
-      syncNearField();
+      // A place chosen before signing in is saved to the account; an account place replaces the device one.
+      const devicePlace = RCLocation.place(null);
+      if (!user.pincode && devicePlace) saveAccountPlace(devicePlace).then(() => locationChip.render()).catch(() => {});
+      locationChip.render();
       renderLocationAlert();
       const searchInput = document.querySelector('#search-input');
       if (getActingType() === 'customer' && user.looking_for_help !== false && currentInterests.length && !searchInput.value.trim()) {
@@ -2352,7 +2377,6 @@
     function openLaunchView() { document.querySelector(`.nav-button[data-view="${launchView}"]`).click(); }
     if (sharedQuery) document.querySelector('#search-input').value = sharedQuery;
     applyNavForActing(getActingType());
-    syncNearField();
     renderLocationAlert();
     if (sharedProfileId) { openProfile(sharedProfileId, { skipHistory: true }); }
     else if (launchView) { openLaunchView(); }

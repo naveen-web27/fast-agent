@@ -21,6 +21,7 @@ from app.features.workers.schemas import (
     JobApply,
     JobCreate,
     JobOut,
+    LocationUpdate,
     MyWorkerProfile,
     ReviewCreate,
     VerificationRequestOut,
@@ -98,6 +99,14 @@ async def update_availability(
 ) -> MyWorkerProfile:
     """Green = available, amber = busy (optionally until a date), grey = offline."""
     return await run_worker_action(service.set_my_availability(session, auth_user_id, payload))
+
+
+@router.put("/me/location", response_model=MyWorkerProfile)
+async def update_location(
+    payload: LocationUpdate, auth_user_id: UUID = Depends(get_current_auth_user_id), session: AsyncSession = Depends(get_db)
+) -> MyWorkerProfile:
+    """Set where the worker works (PIN code, city, area) from the location picker."""
+    return await run_worker_action(service.set_my_location(session, auth_user_id, payload))
 
 
 @router.post("/me/experiences", response_model=MyWorkerProfile, status_code=status.HTTP_201_CREATED)

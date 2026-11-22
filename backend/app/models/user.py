@@ -44,6 +44,8 @@ class User(Base):
     city: Mapped[str | None] = mapped_column(String)
     # 6-digit Indian PIN code; drives "nearest first" ranking (see app/core/location.py).
     pincode: Mapped[str | None] = mapped_column(String)
+    # Area name chosen in the location picker, e.g. "Idappadi" (city holds the district, e.g. "Salem").
+    locality: Mapped[str | None] = mapped_column(String)
     avatar_url: Mapped[str | None] = mapped_column(String)
     role: Mapped[UserRole] = mapped_column(
         Enum(

@@ -17,6 +17,7 @@ class ProfileSummary(BaseModel):
     headline: str
     city: str | None
     pincode: str | None = None
+    locality: str | None = None
     # 4 same area, 3 same district/city, 2 same state, 1 same region, 0 elsewhere; None when the searcher gave no location.
     nearness: int | None = None
     years_experience: int | None
