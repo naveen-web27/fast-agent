@@ -12,6 +12,7 @@ from app.features.workers.schemas import (
     AvailabilityUpdate,
     ClaimWorkerPayload,
     CompanyOption,
+    DirectContact,
     EmployerExperienceCreate,
     ExperienceConfirm,
     ExperienceCreate,
@@ -215,6 +216,14 @@ async def close(job_id: UUID, auth_user_id: UUID = Depends(get_current_auth_user
     return await run_worker_action(service.close_job(session, auth_user_id, job_id))
 
 
+@router.get("/jobs/{job_id}/contact", response_model=DirectContact)
+async def contact_for_job(
+    job_id: UUID, auth_user_id: UUID = Depends(get_current_auth_user_id), session: AsyncSession = Depends(get_db)
+) -> DirectContact:
+    """The employer's number to call or WhatsApp about this job (signed-in users, when shared)."""
+    return await run_worker_action(service.job_contact(session, auth_user_id, job_id))
+
+
 @router.post("/jobs/{job_id}/apply", response_model=HireOut, status_code=status.HTTP_201_CREATED)
 async def apply(
     job_id: UUID, payload: JobApply, auth_user_id: UUID = Depends(get_current_auth_user_id), session: AsyncSession = Depends(get_db)
@@ -225,6 +234,14 @@ async def apply(
 @router.get("/{worker_id}", response_model=WorkerDetail)
 async def worker_detail(worker_id: UUID, session: AsyncSession = Depends(get_db)) -> WorkerDetail:
     return await run_worker_action(service.get_worker(session, worker_id))
+
+
+@router.get("/{worker_id}/contact", response_model=DirectContact)
+async def contact_worker(
+    worker_id: UUID, auth_user_id: UUID = Depends(get_current_auth_user_id), session: AsyncSession = Depends(get_db)
+) -> DirectContact:
+    """The worker's number to call or WhatsApp (signed-in users, when the worker allows direct contact)."""
+    return await run_worker_action(service.worker_contact(session, auth_user_id, worker_id))
 
 
 @router.post("/{worker_id}/hire", response_model=HireOut, status_code=status.HTTP_201_CREATED)

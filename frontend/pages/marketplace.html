@@ -385,6 +385,7 @@
   </nav>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../assets/location.js"></script>
+  <script src="../assets/avatar.js"></script>
   <div class="modal-scrim" id="modal-scrim" hidden></div>
   <div class="toast" id="toast" hidden></div>
   <div class="api-spinner" id="api-spinner" role="status" aria-live="polite" hidden><img src="../assets/rightconnect-mark.svg" alt=""><span class="loading-dots" aria-hidden="true"><i></i><i></i><i></i></span>Signing you in…</div>
@@ -776,7 +777,7 @@
         const card = document.createElement('article');
         card.className = 'profile-card';
         card.innerHTML = `
-          <div class="portrait"></div>
+          <div class="portrait">${RCAvatar.svg({ name: request.counterpart_name, seed: request.counterpart_name })}</div>
           <div>
             <div class="profile-head"><h3>${escapeHtml(request.title)}</h3></div>
             <div class="profile-role">${escapeHtml(request.counterpart_name)}</div>
@@ -861,7 +862,7 @@
       const locked = isPeerLocked(profile.kind, getActingType()) && !isPremiumUser();
       article.className = `profile-card${locked ? ' locked' : ''}`;
       article.innerHTML = `
-        <div class="portrait">${profile.avatar_url ? `<img src="${safeHref(profile.avatar_url)}" alt="${escapeHtml(profile.display_name)}">` : ''}</div>
+        <div class="portrait">${RCAvatar.html({ url: profile.avatar_url, name: profile.display_name, seed: profile.id, kind: profile.kind, safeUrl: safeHref })}</div>
         <div>
           <div class="profile-head"><h3>${escapeHtml(profile.display_name)}</h3>${profile.verified ? `<span class="verified">● Verified</span>` : ''}${profile.claimed === false ? `<span class="unclaimed-badge" title="Added by RightConnect. The owner hasn't joined yet.">Unclaimed</span>` : ''}</div>
           <div class="profile-role">${escapeHtml(roleLine)}</div>
@@ -953,7 +954,7 @@
     function renderProfileDetail(profile) {
       const own = ownsProfile(profile.id);
       currentProfileName = profile.display_name;
-      document.querySelector('#profile-portrait').innerHTML = profile.avatar_url ? `<img src="${safeHref(profile.avatar_url)}" alt="${escapeHtml(profile.display_name)}">` : escapeHtml(initialsOf(profile.display_name));
+      document.querySelector('#profile-portrait').innerHTML = RCAvatar.html({ url: profile.avatar_url, name: profile.display_name, seed: profile.id, kind: profile.kind, safeUrl: safeHref });
       document.querySelector('#profile-verified').hidden = !profile.verified;
       document.querySelector('#profile-name').textContent = profile.display_name;
       document.querySelector('#profile-subtitle').textContent = `${profile.headline} · 📍 ${RCLocation.text(profile) || 'Location not added'}`;
@@ -1011,8 +1012,7 @@
     function renderInsights(profiles) {
       const matchList = document.querySelector('#match-list');
       matchList.innerHTML = profiles.slice(0, 2).map((profile) => {
-        const initials = escapeHtml(profile.display_name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase());
-        return `<div class="match"><span class="avatar">${initials}</span><div><strong>${escapeHtml(profile.display_name)}</strong><span>${escapeHtml(profile.headline)}</span></div><span class="score">${profile.average_rating.toFixed(1)}</span></div>`;
+        return `<div class="match"><span class="avatar">${RCAvatar.html({ url: profile.avatar_url, name: profile.display_name, seed: profile.id, round: true, safeUrl: safeHref })}</span><div><strong>${escapeHtml(profile.display_name)}</strong><span>${escapeHtml(profile.headline)}</span></div><span class="score">${profile.average_rating.toFixed(1)}</span></div>`;
       }).join('') || '<p style="color:#b9c7dd;font-size:12px;margin:0">No profiles yet.</p>';
 
       const totalReviews = profiles.reduce((sum, profile) => sum + profile.review_count, 0);
@@ -1469,7 +1469,7 @@
       return String(name || '?').split(' ').filter(Boolean).map((part) => part[0]).slice(0, 2).join('').toUpperCase();
     }
     function renderChatHeader(name, subtitle, isGroup) {
-      document.querySelector('#chat-avatar').textContent = isGroup ? '👥' : initialsOf(name);
+      document.querySelector('#chat-avatar').innerHTML = isGroup ? '👥' : RCAvatar.svg({ name, round: true });
       document.querySelector('#request-detail-tag').textContent = name;
       document.querySelector('#request-detail-title').textContent = subtitle;
     }
@@ -1536,7 +1536,7 @@
 
       document.querySelector('#request-participants').innerHTML = detail.participants.length
         ? detail.participants.map((participant) => {
-            const initials = escapeHtml(participant.name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase());
+            const initials = RCAvatar.svg({ name: participant.name, seed: participant.profile_id || participant.name, round: true });
             const contact = participant.contact
               ? `<div style="margin-top:4px;font-size:11px;color:var(--muted)">
                   ${participant.contact.email ? `<div>✉ ${escapeHtml(participant.contact.email)}</div>` : ''}
@@ -2288,11 +2288,11 @@
 
     function applySignedInUser(user) {
       const nearBefore = RCLocation.get(currentUser);
-      const initials = user.full_name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase();
-      document.querySelector('#sidebar-avatar').textContent = initials;
+      const userAvatar = RCAvatar.html({ url: user.avatar_url, name: user.full_name, seed: user.id, round: true, safeUrl: safeHref });
+      document.querySelector('#sidebar-avatar').innerHTML = userAvatar;
       document.querySelector('#sidebar-name').textContent = user.full_name;
       document.querySelector('#side-bottom').hidden = false;
-      document.querySelector('#chip-avatar').innerHTML = user.avatar_url ? `<img src="${safeHref(user.avatar_url)}" alt="">` : escapeHtml(initials);
+      document.querySelector('#chip-avatar').innerHTML = userAvatar;
       document.querySelector('#chip-name').innerHTML = `${escapeHtml(user.full_name)}<br><small>${escapeHtml(user.role.replace('_', ' '))}</small>`;
       document.querySelector('#user-chip').hidden = false;
       document.querySelector('#sign-in-link').hidden = true;

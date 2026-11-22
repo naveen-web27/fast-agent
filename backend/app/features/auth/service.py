@@ -191,6 +191,8 @@ async def create_user_profile(
                     languages=[payload.preferred_language] if payload.preferred_language else [],
                     years_experience=payload.years_experience,
                     adult_confirmed=payload.adult_confirmed,
+                    # The signup screen tells workers employers can call/WhatsApp them; they can switch it off later.
+                    show_contact=True,
                 ),
             )
         )

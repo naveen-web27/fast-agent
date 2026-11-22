@@ -34,13 +34,20 @@
     input:focus,textarea:focus,select:focus { outline:2px solid #9bd3c0; border-color:#74bba3; }
     input[type=checkbox] { width:auto; } label.check { display:flex; align-items:center; gap:7px; font-size:12px; font-weight:700; white-space:nowrap; }
     label.field { display:block; margin:12px 0 5px; font-size:12px; font-weight:800; } .hint { margin:5px 0 0; color:var(--muted); font-size:12px; }
+    .contact-row { display:flex; flex-wrap:wrap; gap:8px; }
+    .btn.wa { border-color:#128c4a; background:#128c4a; color:#fff; } .btn.wa::before { content:'💬 '; } .btn.wa:hover:not(:disabled) { background:#0d6e3a; }
+    .dlg .actions .contact-row { margin-right:auto; }
+    .pay-row { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) minmax(110px,.8fr); gap:8px; align-items:center; } .pay-row > span { color:var(--muted); font-size:12px; font-weight:700; }
+    @media(max-width:520px) { .pay-row { grid-template-columns:1fr auto 1fr; } .pay-row select { grid-column:1/-1; } }
     .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
     .btn { min-height:40px; padding:0 15px; border:1px solid var(--green); border-radius:7px; background:var(--green); color:#fff; font-weight:800; }
     .btn:hover:not(:disabled) { background:#054f46; } .btn.ghost { border-color:var(--line); background:#fff; color:var(--ink); } .btn.ghost:hover:not(:disabled) { background:#f4f8f5; }
     .btn.small { min-height:32px; padding:0 11px; font-size:12px; } .btn.danger { border-color:#f0c4bd; background:#fff; color:var(--danger); }
     .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:14px; }
     .card { display:flex; flex-direction:column; gap:8px; padding:16px; border:1px solid var(--line); border-radius:10px; background:#fff; }
-    .card h3 { margin:0; font-size:15px; } .card .meta { color:var(--muted); font-size:12px; }
+    .card h3 { margin:0; font-size:15px; }
+    .who { display:flex; align-items:center; gap:12px; } .who-pic { flex:none; width:52px; height:52px; overflow:hidden; border-radius:12px; } .who-pic img { width:100%; height:100%; object-fit:cover; }
+    .who-pic.big { width:72px; height:72px; border-radius:16px; } .card .meta { color:var(--muted); font-size:12px; }
     .card .foot { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:auto; padding-top:6px; }
     .light { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:800; }
     .light i { width:10px; height:10px; border-radius:50%; background:var(--off); box-shadow:0 0 0 3px #eef2f1; }
@@ -163,7 +170,7 @@
     <div class="grid2"><div><label class="field" for="hire-location">Location</label><input id="hire-location" maxlength="160"></div><div><label class="field" for="hire-start">Start date</label><input id="hire-start" type="date"></div></div>
     <div class="grid2"><div><label class="field" for="hire-pay">Pay offered</label><input id="hire-pay" maxlength="80" placeholder="₹800/day"></div><div id="hire-org-wrap" hidden><label class="field" for="hire-org">Hiring for</label><select id="hire-org"></select></div></div>
     <label class="field" for="hire-details">Details</label><textarea id="hire-details" rows="3" maxlength="2000"></textarea>
-    <p class="hint">Phone numbers are shared only after the worker accepts.</p>
+    <p class="hint">Your phone number is shared with the worker once they accept.</p>
     <div class="error" id="hire-error"></div><div class="actions"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn" type="submit">Send request</button></div>
   </form></dialog>
 
@@ -187,6 +194,8 @@
     <div class="grid2"><div><label class="field" for="job-pay">Pay</label><input id="job-pay" maxlength="80" placeholder="₹700/day"></div><div><label class="field" for="job-start">Starts on</label><input id="job-start" type="date"></div></div>
     <div id="job-org-wrap" hidden><label class="field" for="job-org">Post as</label><select id="job-org"></select></div>
     <label class="field" for="job-desc">Details</label><textarea id="job-desc" rows="3" maxlength="2000"></textarea>
+    <label class="field" for="job-phone">Phone / WhatsApp for this job</label><input id="job-phone" type="tel" inputmode="tel" maxlength="30" placeholder="Blank = your account number">
+    <label class="check" style="margin-top:8px;white-space:normal"><input id="job-show-contact" type="checkbox" checked> Let workers call or WhatsApp me about this job</label>
     <div class="error" id="job-error"></div><div class="actions"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn" type="submit">Post job</button></div>
   </form></dialog>
 
@@ -207,6 +216,7 @@
   <div class="loading-screen" id="loading" hidden>Opening Google…</div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../assets/location.js"></script>
+  <script src="../assets/avatar.js"></script>
   <script>
     const apiBase = '/api/v1';
     let authClient = null;
@@ -262,8 +272,46 @@
       const label = { available: 'Available now', busy: worker.busy_until ? `Busy · free from ${shortDate(worker.busy_until)}` : 'Busy', offline: 'Not looking for work' }[worker.availability];
       return `<span class="light ${worker.availability}"><i></i>${label}</span>${worker.availability_stale ? ' <span class="stale">(not updated recently)</span>' : ''}`;
     }
-    function rateText(worker) {
-      return worker.rate_amount != null ? `₹${Number(worker.rate_amount).toLocaleString('en-IN')}/${worker.rate_unit}` : '';
+    // ---------- direct contact: Call / WhatsApp ----------
+    function contactButtons(kind, id, small = true) {
+      const size = small ? ' small' : '';
+      return `<div class="contact-row"><button class="btn ghost${size}" type="button" data-contact="call" data-kind="${kind}" data-id="${escapeHtml(id)}">📞 Call</button><button class="btn wa${size}" type="button" data-contact="whatsapp" data-kind="${kind}" data-id="${escapeHtml(id)}">WhatsApp</button></div>`;
+    }
+    // WhatsApp needs digits with the country code; numbers are stored like +919876543210.
+    function whatsappUrl(phone, text) { return `https://wa.me/${String(phone).replace(/\D/g, '')}?text=${encodeURIComponent(text)}`; }
+    function wireContact(root, { name, text }) {
+      root.querySelectorAll('[data-contact]').forEach((button) => button.addEventListener('click', async (event) => {
+        event.stopPropagation();
+        if (!requireSignIn()) return;
+        const { contact: how, kind, id } = button.dataset;
+        // Open WhatsApp's tab now, while the click still counts, so pop-up blockers allow it.
+        const tab = how === 'whatsapp' ? window.open('', '_blank') : null;
+        button.disabled = true;
+        try {
+          const contact = await api(kind === 'job' ? `/workers/jobs/${id}/contact` : `/workers/${id}/contact`);
+          if (how === 'whatsapp') {
+            const url = whatsappUrl(contact.phone, text(contact.name));
+            if (tab) tab.location.href = url; else window.location.href = url;
+          } else {
+            window.location.href = `tel:${contact.phone}`;
+            message(`Calling ${contact.name} on ${contact.phone}.`);
+          }
+        } catch (error) {
+          tab?.close();
+          message(error.message, true);
+        } finally {
+          button.disabled = false;
+        }
+      }));
+    }
+
+    // ₹500–1,000/day, ₹800/day, or "Pay: discuss" when the worker hides it.
+    function rateText(worker, own = false) {
+      if (worker.rate_hidden && !own) return 'Pay: discuss';
+      if (worker.rate_amount == null) return '';
+      const money = (amount) => Number(amount).toLocaleString('en-IN');
+      const range = worker.rate_max != null && worker.rate_max !== worker.rate_amount ? `₹${money(worker.rate_amount)}–${money(worker.rate_max)}` : `₹${money(worker.rate_amount)}`;
+      return `${range}/${worker.rate_unit}${own && worker.rate_hidden ? ' (hidden)' : ''}`;
     }
     function skillChips(skills, limit = 99) {
       const shown = skills.slice(0, limit).map((skill) => `<span class="chip${skill.verified ? ' verified' : ''}" title="${escapeHtml(skill.verified ? `Verified by ${skill.verified_by.join(', ')}` : 'Self-declared')}">${escapeHtml(skill.name)}</span>`).join('');
@@ -311,11 +359,13 @@
       card.className = 'card';
       card.innerHTML = `
         <div>${lightHtml(worker)}</div>
-        <div><h3>${escapeHtml(worker.display_name)} ${worker.claimed ? '' : '<span class="badge unclaimed">Unclaimed</span>'}</h3><div class="meta">${escapeHtml(worker.headline)}</div>${RCLocation.html(worker)}
+        <div class="who"><div class="who-pic">${RCAvatar.html({ url: worker.avatar_url, name: worker.display_name, seed: worker.id, kind: 'worker' })}</div><div><h3>${escapeHtml(worker.display_name)} ${worker.claimed ? '' : '<span class="badge unclaimed">Unclaimed</span>'}</h3><div class="meta">${escapeHtml(worker.headline)}</div>${RCLocation.html(worker)}</div></div><div>
         <div class="meta">${worker.years_experience != null ? `${worker.years_experience} yrs · ` : ''}${escapeHtml(worker.languages.join(', '))}${worker.verified_skill_count ? ` · <strong style="color:#0b6b4f">${worker.verified_skill_count} verified skill${worker.verified_skill_count === 1 ? '' : 's'}</strong>` : ''}</div></div>
         <div class="chips">${skillChips(worker.skills, 6)}</div>
-        <div class="foot"><span>${worker.review_count ? `<span class="rating">★ ${worker.average_rating.toFixed(1)}</span> <span class="meta">(${worker.review_count})</span>` : '<span class="meta">No reviews yet</span>'}${rateText(worker) ? ` · <span class="rate">${escapeHtml(rateText(worker))}</span>` : ''}</span><button class="btn small" type="button">View</button></div>`;
-      card.querySelector('button').addEventListener('click', () => openWorker(worker.id));
+        ${worker.contact_available ? contactButtons('worker', worker.id) : ''}
+        <div class="foot"><span>${worker.review_count ? `<span class="rating">★ ${worker.average_rating.toFixed(1)}</span> <span class="meta">(${worker.review_count})</span>` : '<span class="meta">No reviews yet</span>'}${rateText(worker) ? ` · <span class="rate">${escapeHtml(rateText(worker))}</span>` : ''}</span><button class="btn small" type="button" data-view>View</button></div>`;
+      card.querySelector('[data-view]').addEventListener('click', () => openWorker(worker.id));
+      wireContact(card, { text: (name) => `Hi ${name}, I found your ${worker.headline} profile on RightConnect. Are you available for work?` });
       return card;
     }
     async function findWorkers(append = false) {
@@ -358,16 +408,17 @@
         currentWorker = worker;
         const mine = myWorker && myWorker.id === worker.id;
         body.innerHTML = `
-          <div class="row" style="justify-content:space-between;align-items:flex-start"><div><h2>${escapeHtml(worker.display_name)}</h2><div class="meta" style="color:var(--muted)">${escapeHtml(worker.headline)}</div>${RCLocation.html(worker)}</div><button class="btn ghost small" type="button" data-close-worker>Close</button></div>
+          <div class="row" style="justify-content:space-between;align-items:flex-start"><div class="who"><div class="who-pic big">${RCAvatar.html({ url: worker.avatar_url, name: worker.display_name, seed: worker.id, kind: 'worker' })}</div><div><h2>${escapeHtml(worker.display_name)}</h2><div class="meta" style="color:var(--muted)">${escapeHtml(worker.headline)}</div>${RCLocation.html(worker)}</div></div><button class="btn ghost small" type="button" data-close-worker>Close</button></div>
           <div style="margin-top:8px">${lightHtml(worker)}</div>
           <p class="meta" style="color:var(--muted)">${[worker.years_experience != null ? `${worker.years_experience} yrs experience` : '', worker.languages.join(', '), rateText(worker), worker.review_count ? `★ ${worker.average_rating.toFixed(1)} (${worker.review_count} reviews)` : ''].filter(Boolean).map(escapeHtml).join(' · ')}</p>
           ${worker.bio ? `<p>${escapeHtml(worker.bio)}</p>` : ''}
           <div class="section-title">Skills</div><div class="chips">${skillChips(worker.skills) || '<span class="meta">No skills listed yet.</span>'}</div>
           <div class="section-title">Work history</div>${worker.experiences.map((exp) => experienceHtml(exp, false)).join('') || '<p class="meta" style="color:var(--muted)">No work history yet.</p>'}
           <div class="section-title">Reviews</div>${worker.reviews.map((review) => `<div class="exp"><strong><span class="rating">★ ${review.rating}</span> ${escapeHtml(review.reviewer_name)}</strong>${review.body ? `<div class="meta">${escapeHtml(review.body)}</div>` : ''}</div>`).join('') || '<p class="meta" style="color:var(--muted)">No reviews yet. Reviews come only from employers after completed work.</p>'}
-          <div class="actions">${mine ? '' : `${adminCompanies.length ? '<button class="btn ghost" type="button" data-employer-exp>Add verified work history</button>' : ''}${worker.claimed ? '<button class="btn" type="button" data-hire>Send hire request</button>' : '<span class="hint">This worker hasn\'t joined yet, so they can\'t receive requests.</span>'}`}</div>`;
+          <div class="actions">${mine ? '' : `${adminCompanies.length ? '<button class="btn ghost" type="button" data-employer-exp>Add verified work history</button>' : ''}${worker.claimed ? `${worker.contact_available ? contactButtons('worker', worker.id, false) : '<span class="hint">Their number is shared after they accept your hire request.</span>'}<button class="btn" type="button" data-hire>Send hire request</button>` : '<span class="hint">This worker hasn\'t joined yet, so they can\'t receive requests.</span>'}`}</div>`;
         body.querySelector('[data-close-worker]').addEventListener('click', () => document.querySelector('#worker-dialog').close());
         body.querySelector('[data-hire]')?.addEventListener('click', () => openHire(worker));
+        wireContact(body, { text: (name) => `Hi ${name}, I found your ${worker.headline} profile on RightConnect. Are you available for work?` });
         body.querySelector('[data-employer-exp]')?.addEventListener('click', () => openExperience({ mode: 'employer', worker }));
       } catch (error) { body.innerHTML = `<p class="empty">${escapeHtml(error.message)}</p>`; }
     }
@@ -489,8 +540,10 @@
         <div class="meta">${escapeHtml(job.poster_name)}${job.organization_verified ? ' ✓' : ''}</div>${RCLocation.html(job)}
         <div class="chips"><span class="chip">${escapeHtml(job.skill)}</span><span class="chip">${job.openings} needed</span>${job.pay ? `<span class="chip">${escapeHtml(job.pay)}</span>` : ''}${job.starts_on ? `<span class="chip">From ${shortDate(job.starts_on)}</span>` : ''}</div>
         ${job.description ? `<div class="meta">${escapeHtml(job.description)}</div>` : ''}
+        ${!mine && job.contact_available ? contactButtons('job', job.id) : ''}
         <div class="foot">${mine ? `<span class="meta">${job.application_count} application${job.application_count === 1 ? '' : 's'}</span>${job.status === 'open' ? '<button class="btn ghost small" type="button" data-close-job>Close job</button>' : ''}` : applied ? '<span class="badge accepted">Applied</span>' : '<span></span><button class="btn small" type="button" data-apply>Apply</button>'}</div>`;
       card.querySelector('[data-apply]')?.addEventListener('click', () => openApply(job));
+      wireContact(card, { text: (name) => `Hi ${name}, I saw your job "${job.title}" on RightConnect. I'm interested. Is it still open?` });
       card.querySelector('[data-close-job]')?.addEventListener('click', async (event) => {
         const button = event.currentTarget;
         button.disabled = true;
@@ -541,6 +594,7 @@
           title: value('#job-title'), skill: value('#job-skill'), city: value('#job-city'), area: value('#job-area') || null, pincode: jobPlace.pincode,
           openings: Number(value('#job-openings')) || 1, pay: value('#job-pay') || null, starts_on: value('#job-start') || null,
           description: value('#job-desc') || null, organization_id: value('#job-org') || null,
+          contact_phone: value('#job-phone') || null, show_contact: document.querySelector('#job-show-contact').checked,
         }) });
         document.querySelector('#job-dialog').close();
         message('Job posted. Applications will appear under Hires.');
@@ -700,22 +754,36 @@
         <div class="grid2"><div><label class="field" for="${prefix}-city">City *</label><input id="${prefix}-city" maxlength="100" value="${v('city')}"></div><div><label class="field" for="${prefix}-area">Area</label><input id="${prefix}-area" maxlength="100" value="${v('area')}"></div></div>
         <label class="field" for="${prefix}-skills">Your skills (comma separated)</label><input id="${prefix}-skills" maxlength="1200" value="${escapeHtml((worker?.self_skills || []).join(', '))}" placeholder="Billing, Customer handling, South Indian cooking">
         <p class="hint">These show as self-declared. Employers you worked for can verify them.</p>
-        <div class="grid2"><div><label class="field" for="${prefix}-rate">Expected pay (₹)</label><input id="${prefix}-rate" type="number" min="0" value="${v('rate_amount')}"></div>
-        <div><label class="field" for="${prefix}-unit">Per</label><select id="${prefix}-unit"><option value="">—</option>${['hour', 'day', 'month'].map((unit) => `<option value="${unit}"${worker?.rate_unit === unit ? ' selected' : ''}>${unit}</option>`).join('')}</select></div></div>
+        <label class="field" for="${prefix}-rate">Expected pay (₹) <span class="hint" style="font-weight:600">— a range like 500 to 1000, or one amount</span></label>
+        <div class="pay-row"><input id="${prefix}-rate" type="number" min="0" inputmode="numeric" placeholder="From, e.g. 500" value="${v('rate_amount')}" aria-label="Lowest pay"><span>to</span><input id="${prefix}-rate-max" type="number" min="0" inputmode="numeric" placeholder="To, e.g. 1000 (optional)" value="${v('rate_max')}" aria-label="Highest pay"><select id="${prefix}-unit" aria-label="Pay per"><option value="">per…</option>${['hour', 'day', 'month'].map((unit) => `<option value="${unit}"${worker?.rate_unit === unit ? ' selected' : ''}>per ${unit}</option>`).join('')}</select></div>
+        <label class="check" style="margin-top:8px;white-space:normal"><input id="${prefix}-rate-hidden" type="checkbox"${worker?.rate_hidden ? ' checked' : ''}> Hide my pay — employers see "Pay: discuss" and talk to you about it</label>
+        <label class="field" for="${prefix}-phone">Phone / WhatsApp number</label><input id="${prefix}-phone" type="tel" inputmode="tel" maxlength="30" value="${v('contact_phone')}" placeholder="+91 98765 43210 (blank = your account number)">
+        <label class="check" style="margin-top:8px;white-space:normal"><input id="${prefix}-show-contact" type="checkbox"${(worker?.show_contact ?? includeAdult) ? ' checked' : ''}> Let employers call or WhatsApp me directly (only signed-in users can see the number)</label>
         <label class="field" for="${prefix}-languages">Languages (comma separated)</label><input id="${prefix}-languages" maxlength="300" value="${escapeHtml((worker?.languages || []).join(', '))}" placeholder="Tamil, English">
         <label class="field" for="${prefix}-bio">About you</label><textarea id="${prefix}-bio" rows="3" maxlength="1500">${v('bio')}</textarea>
         ${includeAdult ? `<label class="check" style="margin-top:12px;white-space:normal"><input id="${prefix}-adult" type="checkbox"> I am 18 years or older.</label>` : ''}
         <div class="error" id="${prefix}-error" style="color:var(--danger);font-size:12px;min-height:16px;margin-top:8px"></div>
         <div class="row" style="justify-content:flex-end"><button class="btn" type="submit">${includeAdult ? 'Create my work profile' : 'Save changes'}</button></div>`;
     }
+    function payProblem(payload) {
+      const low = payload.rate_amount ?? payload.rate_max;
+      if (payload.rate_amount != null && payload.rate_max != null && payload.rate_max < payload.rate_amount) return 'The "to" pay must be more than the "from" pay.';
+      if (low != null && !payload.rate_unit) return 'Choose whether your pay is per hour, day or month.';
+      if (low == null && payload.rate_unit) return 'Enter your pay, or leave "per…" empty.';
+      return '';
+    }
     function readProfile(prefix) {
       const rate = value(`#${prefix}-rate`);
+      const rateMax = value(`#${prefix}-rate-max`);
       return {
         headline: value(`#${prefix}-headline`), city: value(`#${prefix}-city`), area: value(`#${prefix}-area`) || null,
         pincode: RCLocation.picked(document.querySelector(`#${prefix}-pincode`))?.pincode || null,
         years_experience: value(`#${prefix}-years`) === '' ? null : Number(value(`#${prefix}-years`)),
         skills: list(value(`#${prefix}-skills`)), languages: list(value(`#${prefix}-languages`)),
-        rate_amount: rate === '' ? null : Number(rate), rate_unit: value(`#${prefix}-unit`) || null, bio: value(`#${prefix}-bio`) || null,
+        rate_amount: rate === '' ? null : Number(rate), rate_max: rateMax === '' ? null : Number(rateMax),
+        rate_unit: value(`#${prefix}-unit`) || null, rate_hidden: document.querySelector(`#${prefix}-rate-hidden`).checked,
+        contact_phone: value(`#${prefix}-phone`) || null, show_contact: document.querySelector(`#${prefix}-show-contact`).checked,
+        bio: value(`#${prefix}-bio`) || null,
       };
     }
     function renderMe() {
@@ -759,6 +827,7 @@
       const errorBox = document.querySelector('#create-error');
       const payload = { ...readProfile('create'), adult_confirmed: document.querySelector('#create-adult').checked };
       if (payload.headline.length < 2 || payload.city.length < 2) { errorBox.textContent = 'Main work and city are required.'; return; }
+      if (payProblem(payload)) { errorBox.textContent = payProblem(payload); return; }
       if (!payload.pincode) { errorBox.textContent = 'Pick your area from the list, or type your 6-digit PIN code.'; return; }
       if (!payload.adult_confirmed) { errorBox.textContent = 'You must be 18 or older to work through RightConnect.'; return; }
       submitting(event.currentTarget, async () => {
@@ -771,6 +840,7 @@
       event.preventDefault();
       const payload = readProfile('edit');
       if (payload.headline.length < 2 || payload.city.length < 2) { document.querySelector('#edit-error').textContent = 'Main work and city are required.'; return; }
+      if (payProblem(payload)) { document.querySelector('#edit-error').textContent = payProblem(payload); return; }
       if (value('#edit-pincode') && !payload.pincode) { document.querySelector('#edit-error').textContent = 'Pick your area from the list, or type your 6-digit PIN code.'; return; }
       submitting(event.currentTarget, async () => {
         myWorker = await api('/workers/me', { method: 'PUT', body: JSON.stringify(payload) });
@@ -846,7 +916,8 @@
         }
       }
       document.querySelector('#sign-in').hidden = Boolean(token);
-      const tab = ['find', 'jobs', 'hires', 'me'].includes(params.get('tab')) ? params.get('tab') : (myWorker ? 'me' : 'find');
+      // "Workers & jobs" always opens Find workers; links like "Find work" ask for ?tab=me explicitly.
+      const tab = ['find', 'jobs', 'hires', 'me'].includes(params.get('tab')) ? params.get('tab') : 'find';
       if (params.get('q')) document.querySelector('#find-q').value = params.get('q');
       locationChip = RCLocation.mountChip(document.querySelector('#location-chip-slot'), {
         getAccount: nearAccount,

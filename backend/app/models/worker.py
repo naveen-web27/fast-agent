@@ -3,7 +3,7 @@ import uuid
 from datetime import date, datetime
 from enum import StrEnum
 
-from sqlalchemy import ARRAY, Date, DateTime, ForeignKey, Integer, Numeric, SmallInteger, String, Text, func
+from sqlalchemy import ARRAY, Boolean, Date, DateTime, ForeignKey, Integer, Numeric, SmallInteger, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -52,8 +52,14 @@ class WorkerProfile(Base):
     years_experience: Mapped[int | None] = mapped_column(SmallInteger)
     # Self-declared skills; employer-verified skills come from verified work history.
     skills: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False, default=list)
+    # Pay range: rate_amount is the lower end, rate_max the optional upper end.
     rate_amount: Mapped[int | None] = mapped_column(Integer)
+    rate_max: Mapped[int | None] = mapped_column(Integer)
     rate_unit: Mapped[str | None] = mapped_column(String)
+    # Hidden pay is shown only to the worker; everyone else sees "Pay: discuss".
+    rate_hidden: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Lets signed-in users call/WhatsApp the worker without a hire request first.
+    show_contact: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     availability: Mapped[str] = mapped_column(String, nullable=False, default=Availability.AVAILABLE.value)
     busy_until: Mapped[date | None] = mapped_column(Date)
     availability_updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -119,6 +125,9 @@ class JobPost(Base):
     pay: Mapped[str | None] = mapped_column(String)
     starts_on: Mapped[date | None] = mapped_column(Date)
     description: Mapped[str | None] = mapped_column(Text)
+    # Number workers can call/WhatsApp about the job (shown to signed-in users when show_contact is on).
+    contact_phone: Mapped[str | None] = mapped_column(String)
+    show_contact: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     status: Mapped[str] = mapped_column(String, nullable=False, default="open")
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -21,6 +21,7 @@ from app.features.workers.schemas import (
     AvailabilityUpdate,
     ClaimCodeOut,
     Contact,
+    DirectContact,
     EmployerExperienceCreate,
     ExperienceConfirm,
     ExperienceCreate,
@@ -257,7 +258,18 @@ def _experience_out(experience: WorkerExperience, org_name: str | None, org_veri
     )
 
 
-def _summary(worker: WorkerProfile, experiences: list[tuple]) -> WorkerSummary:
+def pay_fields(worker: WorkerProfile, include_private: bool) -> dict:
+    """Hidden pay is left out of everything except the worker's own profile."""
+    show = include_private or not worker.rate_hidden
+    return {
+        "rate_amount": worker.rate_amount if show else None,
+        "rate_max": worker.rate_max if show else None,
+        "rate_unit": worker.rate_unit if show else None,
+        "rate_hidden": bool(worker.rate_hidden),
+    }
+
+
+def _summary(worker: WorkerProfile, experiences: list[tuple], include_private: bool = False) -> WorkerSummary:
     today = date.today()
     skills = build_skills(
         worker.skills,
@@ -273,8 +285,8 @@ def _summary(worker: WorkerProfile, experiences: list[tuple]) -> WorkerSummary:
         pincode=worker.pincode,
         languages=worker.languages,
         years_experience=worker.years_experience,
-        rate_amount=worker.rate_amount,
-        rate_unit=worker.rate_unit,
+        **pay_fields(worker, include_private),
+        contact_available=worker.user_id is not None and bool(worker.show_contact),
         availability=availability,
         busy_until=worker.busy_until if availability == Availability.BUSY.value else None,
         availability_stale=availability_is_stale(availability, worker.availability_updated_at, _now()),
@@ -300,7 +312,7 @@ async def _detail_fields(session: AsyncSession, worker: WorkerProfile, include_p
     ).all()
     shown = experiences if include_private else [row for row in experiences if row[0].status != ExperienceStatus.DECLINED.value]
     return {
-        **_summary(worker, experiences).model_dump(),
+        **_summary(worker, experiences, include_private).model_dump(),
         "bio": worker.bio,
         "experiences": [_experience_out(*row) for row in shown],
         "reviews": [
@@ -385,6 +397,19 @@ async def search_workers(
     )
 
 
+async def worker_contact(session: AsyncSession, auth_user_id: UUID, worker_id: UUID) -> DirectContact:
+    """The worker's call/WhatsApp number, for signed-in users, only when the worker allows direct contact."""
+    await _user(session, auth_user_id)
+    worker = await _visible_worker(session, worker_id)
+    if worker.user_id is None or not worker.show_contact:
+        raise WorkerAccessError("This worker shares their number after you send a hire request and they accept.")
+    owner = await session.get(User, worker.user_id)
+    phone = worker.contact_phone or (owner.phone if owner else None)
+    if not phone:
+        raise WorkerNotFoundError("This worker hasn't added a phone number yet. Send a hire request instead.")
+    return DirectContact(name=worker.display_name, phone=phone)
+
+
 async def get_worker(session: AsyncSession, worker_id: UUID) -> WorkerDetail:
     worker = await _visible_worker(session, worker_id)
     return WorkerDetail(**await _detail_fields(session, worker, include_private=False))
@@ -397,6 +422,7 @@ async def _my_profile_out(session: AsyncSession, worker: WorkerProfile, user: Us
     return MyWorkerProfile(
         **await _detail_fields(session, worker, include_private=True),
         contact_phone=worker.contact_phone or user.phone,
+        show_contact=bool(worker.show_contact),
         self_skills=worker.skills,
     )
 
@@ -417,7 +443,12 @@ def _apply_fields(worker: WorkerProfile, payload) -> None:
     worker.years_experience = payload.years_experience
     worker.skills = payload.skills
     worker.rate_amount = payload.rate_amount
+    worker.rate_max = payload.rate_max
     worker.rate_unit = payload.rate_unit
+    worker.rate_hidden = payload.rate_hidden
+    if payload.contact_phone:
+        worker.contact_phone = payload.contact_phone
+    worker.show_contact = payload.show_contact
 
 
 def new_worker_for_user(user: User, payload: WorkerCreate) -> WorkerProfile:
@@ -921,6 +952,7 @@ async def _job_out(session: AsyncSession, job: JobPost, mine: bool) -> JobOut:
         created_at=job.created_at,
         mine=mine,
         applied=False,
+        contact_available=bool(job.show_contact and job.contact_phone and job.status == "open"),
         application_count=count,
     )
 
@@ -962,6 +994,20 @@ async def list_open_jobs(
     return results
 
 
+async def job_contact(session: AsyncSession, auth_user_id: UUID, job_id: UUID) -> DirectContact:
+    """The poster's call/WhatsApp number for an open job, for signed-in users, when the poster allows it."""
+    await _user(session, auth_user_id)
+    job = await session.get(JobPost, job_id)
+    if job is None or job.status != "open":
+        raise WorkerNotFoundError("This job is closed or no longer exists")
+    if not job.show_contact or not job.contact_phone:
+        raise WorkerAccessError("The employer hasn't shared a number for this job. Apply and they'll contact you.")
+    poster = await session.get(User, job.poster_user_id)
+    organization = await session.get(Organization, job.organization_id) if job.organization_id else None
+    name = organization.name if organization else (poster.full_name if poster else "Employer")
+    return DirectContact(name=name, phone=job.contact_phone)
+
+
 async def list_my_jobs(session: AsyncSession, auth_user_id: UUID) -> list[JobOut]:
     user = await _user(session, auth_user_id)
     jobs = (
@@ -986,6 +1032,8 @@ async def create_job(session: AsyncSession, auth_user_id: UUID, payload: JobCrea
         pay=payload.pay,
         starts_on=payload.starts_on,
         description=payload.description,
+        contact_phone=payload.contact_phone or user.phone,
+        show_contact=payload.show_contact,
         status="open",
     )
     session.add(job)

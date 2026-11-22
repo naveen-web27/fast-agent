@@ -41,8 +41,19 @@ class WorkerFields(BaseModel):
     languages: list[str] = Field(default_factory=list, max_length=10)
     years_experience: int | None = Field(default=None, ge=0, le=70)
     skills: list[str] = Field(default_factory=list, max_length=MAX_SKILLS)
+    # Pay range: rate_amount is the lower end (or the only amount), rate_max the optional upper end.
     rate_amount: int | None = Field(default=None, ge=0, le=10_000_000)
+    rate_max: int | None = Field(default=None, ge=0, le=10_000_000)
     rate_unit: RateUnit | None = None
+    rate_hidden: bool = False
+    # Phone/WhatsApp number for direct contact; blank keeps the current one (default: the account phone).
+    contact_phone: str | None = Field(default=None, max_length=30)
+    show_contact: bool = False
+
+    @field_validator("contact_phone")
+    @classmethod
+    def _contact_phone(cls, value: str | None) -> str | None:
+        return normalize_phone(value)
 
     @field_validator("headline", "city")
     @classmethod
@@ -71,8 +82,14 @@ class WorkerFields(BaseModel):
 
     @model_validator(mode="after")
     def _rate(self):
+        if self.rate_max is not None and self.rate_amount is None:
+            self.rate_amount, self.rate_max = self.rate_max, None
+        if self.rate_max is not None and self.rate_max == self.rate_amount:
+            self.rate_max = None
+        if self.rate_max is not None and self.rate_max < self.rate_amount:
+            raise ValueError("The highest pay must be more than the lowest pay")
         if (self.rate_amount is None) != (self.rate_unit is None):
-            raise ValueError("Enter both the pay amount and whether it is per hour, day or month")
+            raise ValueError("Enter both the pay and whether it is per hour, day or month")
         return self
 
 
@@ -127,12 +144,6 @@ class AdminWorkerCreate(WorkerCreate):
     """An admin adding a real local worker who isn't on RightConnect yet; adult_confirmed is the admin's check."""
 
     full_name: str = Field(min_length=2, max_length=120)
-    contact_phone: str | None = Field(default=None, max_length=30)
-
-    @field_validator("contact_phone")
-    @classmethod
-    def _phone(cls, value: str | None) -> str | None:
-        return normalize_phone(value)
 
 
 class ClaimCodeOut(BaseModel):
@@ -188,8 +199,13 @@ class WorkerSummary(BaseModel):
     nearness: int | None = None
     languages: list[str]
     years_experience: int | None
+    # Null when the worker hides their pay (rate_hidden=True); the worker's own profile always has them.
     rate_amount: int | None
+    rate_max: int | None = None
     rate_unit: RateUnit | None
+    rate_hidden: bool = False
+    # True when signed-in users can fetch a number to call/WhatsApp this worker.
+    contact_available: bool = False
     availability: AvailabilityValue
     busy_until: date | None
     # The worker hasn't touched the light for a while, so "available" may be out of date.
@@ -211,6 +227,7 @@ class WorkerDetail(WorkerSummary):
 
 class MyWorkerProfile(WorkerDetail):
     contact_phone: str | None
+    show_contact: bool = False
     self_skills: list[str]
 
 
@@ -368,6 +385,14 @@ class JobCreate(BaseModel):
     starts_on: date | None = None
     description: str | None = Field(default=None, max_length=2000)
     organization_id: UUID | None = None
+    # Number workers can call/WhatsApp about this job; blank uses the poster's account phone.
+    contact_phone: str | None = Field(default=None, max_length=30)
+    show_contact: bool = False
+
+    @field_validator("contact_phone")
+    @classmethod
+    def _contact_phone(cls, value: str | None) -> str | None:
+        return normalize_phone(value)
 
     @field_validator("area", "pay", "description", mode="before")
     @classmethod
@@ -400,8 +425,16 @@ class JobOut(BaseModel):
     created_at: datetime
     mine: bool
     applied: bool
+    contact_available: bool = False
     # Only for the poster.
     application_count: int | None
+
+
+class DirectContact(BaseModel):
+    """A phone number to call or WhatsApp; only returned to signed-in users when the owner allows it."""
+
+    name: str
+    phone: str
 
 
 class AdminWorkerOut(BaseModel):

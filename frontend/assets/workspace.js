@@ -830,7 +830,7 @@ function renderProfileExtras(profile, own = false) {
   const educations = profile.educations || [];
   if (profile.kind === 'expert' && (experiences.length || own)) {
     cards.push(sectionCard('Experience', experiences.length
-      ? experiences.map((xp) => `<div class="xp-item"><div class="xp-logo">${escapeHtml(initialsOf(xp.organization))}</div><div><strong>${escapeHtml(xp.title)}</strong><span>${escapeHtml(xp.organization)}${xp.location ? ` · ${escapeHtml(xp.location)}` : ''}</span><span class="muted">${monthYear(xp.start_date)} – ${xp.end_date ? monthYear(xp.end_date) : 'Present'} · ${spanText(xp.start_date, xp.end_date)}</span>${xp.description ? `<p>${escapeHtml(xp.description)}</p>` : ''}</div></div>`).join('')
+      ? experiences.map((xp) => `<div class="xp-item"><div class="xp-logo" style="overflow:hidden">${RCAvatar.svg({ name: xp.organization, seed: xp.organization })}</div><div><strong>${escapeHtml(xp.title)}</strong><span>${escapeHtml(xp.organization)}${xp.location ? ` · ${escapeHtml(xp.location)}` : ''}</span><span class="muted">${monthYear(xp.start_date)} – ${xp.end_date ? monthYear(xp.end_date) : 'Present'} · ${spanText(xp.start_date, xp.end_date)}</span>${xp.description ? `<p>${escapeHtml(xp.description)}</p>` : ''}</div></div>`).join('')
       : prompt('experience', '+ Add your work experience'), 'experience', own));
   }
   if (profile.kind === 'expert' && (educations.length || own)) {
@@ -877,7 +877,7 @@ function openMyProfile() {
 
 function customerCard(data, own) {
   const since = new Date(data.member_since).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
-  const portrait = data.avatar_url ? `<img src="${safeHref(data.avatar_url)}" alt="">` : escapeHtml(initialsOf(data.full_name));
+  const portrait = RCAvatar.html({ url: data.avatar_url, name: data.full_name, seed: data.id || data.full_name, safeUrl: safeHref });
   return `<article class="profile-hero"><div class="profile-summary"><div class="portrait">${portrait}</div><div>
       <span class="section-tag">Customer</span><h1>${escapeHtml(data.full_name)}</h1>
       <p>${[data.city, `Member since ${since}`].filter(Boolean).map(escapeHtml).join(' · ')}</p>

@@ -17,7 +17,8 @@ NAMES = {
     "STALE_AFTER_DAYS", "CLAIM_CODE_DAYS", "CLAIM_CODE_ALPHABET", "WorkerNotFoundError", "WorkerAccessError",
     "WorkerConflictError", "WorkerIdentityError", "effective_availability", "availability_is_stale", "build_skills",
     "hire_action_allowed", "generate_claim_code", "normalize_claim_code", "hash_claim_code", "_now",
-    "claim_worker_profile", "hire_action", "_user", "_my_worker",
+    "claim_worker_profile", "hire_action", "_user", "_my_worker", "pay_fields",
+    "worker_contact",
 }
 
 
@@ -108,6 +109,7 @@ class WorkforceRuleTests(unittest.IsolatedAsyncioTestCase):
             "IntegrityError": type("IntegrityError", (Exception,), {}),
             "select": lambda *args: Expression(), "active_user_by_auth_id": lambda value: Expression(),
             "_my_profile_out": self.profile_out, "_hire_out": self.hire_out, "_admin_org_ids": self.org_ids,
+            "_visible_worker": AsyncMock(), "DirectContact": SimpleNamespace, "User": Row,
             "date": date, "datetime": datetime, "timedelta": timedelta, "timezone": timezone,
             "hashlib": hashlib, "re": re, "secrets": secrets,
         })
@@ -154,6 +156,43 @@ class WorkforceRuleTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(skills), 1)
         self.assertEqual(skills[0].verified_by, ["Hotel A", "Hotel B"])
         self.assertFalse(skills[0].self_declared)
+
+    # ---------- pay range ----------
+
+    def test_hidden_pay_is_only_shown_to_the_worker(self):
+        worker = SimpleNamespace(rate_amount=500, rate_max=1000, rate_unit="day", rate_hidden=True)
+        self.assertEqual(
+            self.svc.pay_fields(worker, include_private=False),
+            {"rate_amount": None, "rate_max": None, "rate_unit": None, "rate_hidden": True},
+        )
+        self.assertEqual(
+            self.svc.pay_fields(worker, include_private=True),
+            {"rate_amount": 500, "rate_max": 1000, "rate_unit": "day", "rate_hidden": True},
+        )
+
+    def test_visible_pay_range_is_public(self):
+        worker = SimpleNamespace(rate_amount=500, rate_max=1000, rate_unit="day", rate_hidden=False)
+        self.assertEqual(self.svc.pay_fields(worker, include_private=False)["rate_max"], 1000)
+
+    # ---------- direct contact ----------
+
+    async def test_contact_needs_the_workers_permission(self):
+        owner = SimpleNamespace(id=uuid4(), phone="+919876543210")
+        viewer = SimpleNamespace(id=uuid4())
+        for worker in [WorkerProfile(user_id=owner.id, show_contact=False), WorkerProfile(user_id=None, show_contact=True)]:
+            self.svc.worker_contact.__globals__["_visible_worker"].return_value = worker
+            with self.subTest(worker=worker), self.assertRaises(self.svc.WorkerAccessError):
+                await self.svc.worker_contact(Session(scalars=[viewer], objects={}), uuid4(), uuid4())
+
+    async def test_contact_falls_back_to_the_account_phone(self):
+        owner = SimpleNamespace(id=uuid4(), phone="+919876543210")
+        worker = WorkerProfile(user_id=owner.id, show_contact=True, contact_phone=None, display_name="Fascino")
+        self.svc.worker_contact.__globals__["_visible_worker"].return_value = worker
+        contact = await self.svc.worker_contact(Session(scalars=[SimpleNamespace(id=uuid4())], objects={(Row, owner.id): owner}), uuid4(), uuid4())
+        self.assertEqual((contact.name, contact.phone), ("Fascino", "+919876543210"))
+        worker.contact_phone = "+919000000001"
+        contact = await self.svc.worker_contact(Session(scalars=[SimpleNamespace(id=uuid4())], objects={(Row, owner.id): owner}), uuid4(), uuid4())
+        self.assertEqual(contact.phone, "+919000000001")
 
     # ---------- hire permissions ----------
 

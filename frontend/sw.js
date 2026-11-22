@@ -1,5 +1,5 @@
-const CACHE_NAME = 'rightconnect-shell-v9';
-const SHELL = ['/', '/pages/marketplace.html', '/pages/auth.html', '/pages/plans.html', '/manifest.webmanifest', '/assets/rightconnect-mark.svg', '/assets/icon-192.png', '/assets/workspace.js', '/assets/mobile-install.js', '/assets/showcases.js', '/assets/app-tour.js', '/assets/location.js'];
+const CACHE_NAME = 'rightconnect-shell-v10';
+const SHELL = ['/', '/pages/marketplace.html', '/pages/auth.html', '/pages/plans.html', '/manifest.webmanifest', '/assets/rightconnect-mark.svg', '/assets/icon-192.png', '/assets/workspace.js', '/assets/mobile-install.js', '/assets/showcases.js', '/assets/app-tour.js', '/assets/location.js', '/assets/avatar.js'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL)));

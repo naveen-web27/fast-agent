@@ -452,6 +452,11 @@ CREATE TABLE worker_profiles (
     years_experience SMALLINT CHECK (years_experience BETWEEN 0 AND 70),
     skills TEXT[] NOT NULL DEFAULT '{}',
     rate_amount INTEGER CHECK (rate_amount >= 0),
+    -- Pay range: rate_amount is the lower end, rate_max the optional upper end; rate_hidden keeps it private.
+    rate_max INTEGER,
+    rate_hidden BOOLEAN NOT NULL DEFAULT FALSE,
+    -- Signed-in users may call/WhatsApp the worker directly (contact_phone, else the account phone).
+    show_contact BOOLEAN NOT NULL DEFAULT FALSE,
     rate_unit TEXT CHECK (rate_unit IN ('hour', 'day', 'month')),
     availability TEXT NOT NULL DEFAULT 'available' CHECK (availability IN ('available', 'busy', 'offline')),
     busy_until DATE,
@@ -469,7 +474,8 @@ CREATE TABLE worker_profiles (
     blocked_at TIMESTAMPTZ,
     blocked_reason TEXT,
     deleted_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT worker_profiles_rate_range_check CHECK (rate_max IS NULL OR (rate_amount IS NOT NULL AND rate_max >= rate_amount))
 );
 CREATE UNIQUE INDEX worker_profiles_user_active_idx ON worker_profiles(user_id) WHERE user_id IS NOT NULL AND deleted_at IS NULL;
 CREATE UNIQUE INDEX worker_profiles_claim_code_idx ON worker_profiles(claim_code_hash) WHERE claim_code_hash IS NOT NULL;
@@ -489,6 +495,8 @@ CREATE TABLE job_posts (
     pay TEXT,
     starts_on DATE,
     description TEXT,
+    contact_phone TEXT,
+    show_contact BOOLEAN NOT NULL DEFAULT FALSE,
     status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'closed')),
     closed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
