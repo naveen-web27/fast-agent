@@ -50,6 +50,24 @@
       .showcase-vertical .showcase-cover { aspect-ratio:3/4; }
       .showcase-group-title,.showcase-group-title:not(:first-child) { align-self:center; margin:0; padding:0 4px; border:0; writing-mode:vertical-rl; transform:rotate(180deg); }
     }
+    /* Phones/tablets: the sidebar sits below every result, so a Shorts-style shelf goes inside the results instead. */
+    .showcase-shelf { display:none; min-width:0; max-width:100%; margin:4px 0; padding:12px 0 4px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+    .shelf-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 10px; }
+    .shelf-head strong { display:flex; align-items:center; gap:7px; font-size:15px; }
+    .shelf-head strong i { display:grid; place-items:center; width:22px; height:22px; border-radius:6px; background:#e02424; color:#fff; font-size:10px; font-style:normal; }
+    .shelf-head .secondary { min-height:30px; padding:0 10px; font-size:11px; }
+    .shelf-row { display:flex; gap:10px; overflow-x:auto; padding:0 2px 10px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+    .shelf-row::-webkit-scrollbar { display:none; }
+    .short { position:relative; flex:0 0 clamp(128px,36vw,168px); scroll-snap-align:start; border-radius:12px; overflow:hidden; background:var(--navy); aspect-ratio:9/16; }
+    .short a.short-cover { position:absolute; inset:0; display:block; color:#fff; text-decoration:none; }
+    .short img { width:100%; height:100%; object-fit:cover; }
+    .short .short-shade { position:absolute; inset:auto 0 0 0; padding:28px 9px 9px; background:linear-gradient(transparent,#000c); }
+    .short .short-title { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin:0 0 6px; color:#fff; font-size:12px; font-weight:800; line-height:1.3; }
+    .short .short-by { position:relative; z-index:1; max-width:100%; padding:3px 7px; overflow:hidden; border:0; border-radius:999px; background:#ffffff26; color:#fff; font-size:10px; font-weight:800; text-overflow:ellipsis; white-space:nowrap; }
+    .short .short-tag { position:absolute; top:7px; left:7px; padding:3px 6px; border-radius:5px; background:#101b31d9; color:#fff; font-size:9px; font-weight:800; }
+    .short .short-tag.for-you { background:#0b7a5e; }
+    .short .short-missing { display:grid; place-items:center; height:100%; padding:14px; text-align:center; font-size:11px; }
+    @media (max-width:1050px) { .showcase-shelf { display:block; } .discover-side .showcase-side { display:none; } }
   `;
   document.head.append(styles);
 
@@ -162,6 +180,7 @@
       const others = latest.results.filter((item) => !shown.has(item.id));
       if (!matching.results.length && !others.length) {
         renderCards(root, [], 'No video showcases yet. Experts and companies can add theirs from View all.');
+        renderShelf([], []);
         return;
       }
       root.replaceChildren();
@@ -174,11 +193,67 @@
         others.forEach((item) => root.append(card(item)));
       }
       root.scrollTop = 0;
+      renderShelf(matching.results, others);
     } catch (error) {
       if (ticket !== stripRequest) return;
+      renderShelf([], []);
       loadError(root, `Could not load video showcases. ${error.message}`, () => loadStrip());
     }
   }
+  // ---------- Shorts shelf inside the results (phones and tablets) ----------
+  const SHELF_AFTER = 3;
+  const shelf = document.createElement('section');
+  shelf.className = 'showcase-shelf';
+  shelf.id = 'showcase-shelf';
+  shelf.setAttribute('aria-label', 'Video showcases');
+  shelf.innerHTML = '<div class="shelf-head"><strong><i aria-hidden="true">&#9654;</i>Showcases</strong><button class="secondary" type="button">View all</button></div><div class="shelf-row" role="list"></div>';
+  shelf.querySelector('.shelf-head button').addEventListener('click', () => showView('showcases'));
+  let shelfItems = 0;
+
+  function shortCard(item, forYou) {
+    const article = document.createElement('article');
+    article.className = 'short';
+    article.setAttribute('role', 'listitem');
+    const provider = platformName(item.platform);
+    article.innerHTML = `
+      <a class="short-cover" href="${safeHref(item.source_url)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(`Watch ${item.title} on ${provider}`)}">
+        <img src="${safeHref(item.cover_url)}" alt="" loading="lazy" referrerpolicy="no-referrer">
+        <span class="short-tag${forYou ? ' for-you' : ''}">${forYou ? 'For you' : provider}</span>
+      </a>
+      <div class="short-shade"><p class="short-title">${escapeHtml(item.title)}</p><button class="short-by" type="button">${escapeHtml(item.provider_name)}</button></div>`;
+    article.querySelector('img').addEventListener('error', (event) => {
+      const missing = document.createElement('span');
+      missing.className = 'short-missing';
+      missing.textContent = `Watch on ${provider}`;
+      event.target.replaceWith(missing);
+    }, { once: true });
+    // The title area opens the video too; only the provider chip opens the RightConnect profile.
+    article.querySelector('.short-shade').addEventListener('click', (event) => { if (!event.target.closest('.short-by')) article.querySelector('a').click(); });
+    article.querySelector('.short-by').addEventListener('click', () => openProfile(item.profile_id));
+    return article;
+  }
+
+  function renderShelf(forYou, others) {
+    const row = shelf.querySelector('.shelf-row');
+    row.replaceChildren(...forYou.map((item) => shortCard(item, true)), ...others.map((item) => shortCard(item, false)));
+    row.scrollLeft = 0;
+    shelfItems = forYou.length + others.length;
+    placeShelf();
+  }
+
+  // Keeps the shelf after the 3rd profile card, like Shorts between YouTube videos, even when results re-render.
+  function placeShelf() {
+    const results = document.querySelector('#results');
+    if (!results) return;
+    if (!shelfItems) { shelf.remove(); return; }
+    const cards = [...results.children].filter((child) => child !== shelf);
+    if (!cards.length) { if (shelf.parentElement !== results) results.append(shelf); return; }
+    const anchor = cards[Math.min(SHELF_AFTER, cards.length) - 1];
+    if (shelf.previousElementSibling !== anchor || shelf.parentElement !== results) anchor.after(shelf);
+  }
+  const resultsRoot = document.querySelector('#results');
+  if (resultsRoot) new MutationObserver(placeShelf).observe(resultsRoot, { childList: true });
+
   // The marketplace calls this after each profile search so the sidebar follows the customer's interest.
   window.refreshShowcaseSidebar = (force = false) => loadStrip(force);
 
