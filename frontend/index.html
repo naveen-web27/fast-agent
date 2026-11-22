@@ -63,9 +63,12 @@
       .hero,.app-panel { grid-template-columns:1fr; gap:30px; }
       .hero { padding-block:44px; }
       .cards { grid-template-columns:1fr; }
-      .header-inner { align-items:flex-start; flex-direction:column; gap:12px; }
-      nav { gap:16px; }
-      nav .button { min-height:40px; padding:6px 12px; }
+      .header-inner { flex-wrap:wrap; gap:10px 12px; min-height:0; padding-block:12px; }
+      .header-inner::after { content:''; order:1; flex-basis:100%; }
+      nav { display:contents; }
+      .brand { font-size:18px; }
+      nav .button { margin-left:auto; min-height:38px; padding:6px 14px; }
+      nav a:not(.button) { order:2; font-size:13px; white-space:nowrap; }
       .section { padding-block:36px; }
       .app-panel,.journey { padding:24px; }
     }

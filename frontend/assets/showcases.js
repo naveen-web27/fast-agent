@@ -66,6 +66,7 @@
     .short .short-by { position:relative; z-index:1; max-width:100%; padding:3px 7px; overflow:hidden; border:0; border-radius:999px; background:#ffffff26; color:#fff; font-size:10px; font-weight:800; text-overflow:ellipsis; white-space:nowrap; }
     .short .short-tag { position:absolute; top:7px; left:7px; padding:3px 6px; border-radius:5px; background:#101b31d9; color:#fff; font-size:9px; font-weight:800; }
     .short .short-tag.for-you { background:#0b7a5e; }
+    .short .short-report { position:absolute; top:5px; right:5px; z-index:1; display:grid; place-items:center; width:30px; height:30px; padding:0; border:0; border-radius:50%; background:#101b31b3; color:#fff; font-size:13px; cursor:pointer; }
     .short .short-missing { display:grid; place-items:center; height:100%; padding:14px; text-align:center; font-size:11px; }
     @media (max-width:1050px) { .showcase-shelf { display:block; } .discover-side .showcase-side { display:none; } }
   `;
@@ -111,12 +112,14 @@
       article.querySelector('.showcase-cover').prepend(placeholder);
     }, { once: true });
     article.querySelector('.showcase-profile').addEventListener('click', () => openProfile(item.profile_id));
-    article.querySelector('.showcase-report').addEventListener('click', () => {
-      document.querySelector('#support-whatsapp').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Please review video showcase ${item.id}: ${item.source_url}`)}`;
-      document.querySelector('#support-email').href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Report video showcase')}&body=${encodeURIComponent(`Showcase: ${item.id}\nProfile: ${item.profile_id}\nVideo: ${item.source_url}\nReason: `)}`;
-      openModal('support-modal');
-    });
+    article.querySelector('.showcase-report').addEventListener('click', () => reportShowcase(item));
     return article;
+  }
+
+  function reportShowcase(item) {
+    document.querySelector('#support-whatsapp').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Please review video showcase ${item.id}: ${item.source_url}`)}`;
+    document.querySelector('#support-email').href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Report video showcase')}&body=${encodeURIComponent(`Showcase: ${item.id}\nProfile: ${item.profile_id}\nVideo: ${item.source_url}\nReason: `)}`;
+    openModal('support-modal');
   }
 
   function renderCards(root, items, empty) {
@@ -220,6 +223,7 @@
         <img src="${safeHref(item.cover_url)}" alt="" loading="lazy" referrerpolicy="no-referrer">
         <span class="short-tag${forYou ? ' for-you' : ''}">${forYou ? 'For you' : provider}</span>
       </a>
+      <button class="short-report" type="button" aria-label="${escapeHtml(`Report ${item.title}`)}" title="Report">&#9873;</button>
       <div class="short-shade"><p class="short-title">${escapeHtml(item.title)}</p><button class="short-by" type="button">${escapeHtml(item.provider_name)}</button></div>`;
     article.querySelector('img').addEventListener('error', (event) => {
       const missing = document.createElement('span');
@@ -230,6 +234,7 @@
     // The title area opens the video too; only the provider chip opens the RightConnect profile.
     article.querySelector('.short-shade').addEventListener('click', (event) => { if (!event.target.closest('.short-by')) article.querySelector('a').click(); });
     article.querySelector('.short-by').addEventListener('click', () => openProfile(item.profile_id));
+    article.querySelector('.short-report').addEventListener('click', () => reportShowcase(item));
     return article;
   }
 

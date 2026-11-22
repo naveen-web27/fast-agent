@@ -84,10 +84,21 @@
     .loading-screen { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; background:rgba(244,246,250,.94); font-weight:800; }
     @media(max-width:820px) { .search { grid-template-columns:1fr 1fr; } .search > :first-child { grid-column:1/-1; } .grid2 { grid-template-columns:1fr; } }
     @media(max-width:520px) { .topbar { padding:10px 14px; } main { padding:20px 14px 70px; } .search { grid-template-columns:1fr; } .tabs { width:100%; } .tabs button { flex:1; padding:9px 8px; } }
+    /* Phone top bar: logo, location chip (takes the space left), back arrow and Sign in on one row, all 38px tall. */
+    @media(max-width:720px) {
+      .topbar { gap:8px; min-height:60px; padding:10px 12px; }
+      .brand { flex:none; } .brand img { width:32px; height:32px; } .brand-name, .back-label, #who { display:none; }
+      .top-actions { flex:1 1 auto; min-width:0; justify-content:flex-end; gap:8px; }
+      #location-chip-slot { flex:1 1 auto; min-width:0; display:flex; justify-content:flex-end; }
+      .topbar .rc-chip { max-width:100%; min-width:0; min-height:38px; height:38px; padding:3px 10px 3px 7px; }
+      .back-link { flex:none; display:grid; place-items:center; width:38px; height:38px; border:1px solid var(--line); border-radius:8px; background:#fff; font-size:16px; }
+      #sign-in { flex:none; min-height:38px; height:38px; white-space:nowrap; }
+    }
+    @media(max-width:359px) { .topbar .rc-chip small, .topbar .rc-chip .rc-caret { display:none; } }
   </style>
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="marketplace.html"><img src="../assets/rightconnect-mark.svg" alt="">RightConnect</a><div class="top-actions"><span id="location-chip-slot"></span><a href="marketplace.html">← Marketplace</a><span id="who"></span><button class="btn small" type="button" id="sign-in" hidden>Sign in</button></div></header>
+  <header class="topbar"><a class="brand" href="marketplace.html" aria-label="RightConnect home"><img src="../assets/rightconnect-mark.svg" alt=""><span class="brand-name">RightConnect</span></a><div class="top-actions"><span id="location-chip-slot"></span><a class="back-link" href="marketplace.html" aria-label="Back to marketplace">←<span class="back-label"> Marketplace</span></a><span id="who"></span><button class="btn small" type="button" id="sign-in" hidden>Sign in</button></div></header>
   <main>
     <div class="intro"><span class="eyebrow">Local workforce</span><h1>Workers &amp; jobs</h1><p>Find trusted workers near you, or find work. Skills marked ✓ were confirmed by a verified employer.</p></div>
     <nav class="tabs" role="tablist">
