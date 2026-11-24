@@ -976,7 +976,8 @@
       document.querySelector('#profile-portrait').innerHTML = RCAvatar.html({ url: profile.avatar_url, name: profile.display_name, seed: profile.id, kind: profile.kind, safeUrl: safeHref });
       document.querySelector('#profile-verified').hidden = !profile.verified;
       document.querySelector('#profile-name').textContent = profile.display_name;
-      document.querySelector('#profile-subtitle').textContent = `${profile.headline} · 📍 ${RCLocation.text(profile) || 'Location not added'}`;
+      const headline = profile.kind === 'expert' ? ['Expert', profile.headline].filter(Boolean).join(' - ') : profile.headline;
+      document.querySelector('#profile-subtitle').textContent = `${headline} · 📍 ${RCLocation.text(profile) || 'Location not added'}`;
       const facts = [];
       if (profile.kind === 'company') {
         if (profile.founded_year) facts.push(`Founded ${profile.founded_year}`);
