@@ -113,6 +113,7 @@
           <div class="q" data-for="expert company"><div class="q-head"><label for="pincode">Where do you work?</label><button type="button" class="info" aria-expanded="false" aria-controls="info-pincode" aria-label="Why we ask">i</button></div><p class="info-text" id="info-pincode" hidden>Type your area or town (e.g. Edappadi) and pick it, or type the PIN code. Customers near you see you first.</p><input id="pincode" autocomplete="postal-code" required inputmode="numeric" maxlength="6" pattern="[1-9][0-9]{5}" title="6-digit PIN code, e.g. 600042" placeholder="600042"></div>
           <div class="q" data-for="customer" data-optional><div class="q-head"><label for="customer-pincode">Where are you?</label><button type="button" class="info" aria-expanded="false" aria-controls="info-customer-pincode" aria-label="Why we ask">i</button></div><p class="info-text" id="info-customer-pincode" hidden>Type your area or town and pick it. We show experts, companies and workers near you first. You can change it any time.</p><input id="customer-pincode" autocomplete="postal-code" inputmode="numeric" maxlength="6" pattern="[1-9][0-9]{5}" title="6-digit PIN code, e.g. 600042" placeholder="600042"></div>
           <div class="q" data-for="worker"><div class="q-head"><label for="worker-pincode">Where do you work?</label></div><input id="worker-pincode" required placeholder="Type your area or town"><input id="worker-city" placeholder="City / district (filled in for you)" autocomplete="address-level2" maxlength="100" minlength="2" required style="margin-top:10px"><input id="worker-area" placeholder="Area (optional)" maxlength="100" style="margin-top:10px"></div>
+          <div class="q" data-for="worker" data-optional><div class="q-head"><label id="work-mode-label">How do you want to work?</label></div><div class="choice-grid" id="work-mode-choices" role="group" aria-labelledby="work-mode-label"><button type="button" class="choice" data-work-mode="onsite">On-site</button><button type="button" class="choice" data-work-mode="remote">Remote</button><button type="button" class="choice" data-work-mode="hybrid">Hybrid</button></div><input type="hidden" id="work-mode" value=""><input id="preferred-location" placeholder="Preferred work location, e.g. Chennai or Anywhere" maxlength="160" style="margin-top:10px"></div>
           <div class="q" data-for="expert worker" data-optional><div class="q-head"><label>Language</label></div><div class="choice-grid" id="language-choices"><button type="button" class="choice" data-language="English">English</button><button type="button" class="choice" data-language="Tamil">Tamil</button><button type="button" class="choice" data-language="Hindi">Hindi</button><button type="button" class="choice" data-language="Telugu">Telugu</button></div><input type="hidden" id="language" value=""></div>
           <div class="q" data-for="expert worker" data-optional><div class="q-head"><label for="experience">Years of experience</label></div><input id="experience" type="number" inputmode="numeric" min="0" max="80" placeholder="5"></div>
           <div class="q" data-for="company" data-optional><div class="q-head"><label for="website">Website</label></div><input id="website" inputmode="url" autocomplete="url" placeholder="yourcompany.com" maxlength="255"></div>
@@ -424,12 +425,18 @@
     skipButton.addEventListener('click', () => {
       roleQuestions()[questionIndex].querySelectorAll('input').forEach((input) => { input.value = ''; });
       if (roleQuestions()[questionIndex].contains(languageChoices[0])) languageChoices.forEach((item) => item.setAttribute('aria-pressed', 'false'));
+      roleQuestions()[questionIndex].querySelectorAll('[data-work-mode]').forEach((item) => item.setAttribute('aria-pressed', 'false'));
       if (questionIndex === roleQuestions().length - 1) detailsForm.requestSubmit(); else showQuestion(questionIndex + 1);
     });
     languageChoices.forEach((button) => button.addEventListener('click', () => {
       document.querySelector('#language').value = button.dataset.language;
       languageChoices.forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
       detailsForm.requestSubmit();
+    }));
+    document.querySelectorAll('[data-work-mode]').forEach((button) => button.addEventListener('click', () => {
+      const input = document.querySelector('#work-mode');
+      input.value = input.value === button.dataset.workMode ? '' : button.dataset.workMode;
+      document.querySelectorAll('[data-work-mode]').forEach((item) => item.setAttribute('aria-pressed', String(item.dataset.workMode === input.value)));
     }));
 
     detailsForm.addEventListener('submit', async (event) => {
@@ -448,6 +455,8 @@
         city: (role === 'worker' ? document.querySelector('#worker-city').value.trim() : document.querySelector('#city').value) || pickedPlace()?.district || null,
         area: role === 'worker' ? (document.querySelector('#worker-area').value.trim() || null) : null,
         adult_confirmed: role === 'worker' && document.querySelector('#adult').checked,
+        work_mode: role === 'worker' ? (document.querySelector('#work-mode').value || null) : null,
+        preferred_location: role === 'worker' ? (document.querySelector('#preferred-location').value.trim() || null) : null,
         pincode: pickedPlace()?.pincode || null,
         // Set when a worker connects Google from their personal link: sign-up keeps that profile.
         worker_key: role === 'worker' ? (sessionStorage.getItem('rightconnect-worker-key') || null) : null,

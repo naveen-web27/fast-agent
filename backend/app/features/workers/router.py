@@ -64,6 +64,7 @@ async def search(
     city: str | None = Query(default=None, max_length=100),
     area: str | None = Query(default=None, max_length=100),
     available: bool = Query(default=False, description="Only workers who are free now"),
+    work_mode: Literal["onsite", "remote", "hybrid"] | None = Query(default=None),
     near: str | None = Query(default=None, pattern=r"^[1-9][0-9]{5}$", description="Searcher's PIN code: nearest first"),
     near_city: str | None = Query(default=None, max_length=100),
     page: int = Query(default=1, ge=1),
@@ -71,7 +72,7 @@ async def search(
     session: AsyncSession = Depends(get_db),
 ) -> WorkerListResponse:
     """Find workers: nearest first (when the searcher's location is known), then available ones."""
-    return await service.search_workers(session, q, city, area, available, page, page_size, near, near_city)
+    return await service.search_workers(session, q, city, area, available, page, page_size, near, near_city, work_mode)
 
 
 @router.get("/me", response_model=MyWorkerProfile)
@@ -257,16 +258,23 @@ async def jobs(
     city: str | None = Query(default=None, max_length=100),
     near: str | None = Query(default=None, pattern=r"^[1-9][0-9]{5}$"),
     near_city: str | None = Query(default=None, max_length=100),
+    work_mode: Literal["onsite", "remote", "hybrid"] | None = Query(default=None),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=50),
     session: AsyncSession = Depends(get_db),
 ) -> list[JobOut]:
-    return await service.list_open_jobs(session, q, city, page, page_size, near, near_city)
+    return await service.list_open_jobs(session, q, city, page, page_size, near, near_city, work_mode)
 
 
 @router.get("/jobs/mine", response_model=list[JobOut])
 async def my_jobs(auth_user_id: UUID = Depends(get_current_auth_user_id), session: AsyncSession = Depends(get_db)) -> list[JobOut]:
     return await run_worker_action(service.list_my_jobs(session, auth_user_id))
+
+
+@router.get("/jobs/{job_id}", response_model=JobOut)
+async def job(job_id: UUID, session: AsyncSession = Depends(get_db)) -> JobOut:
+    """One open job, e.g. opened from a marketplace job card."""
+    return await run_worker_action(service.get_open_job(session, job_id))
 
 
 @router.post("/jobs", response_model=JobOut, status_code=status.HTTP_201_CREATED)

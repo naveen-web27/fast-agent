@@ -52,7 +52,7 @@ from app.features.workers.schemas import (
 )
 from app.models.admin_action import AdminAction
 from app.models.organization_member import MemberRole, OrganizationMember
-from app.models.profile import Organization, Profile, ProfileKind, VerificationStatus
+from app.models.profile import Organization, Profile, ProfileContactView, ProfileKind, VerificationStatus
 from app.models.user import SubscriptionTier, User, UserRole, active_user_by_auth_id
 from app.models.worker import (
     Availability,
@@ -89,7 +89,7 @@ class WorkerIdentityError(Exception):
 
 
 class WorkerLimitError(Exception):
-    """The caller has used today's worker contacts for their plan."""
+    """The caller has used today's new contacts (workers, experts and companies) for their plan."""
 
 
 # ---------- pure helpers (unit-tested) ----------
@@ -184,14 +184,31 @@ def contact_limit_message(limit: int) -> str:
         ),
     }.get(limit, "")
     return (
-        f"You've opened {limit} new worker contacts today, the most for your plan. "
-        f"It resets at midnight, and you can still send hire requests.{upgrade}"
+        f"You've opened {limit} new contacts today, the most for your plan. "
+        f"It resets at midnight, and you can still send requests.{upgrade}"
     )
+
+
+def opened_today(viewer_id: UUID, since: datetime):
+    """One query counting the new worker and expert/company contacts opened since `since`; they share a daily limit."""
+    workers = (
+        select(func.count())
+        .select_from(WorkerContactView)
+        .where(WorkerContactView.viewer_user_id == viewer_id, WorkerContactView.first_viewed_at >= since)
+        .scalar_subquery()
+    )
+    profiles = (
+        select(func.count())
+        .select_from(ProfileContactView)
+        .where(ProfileContactView.viewer_user_id == viewer_id, ProfileContactView.first_viewed_at >= since)
+        .scalar_subquery()
+    )
+    return select(workers + profiles)
 
 
 def merge_profile_fields(target: WorkerProfile, source: WorkerProfile) -> None:
     """Fill the account profile's gaps from the admin-made one; the worker's own entries win."""
-    for field in ("bio", "city", "area", "pincode", "avatar_url", "contact_email", "contact_phone"):
+    for field in ("bio", "city", "area", "pincode", "avatar_url", "contact_email", "contact_phone", "work_mode", "preferred_location"):
         if not getattr(target, field) and getattr(source, field):
             setattr(target, field, getattr(source, field))
     if source.years_experience is not None and (target.years_experience is None or source.years_experience > target.years_experience):
@@ -357,6 +374,8 @@ def _summary(worker: WorkerProfile, experiences: list[tuple], include_private: b
         years_experience=worker.years_experience,
         **pay_fields(worker, include_private),
         contact_available=bool(worker.show_contact) and (worker.user_id is not None or bool(worker.contact_phone or worker.contact_email)),
+        work_mode=worker.work_mode,
+        preferred_location=worker.preferred_location,
         availability=availability,
         busy_until=worker.busy_until if availability == Availability.BUSY.value else None,
         availability_stale=availability_is_stale(availability, worker.availability_updated_at, _now()),
@@ -406,6 +425,7 @@ async def search_workers(
     page_size: int,
     near_pincode: str | None = None,
     near_city: str | None = None,
+    work_mode: str | None = None,
 ) -> WorkerListResponse:
     stmt = select(WorkerProfile).where(_visible())
     if query:
@@ -435,6 +455,8 @@ async def search_workers(
         stmt = stmt.where(WorkerProfile.area.ilike(_like(area), escape="\\"))
     if available_only:
         stmt = stmt.where(_effectively_available())
+    if work_mode:
+        stmt = stmt.where(WorkerProfile.work_mode == work_mode)
 
     total = (await session.scalar(select(func.count()).select_from(stmt.subquery()))) or 0
     light = case(
@@ -468,7 +490,7 @@ async def search_workers(
 
 
 async def contact_daily_limit(session: AsyncSession, user: User) -> int | None:
-    """New worker contacts the user may open per day: the best of their active plans (None = no limit)."""
+    """New contacts (workers, experts, companies) the user may open per day: the best of their active plans (None = no limit)."""
     if user.role == UserRole.PLATFORM_ADMIN:
         return None
     tiers = {SubscriptionTier.FREE}
@@ -518,13 +540,7 @@ async def worker_contact(session: AsyncSession, auth_user_id: UUID, worker_id: U
         .with_for_update()
     )
     now = _now()
-    used = (
-        await session.scalar(
-            select(func.count())
-            .select_from(WorkerContactView)
-            .where(WorkerContactView.viewer_user_id == user.id, WorkerContactView.first_viewed_at >= india_day_start(now))
-        )
-    ) or 0
+    used = (await session.scalar(opened_today(user.id, india_day_start(now)))) or 0
     if view is None:
         if limit is not None and used >= limit:
             raise WorkerLimitError(contact_limit_message(limit))
@@ -637,6 +653,8 @@ def _apply_fields(worker: WorkerProfile, payload) -> None:
     worker.rate_max = payload.rate_max
     worker.rate_unit = payload.rate_unit
     worker.rate_hidden = payload.rate_hidden
+    worker.work_mode = payload.work_mode
+    worker.preferred_location = payload.preferred_location
     if payload.contact_phone:
         worker.contact_phone = payload.contact_phone
     worker.show_contact = payload.show_contact
@@ -1140,6 +1158,7 @@ async def _job_out(session: AsyncSession, job: JobPost, mine: bool) -> JobOut:
         pay=job.pay,
         starts_on=job.starts_on,
         description=job.description,
+        work_mode=job.work_mode or "onsite",
         status=job.status,
         poster_name=organization.name if organization else (poster.full_name if poster else "Employer"),
         organization_name=organization.name if organization else None,
@@ -1160,12 +1179,15 @@ async def list_open_jobs(
     page_size: int,
     near_pincode: str | None = None,
     near_city: str | None = None,
+    work_mode: str | None = None,
 ) -> list[JobOut]:
     stmt = (
         select(JobPost)
         .join(User, User.id == JobPost.poster_user_id)
         .where(JobPost.status == "open", User.deleted_at.is_(None), User.blocked_at.is_(None))
     )
+    if work_mode:
+        stmt = stmt.where(JobPost.work_mode == work_mode)
     if query:
         words, services = search_terms(query)
         conditions = [
@@ -1187,6 +1209,18 @@ async def list_open_jobs(
         for job, out in zip(jobs, results):
             out.nearness = proximity(job.pincode, job.city, near_pincode, near_city)
     return results
+
+
+async def get_open_job(session: AsyncSession, job_id: UUID) -> JobOut:
+    """One open job, for links from the marketplace (workers.html?tab=jobs&job=...)."""
+    job = await session.scalar(
+        select(JobPost)
+        .join(User, User.id == JobPost.poster_user_id)
+        .where(JobPost.id == job_id, JobPost.status == "open", User.deleted_at.is_(None), User.blocked_at.is_(None))
+    )
+    if job is None:
+        raise WorkerNotFoundError("This job is closed or no longer exists")
+    return await _job_out(session, job, mine=False)
 
 
 async def job_contact(session: AsyncSession, auth_user_id: UUID, job_id: UUID) -> DirectContact:
@@ -1229,6 +1263,7 @@ async def create_job(session: AsyncSession, auth_user_id: UUID, payload: JobCrea
         description=payload.description,
         contact_phone=payload.contact_phone or user.phone,
         show_contact=payload.show_contact,
+        work_mode=payload.work_mode,
         status="open",
     )
     session.add(job)

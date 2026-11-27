@@ -78,6 +78,22 @@
     .danger-zone h3 { margin:0 0 4px; color:var(--danger); font-size:13px; }
     .danger-zone .toggle-row button { color:var(--danger); border-color:#f0c4bd; }
     .kind-toggle { display:flex; flex-wrap:wrap; align-items:center; gap:6px; flex:0 1 auto; }
+    .mode-filters { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:10px; font-size:12px; font-weight:700; }
+    .mode-filters select { min-height:32px; padding:0 10px; border:1px solid var(--line); border-radius:8px; background:#fff; font:inherit; }
+    .mode-check { display:inline-flex; align-items:center; gap:6px; }
+    .contact-row,.contact-reveal { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:8px; }
+    .contact-row a,.contact-reveal a { display:inline-flex; align-items:center; min-height:30px; padding:0 10px; color:var(--ink, #10231f); border:1px solid var(--line); border-radius:8px; background:#fff; font-size:12px; font-weight:800; text-decoration:none; }
+    .contact-row a.wa,.contact-reveal a.wa { color:#fff; border-color:#1f9d55; background:#1f9d55; }
+    .contact-note { flex-basis:100%; color:var(--muted); font-size:11px; }
+    .contact-note.error { color:var(--danger); }
+    .avail-light { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:800; }
+    .avail-light i { width:9px; height:9px; border-radius:50%; background:#9aa7a5; }
+    .avail-light.available { color:#0b6b4f; }.avail-light.available i { background:#16a34a; }
+    .avail-light.busy { color:#8a5a00; }.avail-light.busy i { background:#f59e0b; }
+    .avail-light.offline { color:var(--muted); }
+    .mode-tag { display:inline-flex; padding:2px 7px; color:#28508a; border-radius:999px; background:#e8f0fc; font-size:10px; font-weight:800; }
+    .viewer-row { display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--line); font-size:12px; }
+    .viewer-row:first-child { border-top:0; }
     .pagination { display:flex; align-items:center; justify-content:center; gap:14px; margin-top:16px; }
     .pagination span { color:var(--muted); font-size:12px; font-weight:700; }
     .pagination button:disabled { opacity:.45; cursor:not-allowed; }
@@ -349,9 +365,10 @@
       <div class="page">
         <section class="view active" id="discover">
           <div class="page-title"><div><h1>Find help</h1></div><button class="primary" id="match-button">✦ Get matched</button></div>
-          <div class="search-panel"><label class="search-field">⌕ <input id="search-input" placeholder="What do you need?"></label><div class="kind-toggle" id="kind-toggle" role="group" aria-label="Profile type filter"><button type="button" class="pill kind-pill selected" data-kind="expert">Experts</button><button type="button" class="pill kind-pill selected" data-kind="company">Companies</button><button type="button" class="pill kind-pill" id="kind-customer-pill" data-kind="customer" hidden>Customers</button></div><button class="primary" id="search-button">Search</button></div>
+          <div class="search-panel"><label class="search-field">⌕ <input id="search-input" placeholder="What do you need?"></label><div class="kind-toggle" id="kind-toggle" role="group" aria-label="Profile type filter"><button type="button" class="pill kind-pill selected" data-kind="expert">Experts</button><button type="button" class="pill kind-pill selected" data-kind="company">Companies</button><button type="button" class="pill kind-pill" data-kind="worker">Workers</button><button type="button" class="pill kind-pill" data-kind="job">Jobs</button><button type="button" class="pill kind-pill" id="kind-customer-pill" data-kind="customer" hidden>Customers</button></div><button class="primary" id="search-button">Search</button></div>
+          <div class="mode-filters" id="mode-filters" hidden><label class="mode-check" id="mode-available-wrap"><input type="checkbox" id="mode-available"> Available now</label><select id="mode-work-mode" aria-label="Work mode"><option value="">Any work mode</option><option value="onsite">On-site</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option></select></div>
           <div class="location-alert" id="location-alert" hidden></div>
-          <div class="dashboard-grid"><div><div class="filter-row"><h2 id="result-count">Loading profiles…</h2></div><div class="results" id="results"></div><div class="pagination" id="pagination" hidden><button class="secondary" id="page-prev" type="button">← Prev</button><span id="page-indicator">Page 1</span><button class="secondary" id="page-next" type="button">Next →</button></div><section class="other-profiles" id="other-profiles" aria-labelledby="other-profiles-title" hidden><div class="other-divider"><span id="other-profiles-title">Other profiles</span></div><p class="muted other-note">Not an exact match for your search, but they may still help.</p><div class="results" id="other-results"></div><div class="pagination" id="other-pagination" hidden><button class="secondary" id="other-more" type="button">Show more profiles</button></div></section></div><aside class="discover-side"><section class="showcase-discover showcase-side" aria-labelledby="showcase-strip-title"><div class="showcase-heading"><div><h2 id="showcase-strip-title">Video showcases</h2><p class="muted">Reels and Shorts from providers. Videos open on the original platform.</p></div><button class="secondary" type="button" data-view="showcases">View all</button></div><div class="showcase-strip showcase-vertical" id="showcase-strip" tabindex="0" role="region" aria-label="Video showcases, scroll vertically"><p class="muted">Loading showcases...</p></div></section><div class="insight-card"><span class="section-tag">Top picks</span><div class="match-list" id="match-list"></div></div><div class="stat-grid"><div class="stat"><small>Reviews</small><strong id="stat-reviews">–</strong></div><div class="stat"><small>Avg. reply</small><strong id="stat-response">–</strong></div></div></aside></div>
+          <div class="dashboard-grid"><div><div class="filter-row"><h2 id="result-count">Loading profiles…</h2></div><div class="results" id="results"></div><div class="pagination" id="pagination" hidden><button class="secondary" id="page-prev" type="button">← Prev</button><span id="page-indicator">Page 1</span><button class="secondary" id="page-next" type="button">Next →</button></div><section class="other-profiles" id="other-profiles" aria-labelledby="other-profiles-title" hidden><div class="other-divider"><span id="other-profiles-title">Other profiles</span></div><p class="muted other-note">Not an exact match for your search, but they may still help.</p><div class="results" id="other-results"></div><div class="pagination" id="other-pagination" hidden><button class="secondary" id="other-more" type="button">Show more profiles</button></div></section><section class="other-profiles" id="nearby-workers" hidden><div class="other-divider"><span>Workers near you</span></div><div class="results" id="nearby-workers-results" style="margin-top:13px"></div><div class="pagination"><button class="secondary" type="button" data-see-all="worker">See all workers →</button></div></section><section class="other-profiles" id="nearby-jobs" hidden><div class="other-divider"><span>Open jobs</span></div><div class="results" id="nearby-jobs-results" style="margin-top:13px"></div><div class="pagination"><button class="secondary" type="button" data-see-all="job">See all jobs →</button></div></section></div><aside class="discover-side"><section class="showcase-discover showcase-side" aria-labelledby="showcase-strip-title"><div class="showcase-heading"><div><h2 id="showcase-strip-title">Video showcases</h2><p class="muted">Reels and Shorts from providers. Videos open on the original platform.</p></div><button class="secondary" type="button" data-view="showcases">View all</button></div><div class="showcase-strip showcase-vertical" id="showcase-strip" tabindex="0" role="region" aria-label="Video showcases, scroll vertically"><p class="muted">Loading showcases...</p></div></section><div class="insight-card"><span class="section-tag">Top picks</span><div class="match-list" id="match-list"></div></div><div class="stat-grid"><div class="stat"><small>Reviews</small><strong id="stat-reviews">–</strong></div><div class="stat"><small>Avg. reply</small><strong id="stat-response">–</strong></div></div></aside></div>
         </section>
         <section class="view" id="showcases">
           <div class="page-title"><div><h1>Video showcases</h1><p>Discover experts and companies through their YouTube Shorts and Instagram Reels.</p></div></div>
@@ -377,7 +394,7 @@
         </section>
         <section class="view" id="profile">
           <div class="page-title"><div></div><button class="secondary" data-view="discover">← Back</button></div>
-          <div class="profile-layout"><div><article class="profile-hero"><div class="profile-summary"><div class="portrait" id="profile-portrait"></div><div><span class="verified" id="profile-verified" hidden>● Verified</span><h1 id="profile-name">Select a profile</h1><p id="profile-subtitle"></p><p class="profile-facts" id="profile-facts"></p><div class="tags" id="profile-tags"></div><div class="resolved-badge" id="profile-resolved" hidden></div><div class="profile-owner-actions" id="profile-owner-actions"><button class="primary" type="button" id="profile-edit-button" hidden>✎ Edit profile</button><button class="secondary" type="button" id="profile-cv-button" hidden>⇩ Download CV</button></div></div></div><div class="trust-bar"><div class="trust-item"><small>Rating</small><strong id="profile-rating">–</strong></div><div class="trust-item"><small>Reviews</small><strong id="profile-review-count">–</strong></div><div class="trust-item"><small>Replies in</small><strong id="profile-reply">–</strong></div></div></article><article class="content-card" id="profile-bio-card" hidden><h2 id="profile-bio-heading">About</h2><p id="profile-bio"></p></article><div id="profile-extras"></div><article class="content-card"><h2>Reviews</h2><div id="profile-reviews"><p style="color:var(--muted);font-size:12px;margin:0">No reviews yet.</p></div></article></div><aside class="booking"><div class="q-head"><h2 style="margin:0">Free request</h2><button type="button" class="info" aria-expanded="false" aria-controls="info-book" aria-label="What happens next">i</button></div><p class="info-text" id="info-book" hidden>Tell them what you need. When they accept, you can chat in My requests and see their contact.</p><button class="primary" id="book-button" style="margin-top:12px">Send request</button><div class="unclaimed-note" id="profile-unclaimed" hidden>This business was added by RightConnect and hasn't joined yet, so it can't receive requests here.<br><a id="profile-claim-link" href="/pages/claim.html">Is this your business? Claim it →</a></div><button class="secondary" id="detail-save-button" type="button" style="width:100%;margin-top:10px">♡ Save</button><button class="secondary" id="share-profile-button" type="button" style="width:100%;margin-top:8px">Share link</button><div class="assurance">✓ No fee</div><div class="assurance" id="profile-bookable" hidden>✓ Book a time online</div><div class="assurance">✓ Your details stay private</div></aside></div>
+          <div class="profile-layout"><div><article class="profile-hero"><div class="profile-summary"><div class="portrait" id="profile-portrait"></div><div><span class="verified" id="profile-verified" hidden>● Verified</span><h1 id="profile-name">Select a profile</h1><p id="profile-subtitle"></p><p class="profile-facts" id="profile-facts"></p><div class="tags" id="profile-tags"></div><div class="resolved-badge" id="profile-resolved" hidden></div><div class="profile-owner-actions" id="profile-owner-actions"><button class="primary" type="button" id="profile-edit-button" hidden>✎ Edit profile</button><button class="secondary" type="button" id="profile-cv-button" hidden>⇩ Download CV</button></div></div></div><div class="trust-bar"><div class="trust-item"><small>Rating</small><strong id="profile-rating">–</strong></div><div class="trust-item"><small>Reviews</small><strong id="profile-review-count">–</strong></div><div class="trust-item"><small>Replies in</small><strong id="profile-reply">–</strong></div></div></article><article class="content-card" id="profile-bio-card" hidden><h2 id="profile-bio-heading">About</h2><p id="profile-bio"></p></article><article class="content-card" id="profile-viewers-card" hidden><h2>Who viewed your contact</h2><p class="muted" style="margin:0 0 10px;font-size:12px">Signed-in people who opened your phone or email. Only you can see this. Turn contact off in Edit profile.</p><div id="profile-viewers"></div></article><div id="profile-extras"></div><article class="content-card"><h2>Reviews</h2><div id="profile-reviews"><p style="color:var(--muted);font-size:12px;margin:0">No reviews yet.</p></div></article></div><aside class="booking"><div class="q-head"><h2 style="margin:0">Get in touch</h2><button type="button" class="info" aria-expanded="false" aria-controls="info-book" aria-label="What happens next">i</button></div><p class="info-text" id="info-book" hidden>View contact shows their phone, WhatsApp and email right away (the provider sees who viewed it). Or send a free request: when they accept, you can chat in My requests.</p><button class="primary" id="contact-button" type="button" style="width:100%;margin-top:12px" hidden>📇 View contact</button><div class="contact-reveal" id="contact-reveal" hidden></div><button class="primary" id="book-button" style="margin-top:12px">Send request</button><div class="unclaimed-note" id="profile-unclaimed" hidden>This business was added by RightConnect and hasn't joined yet, so it can't receive requests here.<br><a id="profile-claim-link" href="/pages/claim.html">Is this your business? Claim it →</a></div><button class="secondary" id="detail-save-button" type="button" style="width:100%;margin-top:10px">♡ Save</button><button class="secondary" id="share-profile-button" type="button" style="width:100%;margin-top:8px">Share link</button><div class="assurance">✓ No fee</div><div class="assurance" id="profile-bookable" hidden>✓ Book a time online</div><div class="assurance">✓ Your details stay private</div></aside></div>
         </section>
         <section class="view" id="requests">
           <div class="page-title"><div><span class="section-tag">My requests</span><h1>One place for every moving part.</h1><p>Track the people, answers, and decisions around your request.</p></div><button class="primary" data-view="discover">+ New request</button></div>
@@ -762,15 +779,24 @@
       const kinds = selectedKinds();
       if (kinds.length === 0 || kinds.includes('customer')) setKindSelection(['expert', 'company']);
     }
+    const EXCLUSIVE_KINDS = ['customer', 'worker', 'job'];
     async function refreshDiscoverResults() {
-      if (selectedKinds().includes('customer')) { await renderLeadsMode(); } else { await loadProfiles(); }
+      const kinds = selectedKinds();
+      const mode = EXCLUSIVE_KINDS.find((kind) => kinds.includes(kind));
+      document.querySelector('#mode-filters').hidden = mode !== 'worker' && mode !== 'job';
+      document.querySelector('#mode-available-wrap').hidden = mode !== 'worker';
+      if (mode) { document.querySelector('#nearby-workers').hidden = true; document.querySelector('#nearby-jobs').hidden = true; }
+      if (mode === 'customer') { await renderLeadsMode(); }
+      else if (mode === 'worker') { await renderWorkersMode(); }
+      else if (mode === 'job') { await renderJobsMode(); }
+      else { await loadProfiles(); }
     }
     kindPills.forEach((pill) => {
       pill.addEventListener('click', () => {
-        if (pill.dataset.kind === 'customer') {
-          setKindSelection(['customer']);
+        if (EXCLUSIVE_KINDS.includes(pill.dataset.kind)) {
+          setKindSelection([pill.dataset.kind]);
         } else {
-          const selectedProfileKinds = selectedKinds().filter((kind) => kind !== 'customer');
+          const selectedProfileKinds = selectedKinds().filter((kind) => !EXCLUSIVE_KINDS.includes(kind));
           const isOnlySelectedKind = selectedProfileKinds.length === 1 && selectedProfileKinds[0] === pill.dataset.kind;
           setKindSelection(isOnlySelectedKind ? ['expert', 'company'] : [pill.dataset.kind]);
         }
@@ -780,9 +806,206 @@
     });
     pagePrevButton.addEventListener('click', async () => { if (currentPage <= 1) return; currentPage -= 1; setButtonLoading(pagePrevButton, true, ''); await refreshDiscoverResults(); setButtonLoading(pagePrevButton, false); });
     pageNextButton.addEventListener('click', async () => { currentPage += 1; setButtonLoading(pageNextButton, true, ''); await refreshDiscoverResults(); setButtonLoading(pageNextButton, false); });
+    document.querySelectorAll('#mode-available, #mode-work-mode').forEach((input) => input.addEventListener('change', () => { currentPage = 1; refreshDiscoverResults(); }));
+    document.querySelectorAll('[data-see-all]').forEach((button) => button.addEventListener('click', () => {
+      setKindSelection([button.dataset.seeAll]);
+      currentPage = 1;
+      refreshDiscoverResults();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }));
+
+    // ---------- workers and jobs in the marketplace (opening one goes to the Workers & jobs page) ----------
+    const WORK_MODES = { onsite: 'On-site', remote: 'Remote', hybrid: 'Hybrid' };
+    function workModeTag(mode) { return WORK_MODES[mode] ? `<span class="mode-tag">${WORK_MODES[mode]}</span>` : ''; }
+    function availabilityLight(worker) {
+      const label = { available: 'Available now', busy: 'Busy', offline: 'Not looking' }[worker.availability] || worker.availability;
+      return `<span class="avail-light ${escapeHtml(worker.availability)}"><i></i>${label}${worker.availability_stale ? ' <span style="color:var(--muted);font-weight:600">(not updated)</span>' : ''}</span>`;
+    }
+    function workerRate(worker) {
+      if (worker.rate_hidden) return 'Pay: discuss';
+      if (worker.rate_amount == null) return '';
+      const money = (amount) => Number(amount).toLocaleString('en-IN');
+      return `₹${money(worker.rate_amount)}${worker.rate_max != null ? `–${money(worker.rate_max)}` : ''}/${worker.rate_unit}`;
+    }
+    function linkCard(article, label, url) {
+      article.classList.add('clickable');
+      article.tabIndex = 0;
+      article.setAttribute('role', 'link');
+      article.setAttribute('aria-label', label);
+      article.addEventListener('click', () => { window.location.href = url; });
+      article.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href = url; } });
+    }
+    function renderWorkerCard(worker) {
+      const article = document.createElement('article');
+      article.className = 'profile-card';
+      const meta = [worker.years_experience != null ? `${worker.years_experience} yrs` : '', worker.languages.join(', '), workerRate(worker)].filter(Boolean).join(' · ');
+      article.innerHTML = `
+        <div class="portrait">${RCAvatar.html({ url: worker.avatar_url, name: worker.display_name, seed: worker.id, kind: 'worker', safeUrl: safeHref })}</div>
+        <div>
+          <div>${availabilityLight(worker)}</div>
+          <div class="profile-head"><h3>${escapeHtml(worker.display_name)}</h3>${worker.verified_skill_count ? '<span class="verified">● Verified skills</span>' : ''}</div>
+          <div class="profile-role">Worker · ${escapeHtml(worker.headline)}</div>
+          ${RCLocation.html(worker)}
+          ${worker.work_mode || worker.preferred_location ? `<div class="profile-meta">${workModeTag(worker.work_mode)}${worker.preferred_location ? ` Prefers ${escapeHtml(worker.preferred_location)}` : ''}</div>` : ''}
+          <div class="profile-meta">${escapeHtml(meta)}</div>
+          <div class="tags">${worker.skills.slice(0, 5).map((skill) => `<span class="tag">${skill.verified ? '✓ ' : ''}${escapeHtml(skill.name)}</span>`).join('')}</div>
+        </div>
+        <div class="profile-score">
+          <div class="score">★ <strong>${worker.average_rating.toFixed(1)}</strong></div>
+          <div class="review-count">${worker.review_count} reviews</div>
+          <button class="secondary" type="button">View</button>
+        </div>`;
+      linkCard(article, `View ${worker.display_name}`, `workers.html?worker=${encodeURIComponent(worker.id)}`);
+      return article;
+    }
+    function renderJobCard(job) {
+      const article = document.createElement('article');
+      article.className = 'profile-card';
+      const chips = [job.skill, `${job.openings} needed`, job.pay, job.starts_on ? `From ${new Date(`${job.starts_on}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` : ''].filter(Boolean);
+      article.innerHTML = `
+        <div class="portrait">${RCAvatar.html({ name: job.poster_name, seed: job.id, kind: 'company', safeUrl: safeHref })}</div>
+        <div>
+          <div class="profile-head"><h3>${escapeHtml(job.title)}</h3>${job.organization_verified ? '<span class="verified">● Verified</span>' : ''}</div>
+          <div class="profile-role">Job · ${escapeHtml(job.poster_name)}</div>
+          ${RCLocation.html(job)}
+          <div class="profile-meta">${workModeTag(job.work_mode)}</div>
+          <div class="tags">${chips.map((chip) => `<span class="tag">${escapeHtml(chip)}</span>`).join('')}</div>
+        </div>
+        <div class="profile-score"><button class="secondary" type="button">View job</button></div>`;
+      linkCard(article, `View job ${job.title}`, `workers.html?tab=jobs&job=${encodeURIComponent(job.id)}`);
+      return article;
+    }
+    function workerParams(size, page = 1) {
+      const params = new URLSearchParams({ page, page_size: size });
+      const query = document.querySelector('#search-input').value.trim();
+      if (query) params.set('q', query);
+      return RCLocation.apply(params, currentUser);
+    }
+    async function renderModeList(kind) {
+      const ticket = ++profilesTicket;
+      otherKey = null;
+      otherSection.hidden = true;
+      paginationBar.hidden = true;
+      resultCount.innerHTML = `<span class="spinner"></span>Loading ${kind === 'worker' ? 'workers' : 'jobs'}…`;
+      resultsList.classList.add('results-loading');
+      try {
+        const params = workerParams(pageSize, currentPage);
+        const workMode = document.querySelector('#mode-work-mode').value;
+        if (workMode) params.set('work_mode', workMode);
+        if (kind === 'worker' && document.querySelector('#mode-available').checked) params.set('available', 'true');
+        const response = await fetch(`${apiBase}/workers${kind === 'job' ? '/jobs' : ''}?${params}`);
+        if (!response.ok) throw new Error('Request failed');
+        const data = await response.json();
+        if (ticket !== profilesTicket) return;
+        const items = kind === 'job' ? data : data.results;
+        resultsList.innerHTML = '';
+        items.forEach((item) => resultsList.appendChild(kind === 'job' ? renderJobCard(item) : renderWorkerCard(item)));
+        const query = document.querySelector('#search-input').value.trim();
+        if (kind === 'worker') {
+          resultCount.textContent = data.total ? `${data.total} worker${data.total === 1 ? '' : 's'}${query ? ` for ${query}` : ''}` : `No workers yet${query ? ` for ${query}` : ''}`;
+        } else {
+          resultCount.textContent = items.length ? `Open jobs${query ? ` for ${query}` : ''}` : `No open jobs${query ? ` for ${query}` : ''}`;
+        }
+        const hasNext = kind === 'job' ? items.length === pageSize : data.page * data.page_size < data.total;
+        pageIndicator.textContent = `Page ${currentPage}`;
+        pagePrevButton.disabled = currentPage <= 1;
+        pageNextButton.disabled = !hasNext;
+        paginationBar.hidden = currentPage <= 1 && !hasNext;
+      } catch (_) {
+        if (ticket !== profilesTicket) return;
+        resultsList.innerHTML = '';
+        resultCount.textContent = 'Something went wrong while loading. Please try again.';
+      } finally {
+        if (ticket === profilesTicket) resultsList.classList.remove('results-loading');
+      }
+    }
+    function renderWorkersMode() { return renderModeList('worker'); }
+    function renderJobsMode() { return renderModeList('job'); }
+    // A few nearby workers and open jobs under the expert/company results, so the marketplace shows everything on offer.
+    let nearbyTicket = 0;
+    async function loadNearbyWorkersAndJobs() {
+      const ticket = ++nearbyTicket;
+      const sections = [
+        ['#nearby-workers', 'workers', (data) => data.results, renderWorkerCard],
+        ['#nearby-jobs', 'workers/jobs', (data) => data, renderJobCard],
+      ];
+      await Promise.all(sections.map(async ([selector, path, pick, render]) => {
+        const section = document.querySelector(selector);
+        try {
+          const response = await fetch(`${apiBase}/${path}?${workerParams(4)}`);
+          if (!response.ok) throw new Error('Request failed');
+          const items = pick(await response.json());
+          if (ticket !== nearbyTicket) return;
+          const box = section.querySelector('.results');
+          box.innerHTML = '';
+          items.forEach((item) => box.appendChild(render(item)));
+          section.hidden = !items.length || selectedKinds().some((kind) => EXCLUSIVE_KINDS.includes(kind));
+        } catch (_) {
+          if (ticket === nearbyTicket) section.hidden = true;
+        }
+      }));
+    }
+
+    // ---------- View contact for experts and companies (the owner sees who viewed it) ----------
+    const revealedProfileContacts = new Map();
+    function whatsappLink(phone, name) {
+      const text = `Hi ${name}, I found your profile on RightConnect. Can we talk?`;
+      return `https://wa.me/${String(phone).replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
+    }
+    function contactLinksHtml(contact) {
+      const links = [];
+      if (contact.phone) {
+        links.push(`<a href="tel:${escapeHtml(contact.phone)}">📞 ${escapeHtml(contact.phone)}</a>`);
+        links.push(`<a class="wa" href="${escapeHtml(whatsappLink(contact.phone, contact.name))}" target="_blank" rel="noopener">WhatsApp</a>`);
+      }
+      if (contact.email) links.push(`<a href="mailto:${escapeHtml(contact.email)}">✉️ ${escapeHtml(contact.email)}</a>`);
+      if (contact.daily_limit != null) links.push(`<span class="contact-note">${contact.left_today} of ${contact.daily_limit} new contacts left today</span>`);
+      return links.join('');
+    }
+    // Fetches (and logs) the contact once per page load; `box` receives the links or the error.
+    async function revealProfileContact(profileId, button, box) {
+      if (!accessToken) { window.location.href = 'auth.html'; return; }
+      button.disabled = true;
+      try {
+        let contact = revealedProfileContacts.get(profileId);
+        if (!contact) {
+          const response = await fetch(`${apiBase}/profiles/${encodeURIComponent(profileId)}/contact`, { method: 'POST', headers: authHeaders() });
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) throw Object.assign(new Error(body.detail || 'Could not load the contact. Please try again.'), { status: response.status });
+          contact = body;
+          revealedProfileContacts.set(profileId, contact);
+        }
+        box.innerHTML = contactLinksHtml(contact);
+        box.hidden = false;
+        button.hidden = true;
+      } catch (error) {
+        button.disabled = false;
+        box.hidden = false;
+        box.innerHTML = `<span class="contact-note error">${escapeHtml(error.message)}${error.status === 429 ? ' <a href="plans.html">See plans</a>' : ''}</span>`;
+      }
+    }
+    async function loadProfileViewers(profileId) {
+      const card = document.querySelector('#profile-viewers-card');
+      const box = document.querySelector('#profile-viewers');
+      card.hidden = false;
+      box.innerHTML = '<p class="muted" style="margin:0;font-size:12px"><span class="spinner"></span>Loading…</p>';
+      try {
+        const response = await fetch(`${apiBase}/profiles/${encodeURIComponent(profileId)}/contact-views`, { headers: authHeaders() });
+        if (!response.ok) throw new Error('Request failed');
+        const views = await response.json();
+        if (currentProfileId !== profileId) return;
+        const when = (value) => new Date(value).toLocaleString([], { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+        box.innerHTML = views.length
+          ? views.map((view) => `<div class="viewer-row"><span><strong>${escapeHtml(view.viewer_name)}</strong>${view.company_name ? ` · ${escapeHtml(view.company_name)}` : ''}</span><span class="muted">${when(view.last_viewed_at)}${view.view_count > 1 ? ` · ${view.view_count} times` : ''}</span></div>`).join('')
+          : '<p class="muted" style="margin:0;font-size:12px">No one has viewed your contact yet.</p>';
+      } catch (_) {
+        if (currentProfileId === profileId) box.innerHTML = '<p class="muted" style="margin:0;font-size:12px">Could not load who viewed your contact.</p>';
+      }
+    }
     document.querySelector('#payment-nav-button').addEventListener('click', () => { window.location.href = 'plans.html'; });
 
     async function renderLeadsMode() {
+      profilesTicket += 1;
       paginationBar.hidden = true;
       resultsList.innerHTML = '';
       otherKey = null;
@@ -894,8 +1117,10 @@
           <div class="score">★ <strong>${profile.average_rating.toFixed(1)}</strong></div>
           <div class="review-count">${profile.review_count} reviews</div>
           <button class="secondary profile-open">View</button>
+          ${profile.contact_available && !locked && !ownsProfile(profile.id) ? '<button class="secondary contact-open" type="button" style="margin-top:6px">📇 Contact</button>' : ''}
           <button class="secondary save-toggle" type="button" style="margin-top:6px">${savedProfileIds.has(profile.id) ? '♥ Saved' : '♡ Save'}</button>
         </div>
+        ${profile.contact_available && !locked ? '<div class="contact-row" hidden style="grid-column:1/-1"></div>' : ''}
         ${locked ? `<div class="lock-overlay"><span>🔒 Premium</span><button class="primary upgrade-button" type="button">Upgrade to view</button></div>` : ''}`;
       if (locked) {
         article.querySelector('.upgrade-button').addEventListener('click', () => showView('plans'));
@@ -913,6 +1138,11 @@
           const button = event.currentTarget;
           toggleSaved(profile.id, button, (saved) => { button.textContent = saved ? '♥ Saved' : '♡ Save'; });
         });
+        article.querySelector('.contact-open')?.addEventListener('click', (event) => {
+          event.stopPropagation();
+          revealProfileContact(profile.id, event.currentTarget, article.querySelector('.contact-row'));
+        });
+        article.querySelector('.contact-row')?.addEventListener('click', (event) => event.stopPropagation());
       }
       return article;
     }
@@ -995,7 +1225,19 @@
       cvButton.hidden = profile.kind !== 'expert';
       cvButton.onclick = () => printProfile(profile.display_name);
       const unclaimed = profile.claimed === false;
-      document.querySelector('#book-button').hidden = own || unclaimed;
+      const bookButton = document.querySelector('#book-button');
+      bookButton.hidden = own || unclaimed;
+      // View contact is the main action when offered; the request flow stays as the secondary option.
+      bookButton.className = profile.contact_available && !own ? 'secondary' : 'primary';
+      bookButton.style.width = '100%';
+      const contactButton = document.querySelector('#contact-button');
+      const contactBox = document.querySelector('#contact-reveal');
+      contactButton.hidden = own || !profile.contact_available;
+      contactButton.disabled = false;
+      contactBox.hidden = true;
+      contactBox.innerHTML = '';
+      contactButton.onclick = () => revealProfileContact(profile.id, contactButton, contactBox);
+      if (own) { loadProfileViewers(profile.id); } else { document.querySelector('#profile-viewers-card').hidden = true; }
       document.querySelector('#profile-unclaimed').hidden = !unclaimed;
       document.querySelector('#profile-claim-link').href = `/pages/claim.html?profile=${encodeURIComponent(profile.id)}`;
       document.querySelector('#profile-tags').innerHTML = profile.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('');
@@ -1079,8 +1321,11 @@
       loadOtherProfiles(query, selectedKinds().filter((kind) => kind !== 'customer'), true);
     });
 
+    // Shared by every list that writes to #results (profiles, workers, jobs), so a late response from another mode is dropped.
     let profilesTicket = 0;
     async function loadProfiles() {
+      // Callers like sign-in refresh call this directly; while Workers or Jobs is picked, refresh that list instead.
+      if (selectedKinds().some((kind) => kind === 'worker' || kind === 'job')) return refreshDiscoverResults();
       const ticket = ++profilesTicket;
       const query = document.querySelector('#search-input').value.trim();
       const kinds = selectedKinds().filter((kind) => kind !== 'customer');
@@ -1104,6 +1349,7 @@
         resultsList.innerHTML = '';
         renderInsights(data.results);
         if (data.results.length === 0) {
+          if (currentPage === 1) loadNearbyWorkersAndJobs();
           resultCount.textContent = `No profiles yet for ${query || 'your search'}`;
           if (query) {
             const showAll = document.createElement('button');
@@ -1117,6 +1363,7 @@
           return;
         }
         data.results.forEach((profile) => resultsList.appendChild(renderProfileCard(profile)));
+        if (currentPage === 1) loadNearbyWorkersAndJobs(); else { document.querySelector('#nearby-workers').hidden = true; document.querySelector('#nearby-jobs').hidden = true; }
         resultCount.textContent = `${data.total} recommended profile${data.total === 1 ? '' : 's'}${query ? ` for ${query}` : ''}`;
         const totalPages = Math.max(1, Math.ceil(data.total / data.page_size));
         pageIndicator.textContent = `Page ${data.page} of ${totalPages}`;

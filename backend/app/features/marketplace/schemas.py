@@ -32,6 +32,8 @@ class ProfileSummary(BaseModel):
     resolved_clients_count: int | None
     # False for admin-added company listings the owner hasn't claimed; they can't receive requests yet.
     claimed: bool = True
+    # True when signed-in users can open this provider's phone/WhatsApp/email with "View contact".
+    contact_available: bool = False
 
 
 class ProfileListResponse(BaseModel):
@@ -93,4 +95,15 @@ class ProfileVisibilityUpdate(BaseModel):
     """Lets an expert or company admin toggle their public resolved-clients badge."""
 
     show_resolved_count: bool
+
+
+class ProfileContactViewOut(BaseModel):
+    """Someone who opened the provider's contact, shown to the owner so they know who may call."""
+
+    id: UUID
+    viewer_name: str
+    company_name: str | None
+    first_viewed_at: datetime
+    last_viewed_at: datetime
+    view_count: int
 

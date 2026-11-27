@@ -58,6 +58,9 @@ class WorkerProfile(Base):
     rate_unit: Mapped[str | None] = mapped_column(String)
     # Hidden pay is shown only to the worker; everyone else sees "Pay: discuss".
     rate_hidden: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # 'onsite' / 'remote' / 'hybrid' (None = not said), and where the worker would like to work, e.g. "Chennai, Coimbatore".
+    work_mode: Mapped[str | None] = mapped_column(String)
+    preferred_location: Mapped[str | None] = mapped_column(String)
     # Lets signed-in users view the worker's phone/email ("View contact", logged in worker_contact_views).
     show_contact: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     availability: Mapped[str] = mapped_column(String, nullable=False, default=Availability.AVAILABLE.value)
@@ -133,6 +136,7 @@ class JobPost(Base):
     # Number workers can call/WhatsApp about the job (shown to signed-in users when show_contact is on).
     contact_phone: Mapped[str | None] = mapped_column(String)
     show_contact: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    work_mode: Mapped[str] = mapped_column(String, nullable=False, default="onsite")
     status: Mapped[str] = mapped_column(String, nullable=False, default="open")
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

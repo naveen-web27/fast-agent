@@ -49,6 +49,9 @@ class OnboardingRequest(BaseModel):
     # Workers: neighbourhood within the city, and the mandatory 18+ confirmation.
     area: str | None = Field(default=None, max_length=100)
     adult_confirmed: bool = False
+    # Workers: on-site / remote / hybrid, and where they'd like to work (optional).
+    work_mode: Literal["onsite", "remote", "hybrid"] | None = None
+    preferred_location: str | None = Field(default=None, max_length=160)
     pincode: str | None = Field(default=None, max_length=10)
     # Area name picked with the PIN, e.g. "Idappadi".
     locality: str | None = Field(default=None, max_length=120)

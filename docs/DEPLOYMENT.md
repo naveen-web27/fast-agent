@@ -27,7 +27,7 @@ Users are in India, so Singapore is also the closest region to them (~50 ms vs ~
 1. **New project** → Region **Southeast Asia (Singapore) – ap-southeast-1**. Save the database password in a password manager.
    - Plan: Free works, but free projects **pause after 7 days without traffic** and have no daily backups. Use **Pro** for production.
 2. **Create the schema** (SQL Editor → New query):
-   1. Paste and run all of `db/schema.sql`. It contains the current schema through migration 030 (including the PIN code directory and locations, the workforce hub, company claims, video showcases, RLS, image storage, and Razorpay order IDs), so no migration files are needed on a new database.
+   1. Paste and run all of `db/schema.sql`. It contains the current schema through migration 031 (including the PIN code directory and locations, the workforce hub, company claims, video showcases, RLS, image storage, and Razorpay order IDs), so no migration files are needed on a new database.
    2. Do **not** run `db/seed.sql` (demo profiles and fake reviews).
 3. **Connection string** (Project Settings → Database → Connection string → **Session pooler**):
    - Use the **session pooler, port `5432`**: `postgresql://postgres.<ref>:<password>@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres`
@@ -47,7 +47,7 @@ Users are in India, so Singapore is also the closest region to them (~50 ms vs ~
 1. **New → Web Service** → connect the same GitHub repo.
    - Name: `rightconnect-prod` · **Region: Singapore** · Branch: `production` (see section 6) · Runtime: Python.
    - Build command: `pip install -r backend/requirements.txt`
-   - Start command: `uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port $PORT`
+   - Start command: `uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port $PORT --no-server-header`
    - **Health check path**: `/api/v1/health`
    - Plan: **Starter or higher**. The free plan sleeps after 15 minutes idle and the next visitor waits 30–60 s.
 2. **Environment variables**:
@@ -74,6 +74,10 @@ Users are in India, so Singapore is also the closest region to them (~50 ms vs ~
 | `ADMIN_EMAILS` | comma-separated emails allowed to use the admin APIs |
 | `ANDROID_PACKAGE_NAME` | `app.rightconnect.twa` |
 | `ANDROID_SHA256_FINGERPRINTS` | from Play Console → App signing (comma-separated) |
+| `TRUSTED_PROXY_HOPS` | optional, default `1` (Render's proxy). Set `2` only if you put Cloudflare (proxied) in front of Render; never `0` on Render, or every visitor shares one rate limit. |
+| `RATE_LIMITS_ENABLED` | optional, default `true`; `false` is an emergency switch if legitimate users are being blocked |
+| `MAX_REQUEST_BODY_BYTES` | optional, default `1048576` (1 MB); images go straight to Supabase Storage, so API bodies are small |
+| `API_DOCS_ENABLED` | leave unset (`false`) in production so `/docs` and `/openapi.json` don't list every endpoint |
 
 3. **Custom domain** (Settings → Custom Domains): add `rightconnect.app`, create the DNS records Render shows, wait for the certificate. Move the domain off the old service first if it is attached there.
 
@@ -111,6 +115,7 @@ Afterwards everyone signs in once more (the new project issues new tokens). Remo
 - **Direct contact:** apply `028_direct_contact.sql` (adds `show_contact` to workers and `contact_phone`/`show_contact` to job posts) before deploying. Test: with sharing on, a signed-in user taps Call/WhatsApp on a worker and a job card; with it off, no buttons show and the contact endpoint answers 403.
 - **Worker links:** apply `029_worker_links.sql` (adds `access_key_hash`, `access_key_created_at` to `worker_profiles`) before deploying; worker endpoints fail until it runs. Test: in the admin console open Workers → **Worker link** on a worker, open the link on a phone, switch the light to busy, accept a hire request, then use **Connect Google account** and check the same profile (not a new one) appears under My work profile.
 - **Worker contact log, limits and merge:** apply `030_worker_contact_views.sql` (adds `worker_profiles.contact_email` and the `worker_contact_views` table) before deploying; View contact and the admin Workers tab fail until it runs. Test: as a Free user tap **View contact** on a worker (shows phone, WhatsApp, email and "9 of 10 left today"), tap it again on the same worker (count unchanged), and check the worker sees you under **Who viewed your number**; report the view and find it under admin Workers → **Reported callers**; under **To merge**, merge an admin-added worker into a worker account with the same phone.
+- **Expert/company View contact and work mode:** apply `031_profile_contact_and_work_mode.sql` (adds `profiles.contact_phone|contact_email|show_contact` (on by default), the `profile_contact_views` table, `worker_profiles.work_mode|preferred_location` and `job_posts.work_mode`) before deploying; marketplace and worker endpoints fail until it runs. Test: as a Free user tap **📇 Contact** on an expert card (phone, WhatsApp, email and the shared "N of 10 left today"), then **View contact** on a worker and check the count went down again; as the expert, open your profile and see yourself under **Who viewed your contact**; turn contact off in Edit profile and check the button disappears. Pick **Workers** and **Jobs** pills on Discover and check cards open workers.html. Post a Remote job and set Hybrid on a work profile and filter by them.
 - **Worker pay range:** apply `027_worker_pay_range.sql` (adds `rate_max`, `rate_hidden` to `worker_profiles`) before deploying; worker endpoints fail until it runs. Test: save ₹500 to 1000 per day and see "₹500–1,000/day" on the card; tick *Hide my pay* and see "Pay: discuss" in another browser.
 - **PIN code directory:** apply `026_pincode_directory.sql` after 025 (it enables `pg_trgm`), then restart or redeploy the API: it loads the bundled place names automatically when `pincode_areas` is empty (check the logs for "Loaded … PIN code areas"). To refresh the data manually: `PYTHONPATH=backend python3 db/scripts/import_pincodes.py`. Test: the location chip shows "Set your location"; typing "Edappadi" lists Idappadi 637101 and Edappadi taluk areas, "Salem" lists Salem district areas, picking one updates the chip and re-sorts results without leaving the page.
 - `/` shows the public introduction for guests; a restored signed-in session continues to the marketplace. Direct marketplace, service, and authentication URLs still work.
@@ -119,6 +124,7 @@ Afterwards everyone signs in once more (the new project issues new tokens). Remo
 - On Android browsers, check the optional download suggestion; on iOS, check Safari Home Screen guidance. Dismiss the suggestion and confirm it stays dismissed after navigation/reload. Native/standalone app launches should not show it. Test APK installation and updates on a real Android device before sharing publicly.
 - `https://rightconnect.app/api/v1/health` → `{"status":"ok"}`.
 - `https://rightconnect.app/api/v1/health/db` responds in well under 300 ms (dev takes ~1.2 s).
+- **API protection** ([protection.py](../backend/app/core/protection.py)): `curl -sI https://rightconnect.app/api/v1/health` shows `x-content-type-options: nosniff`, `strict-transport-security` and no `server: uvicorn`; `https://rightconnect.app/docs` is 404; `https://rightconnect.app/.env` is 404. **Check the real client IP is detected:** from your phone on mobile data, send 6 company OTP or claim codes within an hour; the 6th must say "Too many requests" while your laptop on Wi-Fi can still send one. If both are blocked, the app sees every visitor as Render's proxy: check `TRUSTED_PROXY_HOPS` (Render logs show `rightconnect.security ... ip=` on every block). Limits (balanced): search 120/min per IP, all API calls 300/min per IP, writes 60/min per IP and 30/min per user, email codes 5/hour, code guesses 10 per 10 min, sign-up 10/hour per IP, new requests 20/hour, job posts 10/hour, hire requests 30/hour. An IP with 20 blocked or scanner requests in 10 minutes is blocked for 15 minutes. Counters are in memory: they reset on deploy, and need Redis before running 2+ instances.
 - Google sign-in works and lands on the marketplace.
 - Create a test request, chat, accept, mark done, rate.
 - A Razorpay Test Mode payment on dev activates Pro through verified Standard Checkout or `order.paid`. Confirm captured status, webhook HTTP 200, cancellation/failure handling, and duplicate delivery without double extension. Use a controlled real payment for production checks; do not lower public prices just to test.

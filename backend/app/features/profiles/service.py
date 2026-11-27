@@ -174,6 +174,9 @@ async def _managed(session: AsyncSession, profile: Profile) -> ManagedProfile:
         portfolio_url=profile.portfolio_url,
         founded_year=profile.founded_year,
         team_size=profile.team_size,
+        contact_phone=profile.contact_phone,
+        contact_email=profile.contact_email,
+        show_contact=profile.show_contact,
         social_links=[SocialLinkOut(platform=link.platform, url=link.url) for link in links],
         experiences=await load_experiences(session, profile.id),
         educations=await load_educations(session, profile.id),
@@ -214,9 +217,13 @@ async def update_profile(session: AsyncSession, auth_user_id: UUID, profile_id: 
     for field in ("display_name", "headline"):
         if changes.get(field):
             setattr(profile, field, changes[field])
-    for field in ("bio", "city", "pincode", "locality", "years_experience", "avatar_url", "intro_video_url", "portfolio_url", "founded_year", "team_size"):
+    for field in ("bio", "city", "pincode", "locality", "years_experience", "avatar_url", "intro_video_url", "portfolio_url", "founded_year", "team_size", "contact_phone"):
         if field in changes:
             setattr(profile, field, changes[field])
+    if "contact_email" in changes:
+        profile.contact_email = str(changes["contact_email"]).lower() if changes["contact_email"] else None
+    if changes.get("show_contact") is not None:
+        profile.show_contact = changes["show_contact"]
     if changes.get("languages") is not None:
         profile.languages = changes["languages"]
     if changes.get("keywords") is not None:

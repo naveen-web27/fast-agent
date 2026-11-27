@@ -1,4 +1,5 @@
 """Query logic for searching live marketplace profiles."""
+from datetime import datetime, timezone
 from functools import reduce
 from operator import add
 from uuid import UUID
@@ -11,6 +12,7 @@ from app.core.plans import CREDENTIAL_LIMIT, SOCIAL_LINK_LIMIT, profile_plan_act
 from app.features.marketplace.catalog import search_terms
 from app.features.profiles.service import load_educations, load_experiences
 from app.features.marketplace.schemas import (
+    ProfileContactViewOut,
     ProfileDetail,
     ProfileLink,
     ProfileListResponse,
@@ -19,9 +21,11 @@ from app.features.marketplace.schemas import (
     PublicOffering,
     ReviewSummary,
 )
+from app.features.workers.schemas import DirectContact
+from app.features.workers.service import contact_daily_limit, contact_limit_message, india_day_start, opened_today
 from app.models.availability import AvailabilitySlot
 from app.models.organization_member import MemberRole, OrganizationMember
-from app.models.profile import ClaimStatus, Organization, Profile, ProfileKind, Service, VerificationStatus
+from app.models.profile import ClaimStatus, Organization, Profile, ProfileContactView, ProfileKind, Service, VerificationStatus
 from app.models.profile_extras import Credential, ProfileOffering
 from app.models.request import Request, RequestParticipant, RequestStatus
 from app.models.review import Review
@@ -40,6 +44,10 @@ class ProfileNotFoundError(Exception):
 
 class ProfileAccessError(Exception):
     """Raised when the caller doesn't manage the profile they're trying to change."""
+
+
+class ContactLimitError(Exception):
+    """The caller has used today's new contacts (workers, experts and companies together) for their plan."""
 
 
 async def _get_user(session: AsyncSession, auth_user_id: UUID) -> User:
@@ -72,6 +80,7 @@ async def _to_summary(session: AsyncSession, profile: Profile) -> ProfileSummary
         if profile.kind is ProfileKind.COMPANY and profile.organization_id
         else None
     )
+    claimed = organization is None or organization.claim_status != ClaimStatus.UNCLAIMED.value
     return ProfileSummary(
         id=profile.id,
         kind=profile.kind.value,
@@ -89,7 +98,8 @@ async def _to_summary(session: AsyncSession, profile: Profile) -> ProfileSummary
         response_minutes=profile.response_minutes,
         tags=[service.name for service in profile.services],
         resolved_clients_count=resolved_count if profile.show_resolved_count else None,
-        claimed=organization is None or organization.claim_status != ClaimStatus.UNCLAIMED.value,
+        claimed=claimed,
+        contact_available=bool(profile.show_contact) and claimed,
     )
 
 
@@ -274,22 +284,139 @@ async def update_resolved_visibility(
     profile = await session.get(Profile, profile_id)
     if profile is None:
         raise ProfileNotFoundError("Profile not found")
-
-    if profile.kind is ProfileKind.EXPERT:
-        if profile.user_id != user.id:
-            raise ProfileAccessError("You do not manage this profile")
-    else:
-        member = await session.scalar(
-            select(OrganizationMember).where(
-                OrganizationMember.organization_id == profile.organization_id,
-                OrganizationMember.user_id == user.id,
-                OrganizationMember.member_role == MemberRole.ADMIN.value,
-            )
+    if not await _manages(session, user, profile):
+        raise ProfileAccessError(
+            "You do not manage this profile" if profile.kind is ProfileKind.EXPERT else "You do not manage this company profile"
         )
-        if member is None:
-            raise ProfileAccessError("You do not manage this company profile")
 
     profile.show_resolved_count = show_resolved_count
     await session.commit()
     await session.refresh(profile)
     return await _to_summary(session, profile)
+
+
+async def _manages(session: AsyncSession, user: User, profile: Profile) -> bool:
+    """The expert who owns the profile, or an admin of the company behind it."""
+    if profile.kind is ProfileKind.EXPERT:
+        return profile.user_id == user.id
+    member = await session.scalar(
+        select(OrganizationMember.id).where(
+            OrganizationMember.organization_id == profile.organization_id,
+            OrganizationMember.user_id == user.id,
+            OrganizationMember.member_role == MemberRole.ADMIN.value,
+        )
+    )
+    return member is not None
+
+
+async def _contact_details(session: AsyncSession, profile: Profile) -> tuple[str | None, str | None]:
+    """The profile's own phone/email, else the expert's account; for companies the listing's, else an admin's."""
+    phone, email = profile.contact_phone, profile.contact_email
+    if profile.kind is ProfileKind.EXPERT:
+        owner = await session.get(User, profile.user_id) if profile.user_id else None
+        if owner is not None:
+            phone, email = phone or owner.phone, email or owner.email
+        return phone, email
+    organization = await session.get(Organization, profile.organization_id) if profile.organization_id else None
+    if organization is not None:
+        phone, email = phone or organization.contact_phone, email or organization.contact_email
+    if not phone or not email:
+        admin = await session.scalar(
+            select(User)
+            .join(OrganizationMember, OrganizationMember.user_id == User.id)
+            .where(
+                OrganizationMember.organization_id == profile.organization_id,
+                OrganizationMember.member_role == MemberRole.ADMIN.value,
+                User.deleted_at.is_(None),
+            )
+            .order_by(OrganizationMember.created_at)
+            .limit(1)
+        )
+        if admin is not None:
+            phone, email = phone or admin.phone, email or admin.email
+    return phone, email
+
+
+async def profile_contact(session: AsyncSession, auth_user_id: UUID, profile_id: UUID) -> DirectContact:
+    """The expert's/company's phone, WhatsApp and email for a signed-in user. Each viewer is logged for the owner,
+    and opening a new provider counts toward the viewer's daily limit, shared with worker contacts."""
+    user = await session.scalar(active_user_by_auth_id(auth_user_id))
+    if user is None:
+        raise IdentityNotFoundError("Finish creating your RightConnect account first")
+    profile = await session.get(Profile, profile_id)
+    if profile is None or profile.blocked_at is not None or profile.deleted_at is not None:
+        raise ProfileNotFoundError("Profile not found")
+    if profile.kind is ProfileKind.COMPANY and profile.organization_id:
+        organization = await session.get(Organization, profile.organization_id)
+        if organization is not None and organization.claim_status == ClaimStatus.UNCLAIMED.value:
+            raise ProfileAccessError("This business hasn't joined RightConnect yet, so its contact isn't shared here.")
+    if not profile.show_contact:
+        raise ProfileAccessError("This provider shares their contact after you send a request and they accept.")
+    phone, email = await _contact_details(session, profile)
+    if not phone and not email:
+        raise ProfileNotFoundError("No contact details have been added yet. Send a request instead.")
+    if await _manages(session, user, profile):
+        return DirectContact(name=profile.display_name, phone=phone, email=email)
+    limit = await contact_daily_limit(session, user)
+    # Locking the viewer's row makes two quick clicks wait for each other, so the limit can't be passed.
+    await session.scalar(select(User.id).where(User.id == user.id).with_for_update())
+    view = await session.scalar(
+        select(ProfileContactView)
+        .where(ProfileContactView.profile_id == profile.id, ProfileContactView.viewer_user_id == user.id)
+        .with_for_update()
+    )
+    now = datetime.now(timezone.utc)
+    used = (await session.scalar(opened_today(user.id, india_day_start(now)))) or 0
+    if view is None:
+        if limit is not None and used >= limit:
+            raise ContactLimitError(contact_limit_message(limit))
+        session.add(ProfileContactView(profile_id=profile.id, viewer_user_id=user.id, first_viewed_at=now, last_viewed_at=now, view_count=1))
+        used += 1
+    else:
+        view.last_viewed_at = now
+        view.view_count += 1
+    await session.commit()
+    return DirectContact(
+        name=profile.display_name, phone=phone, email=email,
+        daily_limit=limit, left_today=None if limit is None else max(limit - used, 0),
+    )
+
+
+async def profile_contact_views(session: AsyncSession, auth_user_id: UUID, profile_id: UUID) -> list[ProfileContactViewOut]:
+    """Who opened this profile's contact, newest first; only for the expert owner or a company admin."""
+    user = await _get_user(session, auth_user_id)
+    profile = await session.get(Profile, profile_id)
+    if profile is None or profile.deleted_at is not None:
+        raise ProfileNotFoundError("Profile not found")
+    if not await _manages(session, user, profile):
+        raise ProfileAccessError("You do not manage this profile")
+    rows = (
+        await session.execute(
+            select(ProfileContactView, User.full_name)
+            .join(User, User.id == ProfileContactView.viewer_user_id)
+            .where(ProfileContactView.profile_id == profile_id)
+            .order_by(ProfileContactView.last_viewed_at.desc())
+            .limit(100)
+        )
+    ).all()
+    companies: dict[UUID, str] = {}
+    viewer_ids = [view.viewer_user_id for view, _ in rows]
+    if viewer_ids:
+        company_rows = await session.execute(
+            select(OrganizationMember.user_id, Organization.name)
+            .join(Organization, Organization.id == OrganizationMember.organization_id)
+            .where(
+                OrganizationMember.user_id.in_(viewer_ids),
+                OrganizationMember.member_role == MemberRole.ADMIN.value,
+                Organization.deleted_at.is_(None),
+            )
+        )
+        for viewer_id, name in company_rows.all():
+            companies.setdefault(viewer_id, name)
+    return [
+        ProfileContactViewOut(
+            id=view.id, viewer_name=name, company_name=companies.get(view.viewer_user_id),
+            first_viewed_at=view.first_viewed_at, last_viewed_at=view.last_viewed_at, view_count=view.view_count,
+        )
+        for view, name in rows
+    ]

@@ -3,10 +3,11 @@ from datetime import date, time
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import AfterValidator, BaseModel, Field, field_validator, model_validator
+from pydantic import AfterValidator, BaseModel, EmailStr, Field, field_validator, model_validator
 
 from app.core.links import normalize_url
 from app.core.location import normalize_pincode
+from app.features.auth.schemas import normalize_phone
 
 TeamSize = Literal["1-10", "11-50", "51-200", "201-500", "500+"]
 
@@ -43,6 +44,20 @@ class ProfileUpdate(BaseModel):
     portfolio_url: OptionalLink = None
     founded_year: int | None = Field(default=None, ge=1800, le=2100)
     team_size: TeamSize | None = None
+    # "View contact": blank phone/email use the account's (or a company admin's); show_contact lets owners hide it.
+    contact_phone: str | None = Field(default=None, max_length=30)
+    contact_email: EmailStr | None = None
+    show_contact: bool | None = None
+
+    @field_validator("contact_phone")
+    @classmethod
+    def _contact_phone(cls, value: str | None) -> str | None:
+        return normalize_phone(value)
+
+    @field_validator("contact_email", mode="before")
+    @classmethod
+    def _blank_email(cls, value):
+        return (value.strip() or None) if isinstance(value, str) else value
 
     @field_validator("languages", "services")
     @classmethod
@@ -199,6 +214,9 @@ class ManagedProfile(BaseModel):
     portfolio_url: str | None
     founded_year: int | None = None
     team_size: str | None = None
+    contact_phone: str | None = None
+    contact_email: str | None = None
+    show_contact: bool = True
     social_links: list[SocialLinkOut]
     experiences: list[ExperienceOut] = []
     educations: list[EducationOut] = []

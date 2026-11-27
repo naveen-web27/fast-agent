@@ -28,7 +28,8 @@
     .panel { margin-bottom:16px; padding:18px; border:1px solid var(--line); border-radius:10px; background:var(--surface); box-shadow:0 9px 24px rgba(20,60,48,.04); }
     .panel h2 { margin:0 0 4px; font-size:17px; } .panel > p.sub { margin:0 0 14px; color:var(--muted); font-size:12px; }
     .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-    .search { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto auto; gap:10px; align-items:center; }
+    .search { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) auto auto; gap:10px; align-items:center; }
+    .chip.mode { color:#28508a; border-color:#cddcf5; background:#e8f0fc; }
     .pin-warn { margin-bottom:16px; padding:11px 14px; color:#5d4a12; border:1px solid #f2dfa7; border-radius:10px; background:#fffaf0; font-weight:700; }
     input,textarea,select { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:7px; background:#fff; color:var(--ink); }
     input:focus,textarea:focus,select:focus { outline:2px solid #9bd3c0; border-color:#74bba3; }
@@ -115,6 +116,7 @@
           <input id="find-q" type="search" placeholder="Work or skill: cook, driver, sales…" maxlength="200" aria-label="Work or skill">
           <input id="find-city" type="search" placeholder="City" maxlength="100" aria-label="City">
           <input id="find-area" type="search" placeholder="Area" maxlength="100" aria-label="Area">
+          <select id="find-mode" aria-label="Work mode"><option value="">Any work mode</option><option value="onsite">On-site</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option></select>
           <label class="check"><input id="find-available" type="checkbox"> Available now</label>
           <button class="btn" type="submit">Search</button>
         </form>
@@ -128,12 +130,14 @@
     <section data-panel="jobs" hidden>
       <div class="panel">
         <div class="row" style="justify-content:space-between"><div><h2>Open jobs</h2><p class="sub" style="margin:0">Shops, hotels and homes looking for people.</p></div><button class="btn" type="button" id="post-job">+ Post a job</button></div>
-        <form class="search" id="jobs-form" style="margin-top:14px;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto">
+        <form class="search" id="jobs-form" style="margin-top:14px;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto">
           <input id="jobs-q" type="search" placeholder="Job or skill" maxlength="200" aria-label="Job or skill">
           <input id="jobs-city" type="search" placeholder="City" maxlength="100" aria-label="City">
+          <select id="jobs-mode" aria-label="Work mode"><option value="">Any work mode</option><option value="onsite">On-site</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option></select>
           <button class="btn" type="submit">Search</button>
         </form>
       </div>
+      <div class="panel" id="job-focus-panel" style="margin-top:14px" hidden><h2>Job you opened</h2><div class="cards" id="job-focus"></div></div>
       <div class="cards" id="jobs-results"></div>
       <div class="panel" id="my-jobs-panel" style="margin-top:18px" hidden><h2>My job posts</h2><p class="sub">Applications appear under Hires.</p><div class="cards" id="my-jobs"></div></div>
     </section>
@@ -205,6 +209,7 @@
     <div class="grid2"><div><label class="field" for="job-skill">Skill needed *</label><input id="job-skill" maxlength="80" required placeholder="Waiter"></div><div><label class="field" for="job-openings">People needed</label><input id="job-openings" type="number" min="1" max="500" value="1"></div></div>
     <label class="field" for="job-pincode">Where is the work? * <span class="hint" style="font-weight:600">(workers nearby see the job first)</span></label><input id="job-pincode">
     <div class="grid2"><div><label class="field" for="job-city">City *</label><input id="job-city" maxlength="100" required></div><div><label class="field" for="job-area">Area</label><input id="job-area" maxlength="100"></div></div>
+    <label class="field" for="job-mode">Work mode *</label><select id="job-mode"><option value="onsite">On-site (at this location)</option><option value="remote">Remote (from anywhere)</option><option value="hybrid">Hybrid (some days on-site)</option></select>
     <div class="grid2"><div><label class="field" for="job-pay">Pay</label><input id="job-pay" maxlength="80" placeholder="₹700/day"></div><div><label class="field" for="job-start">Starts on</label><input id="job-start" type="date"></div></div>
     <div id="job-org-wrap" hidden><label class="field" for="job-org">Post as</label><select id="job-org"></select></div>
     <label class="field" for="job-desc">Details</label><textarea id="job-desc" rows="3" maxlength="2000"></textarea>
@@ -325,6 +330,14 @@
       }));
     }
 
+    const WORK_MODES = { onsite: 'On-site', remote: 'Remote', hybrid: 'Hybrid' };
+    // "Hybrid · prefers Chennai, Coimbatore" shown under the location on worker and job cards.
+    function workModeHtml(item) {
+      const parts = [];
+      if (WORK_MODES[item.work_mode]) parts.push(`<span class="chip mode">${WORK_MODES[item.work_mode]}</span>`);
+      if (item.preferred_location) parts.push(`<span class="meta">Prefers ${escapeHtml(item.preferred_location)}</span>`);
+      return parts.length ? `<div class="row" style="gap:6px;margin-top:4px">${parts.join('')}</div>` : '';
+    }
     // ₹500–1,000/day, ₹800/day, or "Pay: discuss" when the worker hides it.
     function rateText(worker, own = false) {
       if (worker.rate_hidden && !own) return 'Pay: discuss';
@@ -379,7 +392,7 @@
       card.className = 'card';
       card.innerHTML = `
         <div>${lightHtml(worker)}</div>
-        <div class="who"><div class="who-pic">${RCAvatar.html({ url: worker.avatar_url, name: worker.display_name, seed: worker.id, kind: 'worker' })}</div><div><h3>${escapeHtml(worker.display_name)} ${worker.claimed ? '' : '<span class="badge unclaimed">Unclaimed</span>'}</h3><div class="meta">${escapeHtml(worker.headline)}</div>${RCLocation.html(worker)}</div></div><div>
+        <div class="who"><div class="who-pic">${RCAvatar.html({ url: worker.avatar_url, name: worker.display_name, seed: worker.id, kind: 'worker' })}</div><div><h3>${escapeHtml(worker.display_name)} ${worker.claimed ? '' : '<span class="badge unclaimed">Unclaimed</span>'}</h3><div class="meta">${escapeHtml(worker.headline)}</div>${RCLocation.html(worker)}${workModeHtml(worker)}</div></div><div>
         <div class="meta">${worker.years_experience != null ? `${worker.years_experience} yrs · ` : ''}${escapeHtml(worker.languages.join(', '))}${worker.verified_skill_count ? ` · <strong style="color:#0b6b4f">${worker.verified_skill_count} verified skill${worker.verified_skill_count === 1 ? '' : 's'}</strong>` : ''}</div></div>
         <div class="chips">${skillChips(worker.skills, 6)}</div>
         ${worker.contact_available ? contactButtons('worker', worker.id) : ''}
@@ -393,6 +406,7 @@
       const params = new URLSearchParams({ page: findPage, page_size: 12 });
       for (const [key, selector] of [['q', '#find-q'], ['city', '#find-city'], ['area', '#find-area']]) if (value(selector)) params.set(key, value(selector));
       if (document.querySelector('#find-available').checked) params.set('available', 'true');
+      if (value('#find-mode')) params.set('work_mode', value('#find-mode'));
       nearParams(params);
       const box = document.querySelector('#find-results');
       if (!append) box.innerHTML = '<p class="empty">Searching…</p>';
@@ -407,6 +421,7 @@
     }
     document.querySelector('#find-form').addEventListener('submit', (event) => { event.preventDefault(); findWorkers(); });
     document.querySelector('#find-available').addEventListener('change', () => findWorkers());
+    document.querySelector('#find-mode').addEventListener('change', () => findWorkers());
     document.querySelector('#find-more').addEventListener('click', () => findWorkers(true));
 
     function experienceHtml(exp, own) {
@@ -428,7 +443,7 @@
         currentWorker = worker;
         const mine = myWorker && myWorker.id === worker.id;
         body.innerHTML = `
-          <div class="row" style="justify-content:space-between;align-items:flex-start"><div class="who"><div class="who-pic big">${RCAvatar.html({ url: worker.avatar_url, name: worker.display_name, seed: worker.id, kind: 'worker' })}</div><div><h2>${escapeHtml(worker.display_name)}</h2><div class="meta" style="color:var(--muted)">${escapeHtml(worker.headline)}</div>${RCLocation.html(worker)}</div></div><button class="btn ghost small" type="button" data-close-worker>Close</button></div>
+          <div class="row" style="justify-content:space-between;align-items:flex-start"><div class="who"><div class="who-pic big">${RCAvatar.html({ url: worker.avatar_url, name: worker.display_name, seed: worker.id, kind: 'worker' })}</div><div><h2>${escapeHtml(worker.display_name)}</h2><div class="meta" style="color:var(--muted)">${escapeHtml(worker.headline)}</div>${RCLocation.html(worker)}${workModeHtml(worker)}</div></div><button class="btn ghost small" type="button" data-close-worker>Close</button></div>
           <div style="margin-top:8px">${lightHtml(worker)}</div>
           <p class="meta" style="color:var(--muted)">${[worker.years_experience != null ? `${worker.years_experience} yrs experience` : '', worker.languages.join(', '), rateText(worker), worker.review_count ? `★ ${worker.average_rating.toFixed(1)} (${worker.review_count} reviews)` : ''].filter(Boolean).map(escapeHtml).join(' · ')}</p>
           ${worker.bio ? `<p>${escapeHtml(worker.bio)}</p>` : ''}
@@ -548,6 +563,21 @@
     });
 
     // ---------- jobs ----------
+    // A job opened from a marketplace card (?job=...), pinned above the list.
+    let focusJobId = null;
+    async function showFocusJob(jobId) {
+      focusJobId = jobId;
+      const panel = document.querySelector('#job-focus-panel');
+      const box = document.querySelector('#job-focus');
+      try {
+        const job = await api(`/workers/jobs/${encodeURIComponent(jobId)}`);
+        box.innerHTML = '';
+        box.appendChild(jobCard(job, false));
+      } catch (error) {
+        box.innerHTML = `<p class="empty">${escapeHtml(error.message)}</p>`;
+      }
+      panel.hidden = false;
+    }
     function appliedJobIds() {
       return new Set(myHires.as_worker.filter((hire) => hire.job_id && ['pending', 'accepted'].includes(hire.status)).map((hire) => hire.job_id));
     }
@@ -558,7 +588,7 @@
       card.innerHTML = `
         <div class="row" style="justify-content:space-between"><span class="badge ${escapeHtml(job.status)}">${escapeHtml(job.status)}</span><span class="meta">${shortDate(job.created_at)}</span></div>
         <h3>${escapeHtml(job.title)}</h3>
-        <div class="meta">${escapeHtml(job.poster_name)}${job.organization_verified ? ' ✓' : ''}</div>${RCLocation.html(job)}
+        <div class="meta">${escapeHtml(job.poster_name)}${job.organization_verified ? ' ✓' : ''}</div>${RCLocation.html(job)}${workModeHtml(job)}
         <div class="chips"><span class="chip">${escapeHtml(job.skill)}</span><span class="chip">${job.openings} needed</span>${job.pay ? `<span class="chip">${escapeHtml(job.pay)}</span>` : ''}${job.starts_on ? `<span class="chip">From ${shortDate(job.starts_on)}</span>` : ''}</div>
         ${job.description ? `<div class="meta">${escapeHtml(job.description)}</div>` : ''}
         ${!mine && job.contact_available ? contactButtons('job', job.id) : ''}
@@ -576,6 +606,7 @@
       const params = new URLSearchParams();
       if (value('#jobs-q')) params.set('q', value('#jobs-q'));
       if (value('#jobs-city')) params.set('city', value('#jobs-city'));
+      if (value('#jobs-mode')) params.set('work_mode', value('#jobs-mode'));
       nearParams(params);
       const box = document.querySelector('#jobs-results');
       box.innerHTML = '<p class="empty">Loading jobs…</p>';
@@ -583,7 +614,7 @@
         const [jobs, mine] = await Promise.all([api(`/workers/jobs?${params}`), token && account ? api('/workers/jobs/mine') : Promise.resolve([])]);
         const myIds = new Set(mine.map((job) => job.id));
         box.innerHTML = '';
-        jobs.filter((job) => !myIds.has(job.id)).forEach((job) => box.appendChild(jobCard(job, false)));
+        jobs.filter((job) => !myIds.has(job.id) && job.id !== focusJobId).forEach((job) => box.appendChild(jobCard(job, false)));
         if (!box.children.length) box.innerHTML = '<p class="empty">No open jobs match. Check back soon.</p>';
         document.querySelector('#my-jobs-panel').hidden = !mine.length;
         const myBox = document.querySelector('#my-jobs');
@@ -592,6 +623,7 @@
       } catch (error) { box.innerHTML = `<p class="empty">${escapeHtml(error.message)}</p>`; }
     }
     document.querySelector('#jobs-form').addEventListener('submit', (event) => { event.preventDefault(); loadJobs(); });
+    document.querySelector('#jobs-mode').addEventListener('change', () => loadJobs());
     RCLocation.attach(document.querySelector('#job-pincode'), { onPick: (place) => {
       if (place.district && !value('#job-city')) document.querySelector('#job-city').value = place.district;
       if (place.area && !value('#job-area')) document.querySelector('#job-area').value = place.area;
@@ -616,6 +648,7 @@
           openings: Number(value('#job-openings')) || 1, pay: value('#job-pay') || null, starts_on: value('#job-start') || null,
           description: value('#job-desc') || null, organization_id: value('#job-org') || null,
           contact_phone: value('#job-phone') || null, show_contact: document.querySelector('#job-show-contact').checked,
+          work_mode: value('#job-mode') || 'onsite',
         }) });
         document.querySelector('#job-dialog').close();
         message('Job posted. Applications will appear under Hires.');
@@ -773,6 +806,8 @@
         <div><label class="field" for="${prefix}-years">Years of experience</label><input id="${prefix}-years" type="number" min="0" max="70" value="${v('years_experience')}"></div></div>
         <label class="field" for="${prefix}-pincode">Where do you work? * <span class="hint" style="font-weight:600">(employers near you see you first)</span></label><input id="${prefix}-pincode" value="${v('pincode')}">
         <div class="grid2"><div><label class="field" for="${prefix}-city">City *</label><input id="${prefix}-city" maxlength="100" value="${v('city')}"></div><div><label class="field" for="${prefix}-area">Area</label><input id="${prefix}-area" maxlength="100" value="${v('area')}"></div></div>
+        <div class="grid2"><div><label class="field" for="${prefix}-mode">Work mode</label><select id="${prefix}-mode"><option value="">Not set</option>${Object.entries(WORK_MODES).map(([mode, label]) => `<option value="${mode}"${worker?.work_mode === mode ? ' selected' : ''}>${label}</option>`).join('')}</select></div>
+        <div><label class="field" for="${prefix}-pref-loc">Preferred work location</label><input id="${prefix}-pref-loc" maxlength="160" value="${v('preferred_location')}" placeholder="Chennai, Coimbatore or Anywhere"></div></div>
         <label class="field" for="${prefix}-skills">Your skills (comma separated)</label><input id="${prefix}-skills" maxlength="1200" value="${escapeHtml((worker?.self_skills || []).join(', '))}" placeholder="Billing, Customer handling, South Indian cooking">
         <p class="hint">These show as self-declared. Employers you worked for can verify them.</p>
         <label class="field" for="${prefix}-rate">Expected pay (₹) <span class="hint" style="font-weight:600">— a range like 500 to 1000, or one amount</span></label>
@@ -804,6 +839,7 @@
         rate_amount: rate === '' ? null : Number(rate), rate_max: rateMax === '' ? null : Number(rateMax),
         rate_unit: value(`#${prefix}-unit`) || null, rate_hidden: document.querySelector(`#${prefix}-rate-hidden`).checked,
         contact_phone: value(`#${prefix}-phone`) || null, show_contact: document.querySelector(`#${prefix}-show-contact`).checked,
+        work_mode: value(`#${prefix}-mode`) || null, preferred_location: value(`#${prefix}-pref-loc`) || null,
         bio: value(`#${prefix}-bio`) || null,
       };
     }
@@ -974,7 +1010,9 @@
         },
       });
       findWorkers();
-      showTab(tab);
+      showTab(params.get('job') ? 'jobs' : tab);
+      if (params.get('job')) showFocusJob(params.get('job'));
+      if (params.get('worker')) openWorker(params.get('worker'));
     })();
   </script>
   <script src="../assets/mobile-install.js" defer></script>

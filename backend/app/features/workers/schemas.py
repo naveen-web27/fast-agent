@@ -10,6 +10,7 @@ from app.features.auth.schemas import normalize_phone
 
 AvailabilityValue = Literal["available", "busy", "offline"]
 RateUnit = Literal["hour", "day", "month"]
+WorkMode = Literal["onsite", "remote", "hybrid"]
 HireStatusValue = Literal["pending", "accepted", "declined", "cancelled", "completed"]
 MAX_SKILLS = 25
 
@@ -49,6 +50,9 @@ class WorkerFields(BaseModel):
     # Phone/WhatsApp number for direct contact; blank keeps the current one (default: the account phone).
     contact_phone: str | None = Field(default=None, max_length=30)
     show_contact: bool = False
+    # On-site / remote / hybrid, and the places the worker would like to work (e.g. "Chennai, Coimbatore").
+    work_mode: WorkMode | None = None
+    preferred_location: str | None = Field(default=None, max_length=160)
 
     @field_validator("contact_phone")
     @classmethod
@@ -60,7 +64,7 @@ class WorkerFields(BaseModel):
     def _collapse(cls, value: str) -> str:
         return " ".join(value.split())
 
-    @field_validator("bio", "area", mode="before")
+    @field_validator("bio", "area", "preferred_location", mode="before")
     @classmethod
     def _optional(cls, value):
         return blank_to_none(value)
@@ -212,6 +216,8 @@ class WorkerSummary(BaseModel):
     rate_hidden: bool = False
     # True when signed-in users can fetch a number to call/WhatsApp this worker.
     contact_available: bool = False
+    work_mode: WorkMode | None = None
+    preferred_location: str | None = None
     availability: AvailabilityValue
     busy_until: date | None
     # The worker hasn't touched the light for a while, so "available" may be out of date.
@@ -395,6 +401,7 @@ class JobCreate(BaseModel):
     # Number workers can call/WhatsApp about this job; blank uses the poster's account phone.
     contact_phone: str | None = Field(default=None, max_length=30)
     show_contact: bool = False
+    work_mode: WorkMode = "onsite"
 
     @field_validator("contact_phone")
     @classmethod
@@ -425,6 +432,7 @@ class JobOut(BaseModel):
     pay: str | None
     starts_on: date | None
     description: str | None
+    work_mode: WorkMode = "onsite"
     status: Literal["open", "closed"]
     poster_name: str
     organization_name: str | None
@@ -443,7 +451,8 @@ class DirectContact(BaseModel):
     name: str
     phone: str | None
     email: str | None = None
-    # Worker contacts only: the viewer's daily limit of new contacts and how many are left today (None = no limit).
+    # The viewer's daily limit of new contacts (workers, experts and companies together) and how many are left today
+    # (None = no limit).
     daily_limit: int | None = None
     left_today: int | None = None
 

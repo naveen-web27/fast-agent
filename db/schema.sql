@@ -112,6 +112,10 @@ CREATE TABLE profiles (
     review_count INTEGER NOT NULL DEFAULT 0,
     response_minutes INTEGER,
     show_resolved_count BOOLEAN NOT NULL DEFAULT TRUE,
+    -- "View contact" (migration 031): blank phone/email fall back to the owner's account (or company admin's).
+    contact_phone TEXT,
+    contact_email TEXT,
+    show_contact BOOLEAN NOT NULL DEFAULT TRUE,
     subscription_tier subscription_tier NOT NULL DEFAULT 'free',
     subscription_expires_at TIMESTAMPTZ,
     intro_video_url TEXT,
@@ -458,6 +462,9 @@ CREATE TABLE worker_profiles (
     -- Signed-in users may call/WhatsApp the worker directly (contact_phone, else the account phone).
     show_contact BOOLEAN NOT NULL DEFAULT FALSE,
     rate_unit TEXT CHECK (rate_unit IN ('hour', 'day', 'month')),
+    -- Migration 031: how and where the worker wants to work.
+    work_mode TEXT CONSTRAINT worker_profiles_work_mode_check CHECK (work_mode IS NULL OR work_mode IN ('onsite', 'remote', 'hybrid')),
+    preferred_location TEXT,
     availability TEXT NOT NULL DEFAULT 'available' CHECK (availability IN ('available', 'busy', 'offline')),
     busy_until DATE,
     availability_updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -503,6 +510,7 @@ CREATE TABLE job_posts (
     description TEXT,
     contact_phone TEXT,
     show_contact BOOLEAN NOT NULL DEFAULT FALSE,
+    work_mode TEXT NOT NULL DEFAULT 'onsite' CONSTRAINT job_posts_work_mode_check CHECK (work_mode IN ('onsite', 'remote', 'hybrid')),
     status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'closed')),
     closed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -581,8 +589,21 @@ CREATE TABLE worker_contact_views (
 CREATE INDEX worker_contact_views_viewer_idx ON worker_contact_views(viewer_user_id, first_viewed_at DESC);
 CREATE INDEX worker_contact_views_reported_idx ON worker_contact_views(reported_at DESC) WHERE reported_at IS NOT NULL;
 
-REVOKE ALL ON worker_profiles, job_posts, worker_hires, worker_experiences, worker_reviews, worker_contact_views FROM anon, authenticated;
-GRANT ALL ON worker_profiles, job_posts, worker_hires, worker_experiences, worker_reviews, worker_contact_views TO service_role;
+-- Who viewed an expert's/company's contact (migration 031); shares the viewer's daily limit with worker_contact_views.
+CREATE TABLE profile_contact_views (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    viewer_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    first_viewed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_viewed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    view_count INTEGER NOT NULL DEFAULT 1,
+    CONSTRAINT profile_contact_views_once UNIQUE (profile_id, viewer_user_id)
+);
+CREATE INDEX profile_contact_views_viewer_idx ON profile_contact_views(viewer_user_id, first_viewed_at DESC);
+CREATE INDEX profile_contact_views_profile_idx ON profile_contact_views(profile_id, last_viewed_at DESC);
+
+REVOKE ALL ON worker_profiles, job_posts, worker_hires, worker_experiences, worker_reviews, worker_contact_views, profile_contact_views FROM anon, authenticated;
+GRANT ALL ON worker_profiles, job_posts, worker_hires, worker_experiences, worker_reviews, worker_contact_views, profile_contact_views TO service_role;
 
 -- PIN code directory (migration 026); rows loaded by db/scripts/import_pincodes.py.
 CREATE EXTENSION IF NOT EXISTS pg_trgm;

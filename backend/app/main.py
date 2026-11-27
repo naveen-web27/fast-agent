@@ -1,5 +1,6 @@
 """RightConnect FastAPI application entry point."""
 import asyncio
+import logging
 import secrets
 from pathlib import Path
 
@@ -10,20 +11,40 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import get_settings
+from app.core.protection import ProtectionMiddleware, SecurityHeadersMiddleware
 from app.db.session import engine
 from app.features.locations.loader import ensure_directory_loaded
 from app.features.router import feature_router
 
 settings = get_settings()
+security_log = logging.getLogger("rightconnect.security")
 
-app = FastAPI(title=settings.app_name)
+# The interactive API docs list every endpoint, so they are off unless API_DOCS_ENABLED=true (e.g. locally).
+docs = settings.api_docs_enabled
+app = FastAPI(
+    title=settings.app_name,
+    docs_url="/docs" if docs else None,
+    redoc_url="/redoc" if docs else None,
+    openapi_url="/openapi.json" if docs else None,
+)
+# Added innermost first: requests pass security headers -> CORS -> protection -> routes, so 403/429 answers still
+# carry CORS and security headers.
+app.add_middleware(
+    ProtectionMiddleware,
+    api_prefix=settings.api_prefix,
+    proxy_hops=settings.trusted_proxy_hops,
+    max_body_bytes=settings.max_request_body_bytes,
+    rate_limits_enabled=settings.rate_limits_enabled,
+    log=security_log.warning,
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Worker-Key", "X-Report-Token"],
 )
+app.add_middleware(SecurityHeadersMiddleware, api_prefix=settings.api_prefix)
 app.include_router(feature_router, prefix=settings.api_prefix)
 
 

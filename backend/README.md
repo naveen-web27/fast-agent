@@ -18,7 +18,7 @@ For setting up a new dev or production environment on Render + Supabase (regions
 3. Install dependencies: `python3 -m pip install -r backend/requirements.txt`.
 4. Run `db/schema.sql` against your database (or `db/migrations/002_subscription_tier.sql` if the schema already existed), then optionally `db/seed.sql` for sample marketplace profiles.
 5. Start the API: `python3 -m uvicorn app.main:app --app-dir backend --reload`.
-6. Open `http://127.0.0.1:8000/docs`.
+6. Open `http://127.0.0.1:8000/docs` (set `API_DOCS_ENABLED=true` in `backend/.env` first; the docs are off by default so production doesn't list every endpoint).
 
 ## Authentication Boundary
 

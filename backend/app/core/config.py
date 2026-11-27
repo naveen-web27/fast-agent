@@ -49,6 +49,11 @@ class Settings(BaseSettings):
     ai_report_daily_limit: int = 100
     ai_report_retention_days: int = 30
     ai_report_family_limit: int = 20
+    # API protection (app/core/protection.py). Render puts one proxy in front of the app; set 2 if Cloudflare is added.
+    trusted_proxy_hops: int = 1
+    rate_limits_enabled: bool = True
+    max_request_body_bytes: int = 1_048_576
+    api_docs_enabled: bool = False
 
     @property
     def admin_email_list(self) -> set[str]:

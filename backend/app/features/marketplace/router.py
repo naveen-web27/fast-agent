@@ -7,18 +7,28 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.features.marketplace.catalog import suggest
-from app.features.marketplace.schemas import ProfileDetail, ProfileListResponse, ProfileSummary, ProfileVisibilityUpdate
+from app.features.marketplace.schemas import (
+    ProfileContactViewOut,
+    ProfileDetail,
+    ProfileListResponse,
+    ProfileSummary,
+    ProfileVisibilityUpdate,
+)
 from app.features.marketplace.service import (
+    ContactLimitError,
     IdentityNotFoundError,
     ProfileAccessError,
     ProfileNotFoundError,
     get_profile_detail,
     list_saved_profiles,
+    profile_contact,
+    profile_contact_views,
     save_profile,
     search_profiles,
     unsave_profile,
     update_resolved_visibility,
 )
+from app.features.workers.schemas import DirectContact
 from app.models.profile import Service
 from app.security.dependencies import get_current_auth_user_id
 
@@ -110,6 +120,38 @@ async def update_profile_visibility(
     except IdentityNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except ProfileNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except ProfileAccessError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+
+
+@router.post("/profiles/{profile_id}/contact", response_model=DirectContact)
+async def view_profile_contact(
+    profile_id: UUID,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> DirectContact:
+    """The provider's phone/WhatsApp/email for a signed-in user; logged for the owner, counts toward the daily limit."""
+    try:
+        return await profile_contact(session, auth_user_id, profile_id)
+    except (IdentityNotFoundError, ProfileNotFoundError) as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except ProfileAccessError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except ContactLimitError as exc:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
+
+
+@router.get("/profiles/{profile_id}/contact-views", response_model=list[ProfileContactViewOut])
+async def get_profile_contact_views(
+    profile_id: UUID,
+    auth_user_id: UUID = Depends(get_current_auth_user_id),
+    session: AsyncSession = Depends(get_db),
+) -> list[ProfileContactViewOut]:
+    """Who opened this profile's contact; only for the expert owner or a company admin."""
+    try:
+        return await profile_contact_views(session, auth_user_id, profile_id)
+    except (IdentityNotFoundError, ProfileNotFoundError) as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except ProfileAccessError as exc:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc

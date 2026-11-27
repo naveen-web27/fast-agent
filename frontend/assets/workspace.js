@@ -270,9 +270,12 @@ function renderEditor(profile) {
           ${profile.kind === 'company' ? field('ed-founded', 'Founded (year)', profile.founded_year, 'type="number" min="1800" max="2100" placeholder="2015"') : ''}
           ${profile.kind === 'company' ? `<div class="field"><label for="ed-team-size">Team size</label><select id="ed-team-size"><option value="">Not set</option>${TEAM_SIZES.map((size) => `<option value="${size}" ${profile.team_size === size ? 'selected' : ''}>${size} people</option>`).join('')}</select></div>` : ''}
           ${field('ed-languages', 'Languages (comma separated)', profile.languages.join(', '), 'placeholder="English, Tamil"')}
+          ${field('ed-contact-phone', 'Contact phone / WhatsApp', profile.contact_phone, 'type="tel" inputmode="tel" maxlength="30" placeholder="Blank = your account number"')}
+          ${field('ed-contact-email', 'Contact email', profile.contact_email, 'type="email" maxlength="254" placeholder="Blank = your account email"')}
           <div class="field image-upload-field"><label for="ed-avatar-file">Photo or logo</label><div class="image-upload-control"><div class="image-preview" id="ed-avatar-preview">${profile.avatar_url ? `<img src="${safeHref(profile.avatar_url)}" alt="Current profile photo">` : '<span>No photo</span>'}</div><input id="ed-avatar-file" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="ed-avatar-help"><small id="ed-avatar-help">JPEG, PNG or WebP; up to 8 MB. Stored as an optimized image.</small></div></div>
         </div>
         <div class="field"><label for="ed-bio">About</label><textarea id="ed-bio" rows="3" maxlength="2000">${escapeHtml(profile.bio ?? '')}</textarea></div>
+        <label class="field" style="display:flex;align-items:flex-start;gap:8px"><input type="checkbox" id="ed-show-contact" style="width:auto;margin-top:3px" ${profile.show_contact ? 'checked' : ''}> <span>Show my phone, WhatsApp and email to signed-in users with “View contact”. You'll see who viewed it on your profile.</span></label>
         <div class="field"><label for="ed-service-input">Services you offer</label><div class="tag-list" id="ed-services"></div><input id="ed-service-input" placeholder="Type a service, e.g. beauty, then pick or press Enter"></div>
         <div class="field"><div class="q-head"><label for="ed-keyword-input">Search words</label><button type="button" class="info" aria-expanded="false" aria-controls="info-keywords" aria-label="About search words">i</button></div><p class="info-text" id="info-keywords" hidden>Words customers may type to find you, e.g. ads, facebook ads, leads. Not shown on your profile. Up to 20.</p><div class="tag-list" id="ed-keywords"></div><input id="ed-keyword-input" maxlength="40" placeholder="Type a word and press Enter"><div class="tag-list" id="ed-keyword-suggest" style="margin-top:6px"></div></div>
         <div class="editor-grid">
@@ -459,6 +462,9 @@ function wireEditor(profile) {
       services: editorServices,
       locality: place?.area ?? null,
       keywords: editorKeywords,
+      contact_phone: value('#ed-contact-phone') || null,
+      contact_email: value('#ed-contact-email') || null,
+      show_contact: document.querySelector('#ed-show-contact').checked,
     };
     if (profile.kind === 'expert') payload.years_experience = value('#ed-years') === '' ? null : Number(value('#ed-years'));
     if (profile.kind === 'company') {

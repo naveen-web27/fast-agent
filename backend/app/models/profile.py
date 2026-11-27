@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import ARRAY, Boolean, DateTime, Enum, ForeignKey, Numeric, SmallInteger, String, Text, func
+from sqlalchemy import ARRAY, Boolean, DateTime, Enum, ForeignKey, Integer, Numeric, SmallInteger, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -116,6 +116,11 @@ class Profile(Base):
     response_minutes: Mapped[int | None] = mapped_column()
     # Owner-controlled: whether the "N clients resolved" badge is shown publicly on this profile.
     show_resolved_count: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # "View contact": signed-in users see the phone/WhatsApp/email (logged in profile_contact_views).
+    # Blank phone/email fall back to the expert's account, or for companies the listing's and an admin's.
+    contact_phone: Mapped[str | None] = mapped_column(String)
+    contact_email: Mapped[str | None] = mapped_column(String)
+    show_contact: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     # Pro plan for expert profiles; company profiles use their organization's plan instead.
     subscription_tier: Mapped[SubscriptionTier] = mapped_column(
         _enum(SubscriptionTier, "subscription_tier"), nullable=False, default=SubscriptionTier.FREE
@@ -133,3 +138,17 @@ class Profile(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     services: Mapped[list[Service]] = relationship(secondary=ProfileService.__table__, lazy="selectin")
+
+
+class ProfileContactView(Base):
+    """Someone signed in viewed this expert's/company's contact; new rows share the daily limit with worker contacts."""
+
+    __tablename__ = "profile_contact_views"
+    __table_args__ = (UniqueConstraint("profile_id", "viewer_user_id", name="profile_contact_views_once"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    profile_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="CASCADE"), nullable=False)
+    viewer_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    first_viewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    last_viewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    view_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)

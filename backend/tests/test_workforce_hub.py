@@ -20,7 +20,7 @@ NAMES = {
     "claim_worker_profile", "hire_action", "_user", "_my_worker", "pay_fields",
     "worker_contact", "apply_hire_action", "generate_link_key", "hash_link_key", "reachable", "LINK_INVALID",
     "_link_worker", "link_hire_action", "attach_worker", "link_connect_account",
-    "INDIA_TIME", "WorkerLimitError", "india_day_start", "contact_limit_message", "merge_profile_fields",
+    "INDIA_TIME", "WorkerLimitError", "india_day_start", "contact_limit_message", "merge_profile_fields", "opened_today",
 }
 
 
@@ -58,6 +58,9 @@ class Expression:
     def __ge__(self, other):
         return Expression()
 
+    def __add__(self, other):
+        return Expression()
+
     __hash__ = object.__hash__
 
 
@@ -79,6 +82,12 @@ class WorkerHire(Row):
 
 class WorkerContactView(Row):
     worker_id = Expression()
+    viewer_user_id = Expression()
+    first_viewed_at = Expression()
+
+
+class ProfileContactView(Row):
+    profile_id = Expression()
     viewer_user_id = Expression()
     first_viewed_at = Expression()
 
@@ -130,7 +139,7 @@ class WorkforceRuleTests(unittest.IsolatedAsyncioTestCase):
         self.org_ids = AsyncMock(return_value=set())
         self.contact_limit = AsyncMock(return_value=10)
         self.svc = load({
-            "WorkerContactView": WorkerContactView, "SubscriptionTier": SubscriptionTier,
+            "WorkerContactView": WorkerContactView, "ProfileContactView": ProfileContactView, "SubscriptionTier": SubscriptionTier,
             "CONTACT_DAILY_LIMIT": CONTACT_DAILY_LIMIT, "contact_daily_limit": self.contact_limit, "func": Expression(),
             "Availability": Availability, "ExperienceStatus": ExperienceStatus, "HireStatus": HireStatus,
             "SkillOut": SimpleNamespace, "WorkerProfile": WorkerProfile, "WorkerHire": WorkerHire,
@@ -276,12 +285,14 @@ class WorkforceRuleTests(unittest.IsolatedAsyncioTestCase):
     def test_merge_keeps_the_workers_entries_and_fills_gaps(self):
         target = WorkerProfile(bio=None, city="Salem", area=None, pincode=None, avatar_url=None, contact_email=None, contact_phone="+919000000004",
                                years_experience=2, rate_amount=None, rate_max=None, rate_unit=None, rate_hidden=False,
-                               skills=["Cooking"], languages=["Tamil"], review_count=1, average_rating=5)
+                               skills=["Cooking"], languages=["Tamil"], review_count=1, average_rating=5, work_mode="onsite", preferred_location=None)
         source = WorkerProfile(bio="Hotel cook", city="Chennai", area="Idappadi", pincode="637101", avatar_url=None, contact_email="c@x.in",
                                contact_phone="+919000000004", years_experience=6, rate_amount=500, rate_max=800, rate_unit="day", rate_hidden=True,
-                               skills=["cooking", "Billing"], languages=["Tamil", "English"], review_count=3, average_rating=4)
+                               skills=["cooking", "Billing"], languages=["Tamil", "English"], review_count=3, average_rating=4,
+                               work_mode="hybrid", preferred_location="Salem, Erode")
         self.svc.merge_profile_fields(target, source)
         self.assertEqual((target.bio, target.city, target.area, target.pincode, target.contact_email), ("Hotel cook", "Salem", "Idappadi", "637101", "c@x.in"))
+        self.assertEqual((target.work_mode, target.preferred_location), ("onsite", "Salem, Erode"))
         self.assertEqual((target.years_experience, target.rate_amount, target.rate_max, target.rate_unit, target.rate_hidden), (6, 500, 800, "day", True))
         self.assertEqual((target.skills, target.languages), (["Cooking", "Billing"], ["Tamil", "English"]))
         self.assertEqual((target.review_count, target.average_rating), (4, 4.2))
