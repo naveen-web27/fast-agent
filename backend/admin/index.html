@@ -64,12 +64,34 @@
     .modal.wide { width:min(94vw,560px); max-height:92vh; overflow:auto; }
     .modal .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; } .modal .grid2 label,.modal .full label { margin-top:10px; }
     @media (max-width:560px) { .modal .grid2 { grid-template-columns:1fr; } }
+    .modal.xwide { width:min(96vw,920px); max-height:92vh; overflow:auto; }
+    .modal select { width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:8px; font:inherit; background:#fff; }
+    .lead-bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+    .lead-bar .summary { color:var(--muted); font-size:12px; font-weight:700; }
+    .lead { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; margin-bottom:10px; padding:13px 15px; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); }
+    .lead .top { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+    .lead .top strong { font-size:14px; }
+    .lead .line { margin-top:3px; color:var(--muted); font-size:12px; }
+    .lead .line a { color:var(--ink); font-weight:700; text-decoration:none; }
+    .lead .overdue { color:var(--danger); font-weight:800; }
+    .lead .side { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+    .lead .side select { padding:6px 8px; border:1px solid var(--line); border-radius:7px; font:inherit; font-size:12px; font-weight:700; background:#fff; }
+    .lead .side .actions { justify-content:flex-end; }
+    .badge.type { color:#33507f; background:#e8eefb; } .badge.status-new { color:#7a5b00; background:#fff4d6; }
+    .badge.status-interested,.badge.status-signed_up { color:#0b6b4f; background:#e1f6ee; } .badge.status-not_interested { color:#fff; background:#6b7280; }
+    .preview { width:100%; margin-top:10px; border-collapse:collapse; font-size:12px; }
+    .preview th,.preview td { padding:6px 7px; border:1px solid var(--line); text-align:left; vertical-align:top; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .preview th select { min-width:110px; padding:5px; font-size:12px; }
+    .preview tr.bad td { color:var(--danger); }
+    .import-errors { max-height:160px; overflow:auto; margin-top:8px; padding:8px 10px; color:var(--danger); border-radius:8px; background:#fdf0ee; font-size:12px; }
+    @media (max-width:720px) { .lead { grid-template-columns:1fr; } .lead .side { align-items:flex-start; } }
   </style>
 </head>
 <body>
   <header><div><strong>RightConnect admin</strong><a href="/pages/marketplace.html">Open marketplace ↗</a></div><span id="whoami"></span></header>
   <nav class="sections" id="sections">
     <button data-section="overview" class="active">Overview</button>
+    <button data-section="leads">Leads<span class="count" id="leads-due-count" hidden></span></button>
     <button data-section="profiles">Profiles</button>
     <button data-section="claims">Claims<span class="count" id="claims-count" hidden></span></button>
     <button data-section="workers">Workers</button>
@@ -82,7 +104,7 @@
   <main>
     <div class="toolbar" id="toolbar" hidden>
       <div class="pills" id="filters"></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><select id="role-filter" hidden><option value="">All roles</option><option value="customer">Customers</option><option value="expert">Experts</option><option value="company_admin">Company admins</option><option value="worker">Workers</option><option value="platform_admin">Platform admins</option></select><input id="search" type="search" placeholder="Search name, email or phone…"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><select id="role-filter" hidden><option value="">All roles</option><option value="customer">Customers</option><option value="expert">Experts</option><option value="company_admin">Company admins</option><option value="worker">Workers</option><option value="platform_admin">Platform admins</option></select><select id="lead-type-filter" hidden><option value="">All types</option><option value="company">Companies</option><option value="expert">Experts</option><option value="worker">Workers</option><option value="customer">Customers</option><option value="unknown">Type not set</option></select><select id="lead-profile-filter" hidden><option value="">Profile: any</option><option value="missing">No profile yet</option><option value="created">Profile created</option></select><input id="search" type="search" placeholder="Search name, email or phone…"></div>
     </div>
     <div id="content"><p class="notice">Loading…</p></div>
   </main>
@@ -151,6 +173,47 @@
     </form>
   </div>
 
+  <div class="modal wide" id="lead-modal" role="dialog" aria-modal="true" aria-labelledby="lead-title" hidden>
+    <h2 id="lead-title">Add a lead</h2>
+    <p>Someone who enquired, e.g. on WhatsApp from an ad. Only admins see leads.</p>
+    <form id="lead-form" novalidate>
+      <div class="grid2">
+        <div><label for="ld-phone">Phone / WhatsApp *</label><input id="ld-phone" type="tel" maxlength="30" required placeholder="98765 43210"></div>
+        <div><label for="ld-name">Name</label><input id="ld-name" maxlength="120"></div>
+        <div><label for="ld-type">They are a</label><select id="ld-type"><option value="unknown">Not sure yet</option><option value="company">Company / shop</option><option value="expert">Expert</option><option value="worker">Worker</option><option value="customer">Customer</option></select></div>
+        <div><label for="ld-status">Status</label><select id="ld-status"></select></div>
+        <div><label for="ld-business">Company / shop name</label><input id="ld-business" maxlength="160"></div>
+        <div><label for="ld-service">Work / service</label><input id="ld-service" maxlength="120" placeholder="Mobile shop, Driver, Tax consultant"></div>
+        <div><label for="ld-city">City / area</label><input id="ld-city" maxlength="100"></div>
+        <div><label for="ld-follow">Follow up on</label><input id="ld-follow" type="date"></div>
+      </div>
+      <div class="full"><label for="ld-source">Source</label><input id="ld-source" maxlength="80" placeholder="WhatsApp ad – Nov 2026"></div>
+      <div class="full"><label for="ld-notes">Notes</label><textarea id="ld-notes" rows="3" maxlength="2000" placeholder="What they asked, when to call back…"></textarea></div>
+      <div class="error" id="lead-error"></div>
+      <div class="row"><button class="btn" type="button" id="lead-cancel">Cancel</button><button class="btn primary" type="submit" id="lead-save">Save lead</button></div>
+    </form>
+  </div>
+  <div class="modal xwide" id="import-modal" role="dialog" aria-modal="true" aria-labelledby="import-title" hidden>
+    <h2 id="import-title">Paste leads from Excel or Google Sheets</h2>
+    <p>Select the rows in your sheet (with the header row if you have one), copy, and paste below. A single column of phone numbers works too. Numbers already in Leads only get their empty fields filled; nothing you entered is overwritten.</p>
+    <div id="import-step-paste">
+      <textarea id="import-text" rows="9" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font:12px/1.4 ui-monospace,monospace" placeholder="Name&#9;Phone&#9;Type&#9;City&#10;Ravi&#9;98765 43210&#9;Shop owner&#9;Salem"></textarea>
+      <div class="row"><button class="btn" type="button" data-import-close>Cancel</button><button class="btn primary" type="button" id="import-preview-btn">Preview</button></div>
+    </div>
+    <div id="import-step-preview" hidden>
+      <p style="margin:0" id="import-summary"></p>
+      <div style="overflow:auto"><table class="preview" id="import-table"></table></div>
+      <div class="grid2" style="margin-top:4px"><div><label for="import-source">Source for these leads</label><input id="import-source" maxlength="80" placeholder="WhatsApp ad – Nov 2026"></div><div><label style="display:flex;gap:8px;align-items:center;margin-top:34px"><input id="import-header" type="checkbox" style="width:auto"> First row is a header</label></div></div>
+      <div class="error" id="import-error"></div>
+      <div class="row"><button class="btn" type="button" id="import-back">← Back</button><button class="btn primary" type="button" id="import-go">Import</button></div>
+    </div>
+    <div id="import-step-done" hidden>
+      <p id="import-result" style="color:var(--ink);font-weight:700"></p>
+      <div class="import-errors" id="import-result-errors" hidden></div>
+      <div class="row"><button class="btn primary" type="button" data-import-close>Done</button></div>
+    </div>
+  </div>
+
   <script>
     const apiBase = '/api/v1';
     const content = document.querySelector('#content');
@@ -160,8 +223,9 @@
     const roleFilter = document.querySelector('#role-filter');
     let accessToken = null;
     let section = 'overview';
-    const filterState = { profiles: 'pending', users: 'active', claims: 'pending', workers: 'all' };
+    const filterState = { profiles: 'pending', users: 'active', claims: 'pending', workers: 'all', leads: '' };
     const FILTERS = {
+      leads: [['', 'All'], ['due', 'Due today'], ['new', 'New'], ['contacted', 'Contacted'], ['interested', 'Interested'], ['follow_up', 'Follow-up'], ['not_interested', 'Not interested'], ['signed_up', 'Signed up']],
       profiles: [['pending', 'Pending'], ['verified', 'Verified'], ['rejected', 'Rejected'], ['unclaimed', 'Unclaimed'], ['blocked', 'Blocked'], ['deleted', 'Deleted'], ['all', 'All']],
       claims: [['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['all', 'All']],
       workers: [['all', 'All'], ['unclaimed', 'Unclaimed'], ['claimed', 'Claimed'], ['duplicates', 'To merge'], ['reported', 'Reported callers'], ['blocked', 'Blocked'], ['deleted', 'Deleted']],
@@ -251,6 +315,8 @@
       document.querySelectorAll('#sections button[data-section]').forEach((button) => button.classList.toggle('active', button.dataset.section === next));
       searchInput.value = '';
       roleFilter.value = '';
+      leadTypeFilter.value = '';
+      leadProfileFilter.value = '';
       renderToolbar();
       load();
     }
@@ -258,7 +324,10 @@
       const filters = FILTERS[section];
       toolbar.hidden = !filters;
       roleFilter.hidden = section !== 'users';
+      leadTypeFilter.hidden = section !== 'leads';
+      leadProfileFilter.hidden = section !== 'leads';
       searchInput.hidden = section === 'claims';
+      searchInput.placeholder = section === 'leads' ? 'Search name, phone, shop, city, notes…' : 'Search name, email or phone…';
       if (!filters) return;
       filtersBox.innerHTML = filters.map(([value, label]) => `<button data-filter="${value}" class="${filterState[section] === value ? 'active' : ''}">${label}</button>`).join('');
       filtersBox.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => {
@@ -270,11 +339,24 @@
     let searchTimer = null;
     searchInput.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(load, 300); });
     roleFilter.addEventListener('change', load);
+    const leadTypeFilter = document.querySelector('#lead-type-filter');
+    const leadProfileFilter = document.querySelector('#lead-profile-filter');
+    leadTypeFilter.addEventListener('change', load);
+    leadProfileFilter.addEventListener('change', load);
 
     async function load() {
       content.innerHTML = '<p class="notice">Loading…</p>';
       try {
         if (section === 'overview') return renderOverview(await api('/admin/stats'));
+        if (section === 'leads') {
+          const params = new URLSearchParams();
+          if (filterState.leads === 'due') params.set('due', 'true');
+          else if (filterState.leads) params.set('status', filterState.leads);
+          if (leadTypeFilter.value) params.set('type', leadTypeFilter.value);
+          if (leadProfileFilter.value) params.set('profile', leadProfileFilter.value);
+          if (searchInput.value.trim()) params.set('q', searchInput.value.trim());
+          return renderLeads(await api(`/admin/leads?${params}`));
+        }
         if (section === 'profiles') {
           const params = new URLSearchParams({ verification: filterState.profiles });
           if (searchInput.value.trim()) params.set('q', searchInput.value.trim());
@@ -689,6 +771,326 @@
       return element;
     }
 
+    // ---------- leads (enquiries from ads, WhatsApp…) ----------
+    const LEAD_STATUSES = [['new', 'New'], ['contacted', 'Contacted'], ['interested', 'Interested'], ['follow_up', 'Follow-up'], ['not_interested', 'Not interested'], ['signed_up', 'Signed up']];
+    const STATUS_LABEL = Object.fromEntries(LEAD_STATUSES);
+    const TYPE_LABEL = { unknown: 'Type?', company: 'Company', expert: 'Expert', worker: 'Worker', customer: 'Customer' };
+    const MATCH_LABEL = { account: 'Account', worker: 'Worker profile', company: 'Company', expert: 'Expert profile' };
+    let currentLeads = [];
+    document.querySelector('#ld-status').innerHTML = LEAD_STATUSES.map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
+
+    function todayIso() {
+      const now = new Date();
+      return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    }
+    function shortDay(iso) { return iso ? new Date(`${iso}T00:00:00`).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }) : ''; }
+    function prettyPhone(phone) { return phone.startsWith('+91') && phone.length === 13 ? `+91 ${phone.slice(3, 8)} ${phone.slice(8)}` : phone; }
+    function pitchMessage(lead) {
+      const name = lead.full_name ? lead.full_name.split(' ')[0] : 'there';
+      const site = location.origin;
+      return {
+        company: `Hi ${name}, thanks for contacting RightConnect! List ${lead.business_name || 'your business'} free so customers near you can find and call you. Sign up here: ${site}/pages/auth.html`,
+        expert: `Hi ${name}, thanks for contacting RightConnect! Create your free expert profile so people near you can find and contact you: ${site}/pages/auth.html`,
+        worker: `Hi ${name}, thanks for contacting RightConnect! Create your free work profile so shops and homes near you can call you for work: ${site}/pages/auth.html`,
+        customer: `Hi ${name}, thanks for contacting RightConnect! Find trusted experts, businesses and workers near you here: ${site}/pages/marketplace.html`,
+      }[lead.lead_type] || `Hi ${name}, thanks for contacting RightConnect! You can find or list services near you here: ${site}/pages/auth.html`;
+    }
+    async function refreshLeadsDue() {
+      try {
+        const due = await api('/admin/leads?due=true');
+        const badge = document.querySelector('#leads-due-count');
+        badge.textContent = due.length;
+        badge.hidden = !due.length;
+      } catch (_) { /* The badge is optional. */ }
+    }
+
+    function renderLeads(leads) {
+      currentLeads = leads;
+      const missing = leads.filter((lead) => !lead.matches.length).length;
+      content.innerHTML = `
+        <div class="lead-bar"><span class="summary">${leads.length} lead${leads.length === 1 ? '' : 's'} · ${missing} without a profile${leads.length >= 2000 ? ' · showing the newest 2000' : ''}</span>
+        <div class="actions"><button class="btn primary" type="button" id="lead-add">+ Add lead</button><button class="btn" type="button" id="lead-import">Paste from Excel / Sheets</button><button class="btn" type="button" id="lead-export"${leads.length ? '' : ' disabled'}>Download for Excel</button></div></div>
+        <div id="lead-list">${leads.length ? '' : '<p class="empty">No leads here yet. Add one, or paste numbers from your sheet.</p>'}</div>`;
+      document.querySelector('#lead-add').addEventListener('click', () => openLead(null));
+      document.querySelector('#lead-import').addEventListener('click', openImport);
+      document.querySelector('#lead-export').addEventListener('click', exportLeads);
+      const list = document.querySelector('#lead-list');
+      leads.forEach((lead) => list.appendChild(renderLeadRow(lead)));
+    }
+
+    function renderLeadRow(lead) {
+      const element = document.createElement('div');
+      element.className = 'lead';
+      const overdue = lead.follow_up_on && lead.follow_up_on <= todayIso() && !['signed_up', 'not_interested'].includes(lead.status);
+      const profile = lead.matches.length
+        ? `<span class="badge match" title="${escapeHtml(lead.matches.map((match) => `${MATCH_LABEL[match.kind]}: ${match.label}`).join('\n'))}">✓ Profile: ${escapeHtml(lead.matches.map((match) => MATCH_LABEL[match.kind]).join(', '))}</span>`
+        : '<span class="badge nomatch">No profile yet</span>';
+      const details = [lead.business_name, lead.service, lead.city].filter(Boolean).map(escapeHtml).join(' · ');
+      const wa = `https://wa.me/${lead.phone.replace(/\D/g, '')}?text=${encodeURIComponent(pitchMessage(lead))}`;
+      element.innerHTML = `
+        <div>
+          <div class="top"><strong>${escapeHtml(lead.full_name || 'No name')}</strong><span class="badge type">${TYPE_LABEL[lead.lead_type]}</span>${profile}</div>
+          <div class="line"><a href="tel:${escapeHtml(lead.phone)}">📞 ${escapeHtml(prettyPhone(lead.phone))}</a>${details ? ` · ${details}` : ''}</div>
+          ${lead.matches.length ? `<div class="line">${lead.matches.map((match) => `${MATCH_LABEL[match.kind]}: ${escapeHtml(match.label)}`).join(' · ')}</div>` : ''}
+          <div class="line">${lead.follow_up_on ? `<span class="${overdue ? 'overdue' : ''}">Follow up ${shortDay(lead.follow_up_on)}${overdue ? ' (due)' : ''}</span> · ` : ''}${lead.source ? `${escapeHtml(lead.source)} · ` : ''}added ${shortDay(lead.created_at.slice(0, 10))}</div>
+          ${lead.notes ? `<div class="note">${escapeHtml(lead.notes)}</div>` : ''}
+        </div>
+        <div class="side">
+          <select aria-label="Status">${LEAD_STATUSES.map(([value, label]) => `<option value="${value}"${lead.status === value ? ' selected' : ''}>${label}</option>`).join('')}</select>
+          <div class="actions"><a class="btn" href="${escapeHtml(wa)}" target="_blank" rel="noopener" style="text-decoration:none;color:#fff;background:#128c4a;border-color:#128c4a" data-wa>WhatsApp</a><button class="btn" type="button" data-edit>Edit</button><button class="btn reject" type="button" data-delete>Delete</button></div>
+        </div>`;
+      element.querySelector('select').addEventListener('change', async (event) => {
+        const select = event.currentTarget;
+        select.disabled = true;
+        try { await saveLeadInPlace(lead, { status: select.value }, element); showToast(`Marked ${STATUS_LABEL[select.value]}.`, 'success'); }
+        catch (error) { select.value = lead.status; showToast(error.message, 'error'); }
+        finally { select.disabled = false; }
+      });
+      // Pitching a new lead on WhatsApp marks it contacted.
+      element.querySelector('[data-wa]').addEventListener('click', () => {
+        if (lead.status === 'new') saveLeadInPlace(lead, { status: 'contacted' }, element).catch(() => {});
+      });
+      element.querySelector('[data-edit]').addEventListener('click', () => openLead(lead));
+      element.querySelector('[data-delete]').addEventListener('click', () => openConfirm({
+        title: 'Delete this lead?', text: `${lead.full_name || prettyPhone(lead.phone)} will be removed from Leads. This doesn't touch any RightConnect account.`,
+        okLabel: 'Delete lead',
+        onConfirm: async () => { await api(`/admin/leads/${lead.id}`, { method: 'DELETE' }); showToast('Lead deleted.', 'success'); load(); refreshLeadsDue(); },
+      }));
+      return element;
+    }
+    async function saveLeadInPlace(lead, changes, element) {
+      const saved = await api(`/admin/leads/${lead.id}`, { method: 'PATCH', body: JSON.stringify(changes) });
+      const index = currentLeads.findIndex((item) => item.id === lead.id);
+      if (index >= 0) currentLeads[index] = saved;
+      element.replaceWith(renderLeadRow(saved));
+      refreshLeadsDue();
+      return saved;
+    }
+
+    // Add / edit
+    const leadModal = document.querySelector('#lead-modal');
+    let editingLead = null;
+    function closeLead() { leadModal.hidden = true; document.querySelector('#modal-scrim').hidden = true; }
+    function openLead(lead) {
+      editingLead = lead;
+      document.querySelector('#lead-title').textContent = lead ? 'Edit lead' : 'Add a lead';
+      const set = (id, value) => { document.querySelector(id).value = value ?? ''; };
+      set('#ld-phone', lead ? prettyPhone(lead.phone) : '');
+      set('#ld-name', lead?.full_name); set('#ld-business', lead?.business_name); set('#ld-service', lead?.service);
+      set('#ld-city', lead?.city); set('#ld-follow', lead?.follow_up_on); set('#ld-source', lead?.source); set('#ld-notes', lead?.notes);
+      set('#ld-type', lead?.lead_type || 'unknown'); set('#ld-status', lead?.status || 'new');
+      document.querySelector('#lead-error').textContent = '';
+      document.querySelector('#modal-scrim').hidden = false;
+      leadModal.hidden = false;
+      document.querySelector(lead ? '#ld-name' : '#ld-phone').focus();
+    }
+    document.querySelector('#lead-cancel').addEventListener('click', closeLead);
+    document.querySelector('#modal-scrim').addEventListener('click', () => { if (!leadModal.hidden) closeLead(); if (!importModal.hidden) closeImport(); });
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { if (!leadModal.hidden) closeLead(); if (!importModal.hidden) closeImport(); } });
+    document.querySelector('#lead-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const value = (id) => document.querySelector(id).value.trim();
+      const errorBox = document.querySelector('#lead-error');
+      if (value('#ld-phone').replace(/\D/g, '').length < 8) { errorBox.textContent = 'Enter the phone number.'; return; }
+      const payload = {
+        phone: value('#ld-phone'), full_name: value('#ld-name') || null, lead_type: value('#ld-type'), status: value('#ld-status'),
+        business_name: value('#ld-business') || null, service: value('#ld-service') || null, city: value('#ld-city') || null,
+        follow_up_on: value('#ld-follow') || null, source: value('#ld-source') || null, notes: value('#ld-notes') || null,
+      };
+      const button = document.querySelector('#lead-save');
+      button.disabled = true;
+      try {
+        await api(editingLead ? `/admin/leads/${editingLead.id}` : '/admin/leads', { method: editingLead ? 'PATCH' : 'POST', body: JSON.stringify(payload) });
+        closeLead();
+        showToast(editingLead ? 'Lead saved.' : 'Lead added.', 'success');
+        if (section === 'leads') load();
+        refreshLeadsDue();
+      } catch (error) {
+        errorBox.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    // Paste from Excel / Google Sheets: copied cells arrive tab-separated; CSV text works too.
+    const importModal = document.querySelector('#import-modal');
+    const IMPORT_FIELDS = [['', 'Ignore'], ['full_name', 'Name'], ['phone', 'Phone'], ['lead_type', 'Type'], ['business_name', 'Company / shop'], ['service', 'Work / service'], ['city', 'City / area'], ['status', 'Status'], ['follow_up_on', 'Follow-up date'], ['notes', 'Notes'], ['source', 'Source']];
+    const HEADER_WORDS = [
+      ['phone', /phone|mobile|whats ?app|number|contact|\bph\b|cell/i],
+      ['business_name', /company|shop|business|firm|store|organi[sz]ation|brand/i],
+      ['full_name', /name/i],
+      ['lead_type', /type|category|role|segment/i],
+      ['service', /service|work|skill|profession|job|trade/i],
+      ['city', /city|area|location|place|district|town|pin/i],
+      ['status', /status|stage/i],
+      ['follow_up_on', /follow|call ?back|next|date/i],
+      ['notes', /note|remark|comment|message|query|enquiry|requirement/i],
+      ['source', /source|campaign|\bad\b/i],
+    ];
+    let importRows = [];
+    let importMap = [];
+    function closeImport() { importModal.hidden = true; document.querySelector('#modal-scrim').hidden = true; }
+    function importStep(step) { ['paste', 'preview', 'done'].forEach((name) => { document.querySelector(`#import-step-${name}`).hidden = name !== step; }); }
+    function openImport() {
+      document.querySelector('#import-text').value = '';
+      document.querySelector('#import-source').value = '';
+      document.querySelector('#import-error').textContent = '';
+      importStep('paste');
+      document.querySelector('#modal-scrim').hidden = false;
+      importModal.hidden = false;
+      document.querySelector('#import-text').focus();
+    }
+    importModal.querySelectorAll('[data-import-close]').forEach((button) => button.addEventListener('click', closeImport));
+    function parseDelimited(text) {
+      const delimiter = text.includes('\t') ? '\t' : ',';
+      const rows = [];
+      let row = [];
+      let cell = '';
+      let quoted = false;
+      for (let i = 0; i < text.length; i += 1) {
+        const char = text[i];
+        if (quoted) {
+          if (char === '"' && text[i + 1] === '"') { cell += '"'; i += 1; }
+          else if (char === '"') quoted = false;
+          else cell += char;
+        } else if (char === '"' && cell === '') quoted = true;
+        else if (char === delimiter) { row.push(cell); cell = ''; }
+        else if (char === '\n' || char === '\r') {
+          if (char === '\r' && text[i + 1] === '\n') i += 1;
+          row.push(cell); rows.push(row); row = []; cell = '';
+        } else cell += char;
+      }
+      if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+      return rows.map((cells) => cells.map((value) => value.trim())).filter((cells) => cells.some(Boolean));
+    }
+    function looksLikePhone(value) {
+      const digits = String(value || '').replace(/\D/g, '');
+      return digits.length >= 10 && digits.length <= 13 && /^[\d\s+()\-.]+$/.test(String(value).trim());
+    }
+    function guessMapping(rows, hasHeader) {
+      const width = Math.max(...rows.map((cells) => cells.length));
+      const mapping = Array(width).fill('');
+      if (hasHeader) {
+        rows[0].forEach((title, index) => {
+          const match = HEADER_WORDS.find(([field, pattern]) => pattern.test(title) && !mapping.includes(field));
+          if (match) mapping[index] = match[0];
+        });
+        if (mapping.includes('phone')) return mapping;
+      }
+      const data = hasHeader ? rows.slice(1) : rows;
+      let best = -1;
+      let bestCount = 0;
+      for (let index = 0; index < width; index += 1) {
+        const count = data.filter((cells) => looksLikePhone(cells[index])).length;
+        if (count > bestCount) { best = index; bestCount = count; }
+      }
+      if (best >= 0) mapping[best] = 'phone';
+      if (!mapping.includes('full_name')) {
+        const nameColumn = [...Array(width).keys()].find((index) => !mapping[index] && data.some((cells) => /[a-z\u0B80-\u0BFF]/i.test(cells[index] || '')));
+        if (nameColumn !== undefined) mapping[nameColumn] = 'full_name';
+      }
+      return mapping;
+    }
+    function dataRows() { return document.querySelector('#import-header').checked ? importRows.slice(1) : importRows; }
+    function renderImportPreview() {
+      const header = document.querySelector('#import-header').checked;
+      const rows = dataRows();
+      const phoneColumn = importMap.indexOf('phone');
+      const valid = phoneColumn < 0 ? 0 : rows.filter((cells) => looksLikePhone(cells[phoneColumn])).length;
+      document.querySelector('#import-summary').innerHTML = `<b>${rows.length}</b> row${rows.length === 1 ? '' : 's'}. ${phoneColumn < 0 ? '<span style="color:var(--danger)">Pick which column is the phone number.</span>' : `${valid} with a phone number${rows.length - valid ? `; ${rows.length - valid} look wrong and will be listed after import` : ''}.`} Check each column below.`;
+      const select = (index) => `<select data-col="${index}">${IMPORT_FIELDS.map(([value, label]) => `<option value="${value}"${importMap[index] === value ? ' selected' : ''}>${label}</option>`).join('')}</select>`;
+      const titles = header ? importRows[0] : [];
+      document.querySelector('#import-table').innerHTML = `
+        <thead><tr>${importMap.map((_, index) => `<th>${select(index)}${titles[index] ? `<div style="margin-top:4px;color:var(--muted);font-weight:600">${escapeHtml(titles[index])}</div>` : ''}</th>`).join('')}</tr></thead>
+        <tbody>${rows.slice(0, 8).map((cells) => `<tr class="${phoneColumn >= 0 && !looksLikePhone(cells[phoneColumn]) ? 'bad' : ''}">${importMap.map((_, index) => `<td title="${escapeHtml(cells[index] || '')}">${escapeHtml(cells[index] || '')}</td>`).join('')}</tr>`).join('')}
+        ${rows.length > 8 ? `<tr><td colspan="${importMap.length}" style="color:var(--muted)">…and ${rows.length - 8} more</td></tr>` : ''}</tbody>`;
+      document.querySelectorAll('#import-table [data-col]').forEach((element) => element.addEventListener('change', () => {
+        importMap[Number(element.dataset.col)] = element.value;
+        renderImportPreview();
+      }));
+      document.querySelector('#import-go').textContent = `Import ${rows.length} row${rows.length === 1 ? '' : 's'}`;
+    }
+    document.querySelector('#import-preview-btn').addEventListener('click', () => {
+      importRows = parseDelimited(document.querySelector('#import-text').value);
+      if (!importRows.length) { showToast('Paste some rows first.', 'error'); return; }
+      // A header row has words like "Name" or "Phone" and no phone number in it.
+      const hasHeader = !importRows[0].some(looksLikePhone) && importRows[0].some((title) => HEADER_WORDS.some(([, pattern]) => pattern.test(title)));
+      document.querySelector('#import-header').checked = hasHeader;
+      importMap = guessMapping(importRows, hasHeader);
+      document.querySelector('#import-error').textContent = '';
+      importStep('preview');
+      renderImportPreview();
+    });
+    document.querySelector('#import-header').addEventListener('change', () => {
+      importMap = guessMapping(importRows, document.querySelector('#import-header').checked);
+      renderImportPreview();
+    });
+    document.querySelector('#import-back').addEventListener('click', () => importStep('paste'));
+    document.querySelector('#import-go').addEventListener('click', async () => {
+      const errorBox = document.querySelector('#import-error');
+      if (!importMap.includes('phone')) { errorBox.textContent = 'Pick which column is the phone number.'; return; }
+      const rows = dataRows().map((cells) => {
+        const row = {};
+        importMap.forEach((field, index) => {
+          const value = (cells[index] || '').trim();
+          if (!field || !value) return;
+          row[field] = row[field] ? `${row[field]}${field === 'notes' ? '\n' : ' '}${value}` : value;
+        });
+        return row;
+      });
+      const button = document.querySelector('#import-go');
+      button.disabled = true;
+      button.textContent = 'Importing…';
+      const totals = { created: 0, updated: 0, errors: [] };
+      try {
+        for (let start = 0; start < rows.length; start += 1000) {
+          const result = await api('/admin/leads/import', { method: 'POST', body: JSON.stringify({ rows: rows.slice(start, start + 1000), source: document.querySelector('#import-source').value.trim() || null }) });
+          totals.created += result.created;
+          totals.updated += result.updated;
+          totals.errors.push(...result.errors.map((error) => ({ ...error, row: error.row + start + (document.querySelector('#import-header').checked ? 1 : 0) })));
+        }
+        document.querySelector('#import-result').textContent = `${totals.created} new lead${totals.created === 1 ? '' : 's'} added, ${totals.updated} existing lead${totals.updated === 1 ? '' : 's'} filled in${totals.errors.length ? `, ${totals.errors.length} row${totals.errors.length === 1 ? '' : 's'} skipped` : ''}.`;
+        const errorList = document.querySelector('#import-result-errors');
+        errorList.hidden = !totals.errors.length;
+        errorList.innerHTML = totals.errors.map((error) => `Row ${error.row}: ${escapeHtml(error.message)}`).join('<br>');
+        importStep('done');
+        if (section === 'leads') load();
+        refreshLeadsDue();
+      } catch (error) {
+        errorBox.textContent = error.message;
+      } finally {
+        button.disabled = false;
+        renderImportPreview();
+      }
+    });
+
+    // Download what's on screen as a CSV that Excel and Google Sheets open directly.
+    function csvCell(value, { phone = false } = {}) {
+      let text = String(value ?? '');
+      // A leading tab keeps "+91…" as text in Excel; a leading ' stops pasted text running as a formula.
+      if (phone) text = `\t${text}`;
+      else if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+    function exportLeads() {
+      const header = ['Name', 'Phone', 'Type', 'Company / shop', 'Work / service', 'City / area', 'Status', 'Follow up on', 'Source', 'Notes', 'On RightConnect', 'Added on'];
+      const lines = currentLeads.map((lead) => [
+        csvCell(lead.full_name), csvCell(lead.phone, { phone: true }), csvCell(TYPE_LABEL[lead.lead_type] === 'Type?' ? '' : TYPE_LABEL[lead.lead_type]),
+        csvCell(lead.business_name), csvCell(lead.service), csvCell(lead.city), csvCell(STATUS_LABEL[lead.status]), csvCell(lead.follow_up_on),
+        csvCell(lead.source), csvCell(lead.notes), csvCell(lead.matches.map((match) => `${MATCH_LABEL[match.kind]}: ${match.label}`).join('; ') || 'No profile'),
+        csvCell(lead.created_at.slice(0, 10)),
+      ].join(','));
+      // The BOM makes Excel read Tamil and other non-English names correctly.
+      const blob = new Blob(['\ufeff', [header.map((title) => csvCell(title)).join(','), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `rightconnect-leads-${todayIso()}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    }
+
     // ---------- activity ----------
     function renderActivityCard(entry) {
       return card(`
@@ -713,6 +1115,7 @@
       }
       renderToolbar();
       load();
+      refreshLeadsDue();
     })();
   </script>
 </body>

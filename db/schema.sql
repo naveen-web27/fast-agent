@@ -605,6 +605,30 @@ CREATE INDEX profile_contact_views_profile_idx ON profile_contact_views(profile_
 REVOKE ALL ON worker_profiles, job_posts, worker_hires, worker_experiences, worker_reviews, worker_contact_views, profile_contact_views FROM anon, authenticated;
 GRANT ALL ON worker_profiles, job_posts, worker_hires, worker_experiences, worker_reviews, worker_contact_views, profile_contact_views TO service_role;
 
+-- Leads (migration 032): enquiries (e.g. WhatsApp from ads) tracked by admins until they sign up.
+CREATE TABLE leads (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    full_name TEXT,
+    phone TEXT NOT NULL,
+    lead_type TEXT NOT NULL DEFAULT 'unknown' CHECK (lead_type IN ('unknown', 'customer', 'expert', 'company', 'worker')),
+    business_name TEXT,
+    service TEXT,
+    city TEXT,
+    source TEXT,
+    status TEXT NOT NULL DEFAULT 'new'
+        CHECK (status IN ('new', 'contacted', 'interested', 'follow_up', 'not_interested', 'signed_up')),
+    follow_up_on DATE,
+    notes TEXT,
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX leads_phone_idx ON leads(phone);
+CREATE INDEX leads_status_idx ON leads(status, follow_up_on);
+CREATE INDEX leads_created_idx ON leads(created_at DESC);
+REVOKE ALL ON leads FROM anon, authenticated;
+GRANT ALL ON leads TO service_role;
+
 -- PIN code directory (migration 026); rows loaded by db/scripts/import_pincodes.py.
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
