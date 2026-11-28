@@ -8,6 +8,7 @@ Marketing materials for RightConnect (trust marketplace for verified experts & c
 | `video/` | Ad video script (15s reel, 30s, 60s cuts) with shot list, voiceover, on-screen captions, and a text-to-video prompt |
 | `astrology/` | Tamil Thirumana porutham & Jathagam ads: vector poster, image prompts (ChatGPT), video prompts (Gemini/Veo) |
 | [rightconnect digital marketing/](<rightconnect digital marketing/README.md>) | Current AI-team handoff: separate Tamil/English video scripts for customers, experts, and companies; 15s/30s cuts, hooks, storyboards, captions, and production/release guidance |
+| [rightconnect-marketing/](rightconnect-marketing/README.md) | Our agency, RightConnect Marketing (posters, ads, websites): poster prompts for getting our own leads, and the digital business card |
 
 ## Brand quick reference
 

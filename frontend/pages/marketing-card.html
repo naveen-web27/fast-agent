@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>RightConnect Marketing — Digital Card</title>
+  <meta name="description" content="RightConnect Marketing, Salem: posters, Facebook & Instagram ads, business websites and lead tracking. WhatsApp +91 63825 95243.">
+  <meta name="theme-color" content="#05070d">
+  <meta property="og:title" content="RightConnect Marketing — Posters · Ads · Websites">
+  <meta property="og:description" content="Naveenkumar (Founder) & Vinotha (Co-founder) · Salem, Tamil Nadu · WhatsApp +91 63825 95243">
+  <link rel="icon" href="../assets/rightconnect-mark.svg" type="image/svg+xml">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#05070d; --ink:#f3f6fb; --muted:#9aa6bd; --line:rgba(255,255,255,.12); --teal:#2ee6c8; --violet:#8b6cff; --pink:#ff4f8b; --amber:#ffb547; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; min-height:100svh; display:grid; place-items:center; padding:28px 16px 40px; color:var(--ink); font:15px/1.5 Manrope, system-ui, sans-serif; background:var(--bg); overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+    /* slow-moving colour glows behind the card */
+    .glow { position:fixed; z-index:-1; width:70vmax; aspect-ratio:1; border-radius:50%; filter:blur(80px); opacity:.35; animation:drift 18s ease-in-out infinite alternate; }
+    .glow.a { top:-30vmax; left:-25vmax; background:var(--teal); }
+    .glow.b { bottom:-35vmax; right:-25vmax; background:var(--violet); animation-delay:-6s; }
+    .glow.c { top:30%; left:40%; width:40vmax; background:var(--pink); opacity:.18; animation-delay:-12s; }
+    @keyframes drift { to { transform:translate(8vmax,6vmax) scale(1.15); } }
+    .card { position:relative; width:min(430px,100%); padding:28px 22px 22px; border-radius:30px; background:linear-gradient(160deg,rgba(24,30,48,.9),rgba(8,10,18,.94)); box-shadow:0 40px 90px rgba(0,0,0,.55); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); animation:enter .9s cubic-bezier(.2,.8,.2,1) both; }
+    .card::before { content:""; position:absolute; inset:0; border-radius:inherit; padding:1.5px; background:conic-gradient(from var(--angle,0deg),var(--teal),var(--violet),var(--pink),var(--amber),var(--teal)); -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; animation:spin 6s linear infinite; pointer-events:none; }
+    @property --angle { syntax:'<angle>'; inherits:false; initial-value:0deg; }
+    @keyframes spin { to { --angle:360deg; } }
+    @keyframes enter { from { opacity:0; transform:translateY(24px) scale(.97); } }
+    .brand { display:flex; align-items:center; gap:12px; }
+    .brand img { width:54px; height:54px; border-radius:16px; box-shadow:0 10px 30px rgba(46,230,200,.3); }
+    .brand h1 { margin:0; font:800 23px/1.05 Syne, sans-serif; letter-spacing:-.01em; }
+    .brand h1 span { background:linear-gradient(100deg,var(--teal),var(--violet),var(--pink)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .brand p { margin:4px 0 0; color:var(--muted); font-size:13px; font-weight:700; }
+    .tagline { margin:20px 0 18px; font:800 25px/1.12 Syne, sans-serif; letter-spacing:-.01em; }
+    .tagline em { font-style:normal; color:var(--teal); }
+    .people { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .person { display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.03); }
+    .avatar { flex:none; display:grid; place-items:center; width:40px; height:40px; border-radius:50%; color:#05070d; font-weight:800; background:linear-gradient(140deg,var(--c1),var(--c2)); }
+    .person b { display:block; font-size:14px; } .person small { color:var(--muted); font-size:12px; font-weight:600; }
+    .actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:18px 0; }
+    .actions a, .actions button { display:flex; align-items:center; justify-content:center; gap:8px; min-height:50px; padding:0 12px; border:1px solid var(--line); border-radius:16px; color:var(--ink); background:rgba(255,255,255,.05); font:800 14px Manrope, sans-serif; text-decoration:none; cursor:pointer; transition:transform .2s, background .2s; }
+    .actions a:hover, .actions button:hover { transform:translateY(-2px); background:rgba(255,255,255,.09); }
+    .actions .wa { grid-column:1 / -1; min-height:56px; border:0; color:#04110c; background:linear-gradient(120deg,#5dffb0,var(--teal)); box-shadow:0 12px 34px rgba(46,230,200,.32); font-size:16px; }
+    .actions svg { width:18px; height:18px; }
+    h2 { margin:0 0 10px; color:var(--muted); font-size:11px; font-weight:800; letter-spacing:.18em; text-transform:uppercase; }
+    .services { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:18px; }
+    .services div { padding:12px; border-radius:14px; border:1px solid var(--line); background:rgba(255,255,255,.03); font-size:13px; font-weight:700; }
+    .services span { display:block; margin-bottom:4px; font-size:20px; }
+    .info { display:grid; gap:8px; margin:0 0 18px; padding:0; list-style:none; }
+    .info li { display:flex; align-items:center; gap:10px; color:var(--muted); font-weight:600; }
+    .info li b { color:var(--ink); font-weight:700; }
+    .info a { color:inherit; text-decoration:none; }
+    .offer { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:16px; padding:14px 16px; border-radius:16px; background:linear-gradient(120deg,rgba(255,181,71,.16),rgba(255,79,139,.16)); border:1px solid rgba(255,181,71,.3); }
+    .offer b { display:block; font:800 18px Syne, sans-serif; } .offer small { color:var(--muted); font-weight:600; }
+    .offer strong { font:800 24px Syne, sans-serif; color:var(--amber); white-space:nowrap; }
+    .site { display:block; padding:13px; border-radius:16px; text-align:center; color:var(--teal); border:1px dashed rgba(46,230,200,.4); font-weight:800; text-decoration:none; }
+    .toast { position:fixed; left:50%; bottom:24px; padding:10px 16px; border-radius:12px; color:#04110c; background:var(--teal); font-weight:800; transform:translateX(-50%); }
+    footer { margin-top:16px; color:var(--muted); font-size:12px; text-align:center; }
+    @media (prefers-reduced-motion:reduce) { *, *::before { animation:none !important; transition:none !important; } }
+    @media (max-width:360px) { .people, .services { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="glow a" aria-hidden="true"></div><div class="glow b" aria-hidden="true"></div><div class="glow c" aria-hidden="true"></div>
+  <main class="card">
+    <div class="brand">
+      <img src="../assets/rightconnect-mark.svg" alt="">
+      <div><h1>RightConnect <span>Marketing</span></h1><p>Digital marketing · Salem, Tamil Nadu</p></div>
+    </div>
+
+    <p class="tagline">Posters that stop the scroll. <em>Ads that bring customers.</em></p>
+
+    <div class="people">
+      <div class="person"><span class="avatar" style="--c1:var(--teal);--c2:#5dffb0">N</span><div><b>Naveenkumar</b><small>Founder</small></div></div>
+      <div class="person"><span class="avatar" style="--c1:var(--pink);--c2:var(--violet)">V</span><div><b>Vinotha</b><small>Co-founder</small></div></div>
+    </div>
+
+    <div class="actions">
+      <a class="wa" id="whatsapp" href="https://wa.me/916382595243" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2s.2-1.1.1-1.2-.2-.2-.4-.3z"/></svg>
+        Chat on WhatsApp
+      </a>
+      <a href="tel:+916382595243"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>Call</a>
+      <button type="button" id="save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>Save contact</button>
+      <button type="button" id="share" style="grid-column:1 / -1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>Share this card</button>
+    </div>
+
+    <h2>What we do</h2>
+    <div class="services">
+      <div><span>🎨</span>Poster design</div>
+      <div><span>🚀</span>Facebook &amp; Instagram ads</div>
+      <div><span>🌐</span>Business websites</div>
+      <div><span>📈</span>Lead tracking</div>
+    </div>
+
+    <div class="offer"><div><b>Starter pack</b><small>3 posters · feed + status size</small></div><strong>₹599</strong></div>
+
+    <ul class="info">
+      <li>📞 <a href="tel:+916382595243"><b>+91 63825 95243</b></a></li>
+      <li>📍 <b>Salem, Tamil Nadu</b></li>
+    </ul>
+
+    <a class="site" href="digital-marketing.html">See our work &amp; services →</a>
+  </main>
+  <footer>RightConnect Marketing · A RightConnect service</footer>
+
+  <script>
+    (() => {
+      const PHONE = '+916382595243';
+      const pageUrl = `${location.origin}/pages/marketing-card.html`;
+      const siteUrl = `${location.origin}/pages/digital-marketing.html`;
+      document.querySelector('#whatsapp').href = `https://wa.me/${PHONE.slice(1)}?text=${encodeURIComponent('Hi RightConnect Marketing! I got your card. I want to know about posters, ads and websites for my business.')}`;
+
+      function toast(text) {
+        const box = document.createElement('div');
+        box.className = 'toast';
+        box.textContent = text;
+        document.body.appendChild(box);
+        setTimeout(() => box.remove(), 2500);
+      }
+
+      // Contact file the phone opens in its address book.
+      document.querySelector('#save').addEventListener('click', () => {
+        const vcard = [
+          'BEGIN:VCARD', 'VERSION:3.0',
+          'N:;Naveenkumar;;;', 'FN:Naveenkumar (RightConnect Marketing)',
+          'ORG:RightConnect Marketing', 'TITLE:Founder',
+          `TEL;TYPE=CELL,VOICE:${PHONE}`,
+          'ADR;TYPE=WORK:;;;Salem;Tamil Nadu;;India',
+          `URL:${siteUrl}`,
+          'NOTE:Posters\\, Facebook & Instagram ads\\, business websites and lead tracking. Co-founder: Vinotha.',
+          'END:VCARD',
+        ].join('\r\n');
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([vcard], { type: 'text/vcard;charset=utf-8' }));
+        link.download = 'RightConnect-Marketing.vcf';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+      });
+
+      document.querySelector('#share').addEventListener('click', async () => {
+        const data = { title: 'RightConnect Marketing', text: 'Posters, ads & websites for your business — RightConnect Marketing, Salem.', url: pageUrl };
+        if (navigator.share) {
+          try { await navigator.share(data); } catch (_) { /* closed the share sheet */ }
+          return;
+        }
+        try { await navigator.clipboard.writeText(pageUrl); toast('Link copied'); } catch (_) { prompt('Copy this link', pageUrl); }
+      });
+    })();
+  </script>
+  <script src="../assets/mobile-install.js" defer></script>
+</body>
+</html>

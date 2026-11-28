@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>RightConnect Marketing — Posters, Ads &amp; Lead Tracking</title>
-  <meta name="description" content="RightConnect Marketing designs scroll-stopping posters, runs ads for your business and tracks every enquiry, so you know what brings customers.">
+  <title>RightConnect Marketing — Posters, Ads, Websites &amp; Lead Tracking</title>
+  <meta name="description" content="RightConnect Marketing designs scroll-stopping posters, runs ads, builds simple business websites and tracks every enquiry, so you know what brings customers.">
   <meta name="theme-color" content="#05070d">
-  <meta property="og:title" content="RightConnect Marketing — Posters · Ads · Lead Tracking">
-  <meta property="og:description" content="Posters that stop the scroll. Ads that bring enquiries. Every lead tracked.">
+  <meta property="og:title" content="RightConnect Marketing — Posters · Ads · Websites · Lead Tracking">
+  <meta property="og:description" content="Posters that stop the scroll. Ads that bring enquiries. A website customers trust. Every lead tracked.">
   <link rel="icon" href="../assets/rightconnect-mark.svg" type="image/svg+xml">
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
@@ -107,6 +107,15 @@
     .stack-card li::before { content:""; flex:none; width:22px; height:22px; margin-top:2px; border-radius:50%; background:radial-gradient(circle,var(--c1) 30%,transparent 32%), rgba(255,255,255,.06); }
     .visual { position:relative; display:grid; place-items:center; min-height:300px; border-radius:24px; overflow:hidden; background:radial-gradient(circle at 30% 20%,color-mix(in srgb,var(--c1) 45%,transparent),transparent 60%), radial-gradient(circle at 80% 90%,color-mix(in srgb,var(--c2) 45%,transparent),transparent 55%), rgba(255,255,255,.03); }
     .mini-posters { display:flex; gap:14px; transform:rotate(-8deg); }
+    .browser { width:min(320px,86%); border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,.18); background:#0c0f18; box-shadow:0 30px 60px rgba(0,0,0,.55); transform:perspective(900px) rotateY(-10deg) rotateX(4deg); animation:bob 6s ease-in-out infinite; }
+    .browser .chrome { display:flex; align-items:center; gap:6px; padding:9px 12px; background:#151a27; }
+    .browser .chrome i { width:9px; height:9px; border-radius:50%; background:#ff5f57; } .browser .chrome i:nth-child(2) { background:#febc2e; } .browser .chrome i:nth-child(3) { background:#28c840; }
+    .browser .chrome span { flex:1; margin-left:8px; padding:3px 10px; border-radius:99px; background:#0c0f18; color:var(--muted); font-size:11px; font-weight:700; }
+    .browser .site { display:grid; gap:10px; padding:14px; }
+    .browser .site-hero { padding:22px 14px; border-radius:10px; background:linear-gradient(140deg,var(--violet),var(--pink)); font:800 22px/1 Syne; }
+    .browser .site-hero small { display:block; margin-top:6px; font:700 11px Manrope; opacity:.85; }
+    .browser .site-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; } .browser .site-row span { height:52px; border-radius:8px; background:rgba(255,255,255,.08); }
+    .browser .site-btn { padding:9px; border-radius:9px; background:#25d366; color:#04110c; text-align:center; font-size:12px; font-weight:800; }
     .mini-posters span { width:110px; aspect-ratio:4/5; border-radius:12px; background:var(--g); box-shadow:0 20px 40px rgba(0,0,0,.5); animation:bob 5s ease-in-out infinite; animation-delay:var(--t); }
     @keyframes bob { 50% { transform:translateY(-16px); } }
     .ad-phone { width:210px; padding:14px; border-radius:30px; border:1px solid rgba(255,255,255,.2); background:#0c0f18; box-shadow:0 30px 60px rgba(0,0,0,.6); }
@@ -209,9 +218,9 @@
     <section class="hero" data-scene id="top">
       <div class="sticky">
         <div class="hero-copy">
-          <span class="eyebrow"><i></i>Poster design · Ads · Lead tracking</span>
+          <span class="eyebrow"><i></i>Posters · Ads · Websites · Lead tracking</span>
           <h1><span class="line"><span>Posters that stop</span></span><span class="line"><span class="grad">the scroll.</span></span></h1>
-          <p class="lead">We design posters for your business, run the ads, and track every enquiry that comes in, so you know exactly what turns into customers.</p>
+          <p class="lead">We design posters for your business, run the ads, build your website, and track every enquiry that comes in, so you know exactly what turns into customers.</p>
           <div class="ctas"><a class="btn wa" data-wa href="https://wa.me/916382595243" target="_blank" rel="noopener">💬 Start on WhatsApp</a><a class="btn ghost" href="#services">See what we do ↓</a></div>
         </div>
         <div class="fan" aria-hidden="true">
@@ -235,7 +244,7 @@
 
     <!-- SERVICES: sticky cards that stack on top of each other -->
     <section class="block" id="services">
-      <div data-reveal><div class="kicker">What we do</div><h2 class="title">Three things.<br><span class="grad">Done properly.</span></h2><p class="sub">We keep it focused: great creatives, ads that reach the right people, and a clear record of every lead they bring.</p></div>
+      <div data-reveal><div class="kicker">What we do</div><h2 class="title">Four things.<br><span class="grad">Done properly.</span></h2><p class="sub">We keep it focused: great creatives, ads that reach the right people, a website that makes you look trusted, and a clear record of every lead they bring.</p></div>
       <div class="stack">
         <article class="stack-card" style="--n:0;--c1:var(--amber);--c2:var(--pink)">
           <div><div class="num">01 — POSTER DESIGN</div><h3>Posters people actually stop for.</h3><p>Offer posters, festival greetings, launch announcements and menu cards, designed for Instagram, Facebook, WhatsApp status and print.</p>
@@ -247,8 +256,13 @@
             <ul><li>Targeting by location, age and interests</li><li>Budget planned with you before anything runs</li><li>We watch results and adjust what isn't working</li><li>Enquiries land directly on your WhatsApp</li></ul></div>
           <div class="visual"><div class="ad-phone"><div class="bar"></div><div class="ad">Festive<br>Offer ✦</div><div class="meta"><span>Sponsored</span><span>♥ ✉ ↗</span></div><div class="cta">Send WhatsApp message</div></div></div>
         </article>
-        <article class="stack-card" style="--n:2;--c1:var(--teal);--c2:var(--violet)">
-          <div><div class="num">03 — EVERY LEAD TRACKED</div><h3>Know what turned into customers.</h3><p>Every enquiry from your ads is recorded and followed up: called, interested, converted. You see what the ads really brought, not just likes.</p>
+        <article class="stack-card" style="--n:2;--c1:var(--violet);--c2:var(--teal)">
+          <div><div class="num">03 — BUSINESS WEBSITE</div><h3>A website customers can trust.</h3><p>A fast, mobile-friendly website for your business: what you do, your photos, prices or menu, location and a WhatsApp button, so people who see your ads or search your name find a real business.</p>
+            <ul><li>One-page or multi-page, designed for phones first</li><li>Services, gallery, Google Maps location and timings</li><li>WhatsApp and call buttons on every page</li><li>Your own domain name (yourshop.in) can be connected</li></ul></div>
+          <div class="visual"><div class="browser"><div class="chrome"><i></i><i></i><i></i><span>yourshop.in</span></div><div class="site"><div class="site-hero">Glow Salon<small>Bridal · Hair · Skin</small></div><div class="site-row"><span></span><span></span><span></span></div><div class="site-btn">💬 Book on WhatsApp</div></div></div></div>
+        </article>
+        <article class="stack-card" style="--n:3;--c1:var(--teal);--c2:var(--violet)">
+          <div><div class="num">04 — EVERY LEAD TRACKED</div><h3>Know what turned into customers.</h3><p>Every enquiry from your ads is recorded and followed up: called, interested, converted. You see what the ads really brought, not just likes.</p>
             <ul><li>Each lead logged with name, number and need</li><li>Follow-ups on time, nobody forgotten</li><li>Clear count of enquiries vs. customers</li><li>Next campaign planned on real results</li></ul></div>
           <div class="visual"><div class="pipeline"><div style="--t:0s;--s:#9aa6bd">Priya · Salon <span>New</span></div><div style="--t:.2s;--s:#ffb547">Karthik · Café <span>Called</span></div><div style="--t:.4s;--s:#8b6cff">Anu · Boutique <span>Interested</span></div><div style="--t:.6s;--s:#2ee6c8">Ravi · Tuition <span>Converted ✓</span></div></div></div>
         </article>
@@ -301,7 +315,8 @@
     <section class="block" id="faq">
       <div data-reveal><div class="kicker">Questions</div><h2 class="title">Good to know.</h2></div>
       <div class="faq">
-        <details data-reveal><summary>Do I need a website to run ads?</summary><p>No. Your ads can open a WhatsApp chat with you directly, so customers can message you in one tap.</p></details>
+        <details data-reveal><summary>Do I need a website to run ads?</summary><p>No. Your ads can open a WhatsApp chat with you directly, so customers can message you in one tap. A website still helps: people often check it before they message, and it gives you a link to share and something to show on Google.</p></details>
+        <details data-reveal><summary>What kind of website do you make?</summary><p>A simple, fast website for your business: your services, photos, prices or menu, location, timings and WhatsApp/call buttons. It works well on phones. Online payments, logins or booking systems are not included; ask us if you need them.</p></details>
         <details data-reveal><summary>Where do the ads run?</summary><p>Mainly Facebook and Instagram, where most local customers spend their time. Ask us if you want something else and we'll tell you honestly whether it fits your business.</p></details>
         <details data-reveal><summary>How much does it cost?</summary><p>It depends on how many posters you need and how much you want to spend on ads. Message us with your business and goal and we'll share a clear plan and price before anything starts.</p></details>
         <details data-reveal><summary>What do you need from me?</summary><p>Your logo (if you have one), a few photos of your shop, product or work, the offer you want to promote and your area. We'll handle the rest.</p></details>
