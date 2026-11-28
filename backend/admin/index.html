@@ -88,7 +88,7 @@
   </style>
 </head>
 <body>
-  <header><div><strong>RightConnect admin</strong><a href="/pages/marketplace.html">Open marketplace ↗</a></div><span id="whoami"></span></header>
+  <header><div><strong>RightConnect admin</strong><a href="/pages/marketplace.html">Open marketplace ↗</a><a id="marketing-leads-link" href="#">Marketing leads ↗</a></div><span id="whoami"></span></header>
   <nav class="sections" id="sections">
     <button data-section="overview" class="active">Overview</button>
     <button data-section="leads">Leads<span class="count" id="leads-due-count" hidden></span></button>
@@ -1100,6 +1100,7 @@
     }
 
     // ---------- startup ----------
+    document.querySelector('#marketing-leads-link').href = `${location.pathname.replace(/\/$/, '')}/marketing-leads`;
     (async () => {
       try {
         const config = await (await fetch(`${apiBase}/auth/provider-config`)).json();

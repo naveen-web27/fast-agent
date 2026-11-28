@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Leads · RightConnect Marketing</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root { --teal:#0f9d8f; --teal-dark:#0b7c71; --ink:#132033; --muted:#63708a; --line:#e4e9f2; --bg:#f5f7fb; --danger:#c0392b; --warn:#b7791f; --ok:#17865a; --shadow:0 18px 40px rgba(19,32,51,.08); }
+    * { box-sizing:border-box; }
+    body { margin:0; font:14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; color:var(--ink); background:var(--bg); }
+    button, input, select, textarea { font:inherit; color:inherit; }
+    button { cursor:pointer; }
+    a { color:var(--teal-dark); }
+    header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 24px; color:#fff; background:linear-gradient(110deg,#101b31,#14324a 60%,#0f6f68); }
+    header strong { font-size:16px; } header small { opacity:.75; } header a { margin-left:14px; color:#bdf2ea; font-size:12px; font-weight:700; text-decoration:none; }
+    .toolbar { position:sticky; top:0; z-index:5; display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:12px 24px; background:#fff; border-bottom:1px solid var(--line); }
+    .toolbar input[type=search] { flex:1 1 220px; min-width:0; padding:9px 12px; border:1px solid var(--line); border-radius:9px; }
+    .toolbar select { width:auto; padding:9px 10px; border-radius:9px; }
+    .views { display:flex; padding:3px; border-radius:10px; background:#eef2f8; }
+    .views button { padding:6px 12px; border:0; border-radius:8px; background:transparent; color:var(--muted); font-weight:700; }
+    .views button.active { color:var(--ink); background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+    .btn { padding:8px 14px; border:1px solid var(--line); border-radius:9px; background:#fff; font-weight:700; }
+    .btn:hover { border-color:#c9d2e3; }
+    .btn.primary { border-color:var(--teal); color:#fff; background:var(--teal); } .btn.primary:hover { background:var(--teal-dark); }
+    .btn.danger { color:var(--danger); } .btn.small { padding:5px 10px; font-size:12px; }
+    .btn:disabled { opacity:.5; cursor:not-allowed; }
+    main { padding:18px 24px 60px; }
+    .notice { padding:14px 16px; border-radius:10px; background:#fff; border:1px solid var(--line); }
+    .notice.error { color:var(--danger); border-color:#f3c7c1; background:#fff6f4; }
+    .stats { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
+    .stat { padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:#fff; }
+    .stat b { display:block; font-size:20px; } .stat span { color:var(--muted); font-size:12px; font-weight:600; }
+    .stat.alert b { color:var(--danger); } button.stat { text-align:left; } button.stat:hover { border-color:var(--teal); }
+    .board { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(250px,1fr); gap:12px; overflow-x:auto; padding-bottom:10px; }
+    .column { display:flex; flex-direction:column; min-height:300px; border-radius:12px; background:#eaeef5; }
+    .column.drop { outline:2px dashed var(--teal); background:#e2f4f1; }
+    .column h3 { display:flex; justify-content:space-between; margin:0; padding:10px 12px; font-size:13px; }
+    .column h3 span { color:var(--muted); }
+    .column .cards { display:grid; align-content:start; gap:8px; padding:0 8px 10px; }
+    .card { padding:10px 11px; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:0 1px 2px rgba(19,32,51,.04); cursor:pointer; }
+    .card:hover { border-color:#b9c6da; } .card.dragging { opacity:.4; }
+    .card strong { display:block; } .card .sub { color:var(--muted); font-size:12px; }
+    .chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+    .chip { padding:2px 8px; border-radius:99px; background:#eef2f8; color:#3d4a63; font-size:11px; font-weight:700; white-space:nowrap; }
+    .chip.overdue { color:#fff; background:var(--danger); } .chip.today { color:#fff; background:var(--warn); } .chip.later { background:#e5f6f2; color:var(--teal-dark); }
+    .chip.paid { background:#dcf3e6; color:var(--ok); } .chip.partial { background:#fff2d6; color:var(--warn); } .chip.due { background:#fde6e3; color:var(--danger); }
+    .card .actions { display:flex; gap:6px; margin-top:8px; }
+    .card .actions a, .card .actions button { flex:1; padding:4px 0; border:1px solid var(--line); border-radius:7px; background:#fff; color:var(--ink); font-size:12px; font-weight:700; text-align:center; text-decoration:none; }
+    .card .actions .wa { color:#128c4b; }
+    table { width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+    th, td { padding:9px 10px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.04em; background:#fafbfd; }
+    tr.row { cursor:pointer; } tr.row:hover { background:#f8fafc; }
+    .table-wrap { overflow-x:auto; }
+    .section-title { margin:18px 0 8px; font-size:14px; } .section-title span { color:var(--muted); font-weight:600; }
+    .followups { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:10px; }
+    .empty { padding:16px; color:var(--muted); text-align:center; }
+    /* drawer */
+    .drawer-back { position:fixed; inset:0; z-index:20; background:rgba(16,27,49,.35); }
+    .drawer { position:fixed; top:0; right:0; bottom:0; z-index:21; width:min(560px,100vw); overflow-y:auto; background:#fff; box-shadow:-20px 0 50px rgba(16,27,49,.2); animation:slide .2s ease-out; }
+    @keyframes slide { from { transform:translateX(30px); opacity:0; } to { transform:none; opacity:1; } }
+    .drawer-head { position:sticky; top:0; z-index:1; display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:16px 18px; background:#fff; border-bottom:1px solid var(--line); }
+    .drawer-head h2 { margin:0; font-size:18px; } .drawer-head .sub { color:var(--muted); font-size:12px; }
+    .drawer section { padding:14px 18px; border-bottom:1px solid var(--line); }
+    .drawer h4 { margin:0 0 8px; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.05em; }
+    .steps { display:flex; flex-wrap:wrap; gap:6px; }
+    .steps button { padding:6px 10px; border:1px solid var(--line); border-radius:99px; background:#fff; font-size:12px; font-weight:700; }
+    .steps button.on { color:#fff; border-color:var(--teal); background:var(--teal); }
+    .steps button.lost.on { border-color:var(--danger); background:var(--danger); }
+    .quick { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+    .quick button { padding:8px 6px; border:1px solid var(--line); border-radius:9px; background:#fafbfd; font-size:12px; font-weight:700; }
+    .quick button:hover, .quick button.on { border-color:var(--teal); background:#e5f6f2; }
+    .log-form { display:grid; gap:8px; margin-top:10px; padding:12px; border-radius:10px; background:#f5f7fb; }
+    .when { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+    .when button { padding:4px 10px; border:1px solid var(--line); border-radius:99px; background:#fff; font-size:12px; font-weight:700; }
+    .when button.on { border-color:var(--teal); color:var(--teal-dark); background:#e5f6f2; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    label { display:grid; gap:4px; color:var(--muted); font-size:12px; font-weight:700; }
+    label.full { grid-column:1 / -1; }
+    input, select, textarea { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; font-weight:500; }
+    textarea { min-height:70px; resize:vertical; }
+    input:focus, select:focus, textarea:focus { outline:2px solid #bfe8e2; border-color:var(--teal); }
+    .money { display:flex; justify-content:space-between; font-size:13px; } .bar { height:8px; margin-top:6px; border-radius:99px; background:#eef2f8; overflow:hidden; }
+    .bar i { display:block; height:100%; background:linear-gradient(90deg,var(--teal),#3fc79a); }
+    .stars { display:flex; gap:2px; } .stars button { padding:0 2px; border:0; background:none; color:#d5dbe6; font-size:24px; line-height:1; }
+    .stars button.on { color:#e3a315; }
+    .timeline { display:grid; gap:0; margin:0; padding:0; list-style:none; }
+    .timeline li { position:relative; display:flex; gap:10px; padding:8px 0 8px 2px; border-bottom:1px dashed var(--line); }
+    .timeline .icon { flex:none; display:grid; place-items:center; width:28px; height:28px; border-radius:50%; background:#eef2f8; font-size:14px; }
+    .timeline .body { flex:1; min-width:0; } .timeline .body p { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .timeline small { color:var(--muted); font-size:11px; }
+    .timeline .remove { align-self:start; border:0; background:none; color:#9aa5b8; font-size:16px; }
+    .timeline .remove:hover { color:var(--danger); }
+    .row-actions { display:flex; justify-content:space-between; gap:8px; margin-top:12px; }
+    .contact { display:flex; gap:6px; margin-top:8px; }
+    .contact a { padding:6px 12px; border:1px solid var(--line); border-radius:8px; color:var(--ink); font-size:12px; font-weight:700; text-decoration:none; }
+    .contact a.wa { border-color:#bfe7cf; color:#128c4b; background:#effaf3; }
+    dialog { width:min(560px,calc(100vw - 24px)); padding:0; border:0; border-radius:14px; box-shadow:var(--shadow); }
+    dialog::backdrop { background:rgba(16,27,49,.45); }
+    dialog form { padding:20px; } dialog h2 { margin:0 0 4px; } dialog p.help { margin:0 0 14px; color:var(--muted); }
+    .form-error { min-height:18px; margin:8px 0 0; color:var(--danger); font-weight:700; }
+    .toast { position:fixed; left:50%; bottom:22px; z-index:40; padding:10px 16px; border-radius:10px; color:#fff; background:#132033; transform:translateX(-50%); box-shadow:var(--shadow); font-weight:700; }
+    .toast.error { background:var(--danger); }
+    @media (max-width:1000px) { .stats { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+    @media (max-width:640px) {
+      header, .toolbar, main { padding-left:12px; padding-right:12px; }
+      .stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .grid2 { grid-template-columns:1fr; } .quick { grid-template-columns:repeat(2,1fr); }
+      .board { grid-auto-columns:85%; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div><strong>RightConnect Marketing</strong> <small>· Leads, follow-ups &amp; payments</small><a id="console-link" href="#">← Admin console</a><a href="/pages/digital-marketing.html" target="_blank" rel="noopener">Service page ↗</a></div>
+    <small id="whoami"></small>
+  </header>
+  <div class="toolbar">
+    <div class="views" role="tablist">
+      <button type="button" data-view="board" class="active">Pipeline</button>
+      <button type="button" data-view="followups">Follow-ups</button>
+      <button type="button" data-view="list">All leads</button>
+    </div>
+    <input type="search" id="search" placeholder="Search name, phone, business, city, notes…" autocomplete="off">
+    <select id="source-filter" aria-label="Source"><option value="">All sources</option></select>
+    <button type="button" class="btn" id="export">Download for Excel</button>
+    <button type="button" class="btn primary" id="add-lead">+ Add lead</button>
+  </div>
+  <main>
+    <div class="stats" id="stats"></div>
+    <div id="content"><p class="notice">Loading…</p></div>
+  </main>
+
+  <div id="drawer-root"></div>
+
+  <dialog id="add-dialog">
+    <form id="add-form" method="dialog" novalidate>
+      <h2>New lead</h2>
+      <p class="help">Copy the number from WhatsApp. Any format works: 98765 43210, +91-98765-43210…</p>
+      <div class="grid2">
+        <label>Phone / WhatsApp *<input name="phone" required inputmode="tel" autocomplete="off"></label>
+        <label>Name<input name="full_name" maxlength="120"></label>
+        <label>Business name<input name="business_name" maxlength="160"></label>
+        <label>Business type<input name="business_type" list="business-types" maxlength="80"></label>
+        <label>Wants<input name="service" list="services" maxlength="120" value="Posters + Ads"></label>
+        <label>Came from<input name="source" list="sources" maxlength="80" value="WhatsApp ad"></label>
+        <label>City<input name="city" maxlength="100"></label>
+        <label>Quoted price (₹)<input name="deal_amount" type="number" min="0" step="1" inputmode="numeric"></label>
+        <label>Follow up on<input name="follow_up_on" type="date"></label>
+        <label>Next step<input name="next_action" maxlength="200" placeholder="e.g. Send sample posters"></label>
+        <label class="full">Notes<textarea name="notes" maxlength="4000" placeholder="What did they ask for? Budget, offer, deadline…"></textarea></label>
+      </div>
+      <p class="form-error" id="add-error"></p>
+      <div class="row-actions"><button type="button" class="btn" id="add-cancel">Cancel</button><button type="submit" class="btn primary">Save lead</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="confirm-dialog">
+    <form method="dialog">
+      <h2 id="confirm-title">Are you sure?</h2>
+      <p class="help" id="confirm-text"></p>
+      <div class="row-actions"><button value="cancel" class="btn">Cancel</button><button value="ok" class="btn primary" id="confirm-ok" style="background:var(--danger);border-color:var(--danger)">Delete</button></div>
+    </form>
+  </dialog>
+
+  <datalist id="services"><option value="Poster design"><option value="Ads"><option value="Posters + Ads"><option value="Festival posters"><option value="Monthly posters + ads"></datalist>
+  <datalist id="sources"><option value="WhatsApp ad"><option value="Instagram ad"><option value="Facebook ad"><option value="Google form"><option value="Referral"><option value="Walk-in"><option value="Website"></datalist>
+  <datalist id="business-types"><option value="Shop"><option value="Salon / Beauty"><option value="Restaurant / Café"><option value="Clinic / Hospital"><option value="School / Tuition"><option value="Real estate"><option value="Gym / Fitness"><option value="Textiles / Boutique"><option value="Service business"></datalist>
+  <div class="toast" id="toast" hidden></div>
+
+  <script>
+    const apiBase = '/api/v1';
+    const IST = 'Asia/Kolkata';
+    const STATUSES = [
+      ['new', 'New'], ['called', 'Called'], ['interested', 'Interested'], ['converted', 'Converted'],
+      ['in_progress', 'Work in progress'], ['completed', 'Completed'], ['lost', 'Lost'],
+    ];
+    const STATUS_LABEL = Object.fromEntries(STATUSES);
+    const CLOSED = ['completed', 'lost'];
+    const WON = ['converted', 'in_progress', 'completed'];
+    const KIND_ICON = { note: '📝', call: '📞', whatsapp: '💬', meeting: '🤝', payment: '₹', status: '➜' };
+    // Quick-log buttons: [id, label, kind, prefilled text, default follow-up in days (null = leave as is)]
+    const QUICK = [
+      ['answered', '📞 Talked', 'call', 'Talked on call: ', 3],
+      ['no-answer', '📵 No answer', 'call', 'Called, no answer.', 1],
+      ['whatsapp', '💬 WhatsApp', 'whatsapp', 'Messaged on WhatsApp: ', 1],
+      ['meeting', '🤝 Meeting', 'meeting', 'Met: ', null],
+      ['payment', '₹ Payment', 'payment', '', null],
+      ['note', '📝 Note', 'note', '', null],
+    ];
+
+    let authClient = null;
+    let leads = [];
+    let view = 'board';
+    let openLeadId = null;
+    let activities = [];
+    let quickOpen = null;
+
+    // ---------- helpers ----------
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+    function today() { return new Intl.DateTimeFormat('en-CA', { timeZone: IST }).format(new Date()); }
+    function addDays(iso, days) {
+      const date = new Date(`${iso}T12:00:00Z`);
+      date.setUTCDate(date.getUTCDate() + days);
+      return date.toISOString().slice(0, 10);
+    }
+    function formatDay(iso) {
+      if (!iso) return '';
+      const diff = Math.round((new Date(`${iso}T12:00:00Z`) - new Date(`${today()}T12:00:00Z`)) / 86400000);
+      if (diff === 0) return 'Today';
+      if (diff === 1) return 'Tomorrow';
+      if (diff === -1) return 'Yesterday';
+      if (diff < 0) return `${-diff} days late`;
+      return new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+    }
+    function formatWhen(iso) { return new Date(iso).toLocaleString('en-IN', { timeZone: IST, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }); }
+    function money(value) { return `₹${Number(value || 0).toLocaleString('en-IN')}`; }
+    function prettyPhone(phone) {
+      const match = /^\+91(\d{5})(\d{5})$/.exec(phone || '');
+      return match ? `+91 ${match[1]} ${match[2]}` : phone;
+    }
+    function leadName(lead) { return lead.full_name || lead.business_name || prettyPhone(lead.phone); }
+    function isDue(lead) { return lead.follow_up_on && lead.follow_up_on <= today() && !CLOSED.includes(lead.status); }
+    function followChip(lead) {
+      if (!lead.follow_up_on || CLOSED.includes(lead.status)) return '';
+      const cls = lead.follow_up_on < today() ? 'overdue' : lead.follow_up_on === today() ? 'today' : 'later';
+      return `<span class="chip ${cls}">⏰ ${escapeHtml(formatDay(lead.follow_up_on))}</span>`;
+    }
+    function paymentChip(lead) {
+      if (lead.payment === 'paid') return `<span class="chip paid">Paid ${money(lead.paid_amount)}</span>`;
+      if (lead.payment === 'partial') return `<span class="chip partial">${money(lead.deal_amount - lead.paid_amount)} pending</span>`;
+      if (lead.payment === 'due' && WON.includes(lead.status)) return `<span class="chip due">${money(lead.deal_amount)} due</span>`;
+      if (lead.deal_amount) return `<span class="chip">${money(lead.deal_amount)}</span>`;
+      return '';
+    }
+    function whatsappText(lead) {
+      const name = lead.full_name ? ` ${lead.full_name}` : '';
+      const what = lead.service || 'posters and ads';
+      const pending = (lead.deal_amount || 0) - (lead.paid_amount || 0);
+      if (lead.status === 'completed') return `Hi${name}, thank you for choosing RightConnect Marketing! Could you share a quick feedback on the ${what}? It really helps us.`;
+      if (WON.includes(lead.status) && pending > 0) return `Hi${name}, quick update from RightConnect Marketing on your ${what}. Pending amount: ₹${pending.toLocaleString('en-IN')}.`;
+      if (WON.includes(lead.status)) return `Hi${name}, quick update from RightConnect Marketing on your ${what}: `;
+      return `Hi${name}, this is RightConnect Marketing. Thanks for your enquiry about ${what}${lead.business_name ? ` for ${lead.business_name}` : ''}. When is a good time to talk?`;
+    }
+    function waLink(lead) { return `https://wa.me/${lead.phone.replace(/\D/g, '')}?text=${encodeURIComponent(whatsappText(lead))}`; }
+
+    let toastTimer = null;
+    function showToast(message, error = false) {
+      const toast = document.querySelector('#toast');
+      toast.textContent = message;
+      toast.className = `toast${error ? ' error' : ''}`;
+      toast.hidden = false;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toast.hidden = true; }, 3200);
+    }
+
+    async function api(path, options = {}) {
+      // Fresh token every call: this page stays open all day and Supabase refreshes the session itself.
+      const token = (await authClient.auth.getSession()).data.session?.access_token;
+      const response = await fetch(`${apiBase}/admin/marketing-leads${path}`, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        const detail = typeof body.detail === 'string' ? body.detail : body.detail?.[0]?.msg?.replace(/^Value error, /, '');
+        throw new Error(detail || `Request failed (${response.status})`);
+      }
+      return response.status === 204 ? null : response.json();
+    }
+
+    function confirmAction(title, text, okLabel = 'Delete') {
+      const dialog = document.querySelector('#confirm-dialog');
+      document.querySelector('#confirm-title').textContent = title;
+      document.querySelector('#confirm-text').textContent = text;
+      document.querySelector('#confirm-ok').textContent = okLabel;
+      dialog.returnValue = '';
+      dialog.showModal();
+      // Resolve from the buttons themselves; "close" (Esc) is only the fallback.
+      return new Promise((resolve) => {
+        const finish = (ok) => { if (dialog.open) dialog.close(ok ? 'ok' : 'cancel'); resolve(ok); };
+        document.querySelector('#confirm-ok').onclick = (event) => { event.preventDefault(); finish(true); };
+        dialog.querySelector('button[value=cancel]').onclick = (event) => { event.preventDefault(); finish(false); };
+        dialog.addEventListener('close', () => resolve(dialog.returnValue === 'ok'), { once: true });
+      });
+    }
+
+    function replaceLead(updated) {
+      const index = leads.findIndex((lead) => lead.id === updated.id);
+      if (index >= 0) leads[index] = updated; else leads.unshift(updated);
+    }
+
+    // ---------- filtering ----------
+    function visibleLeads() {
+      const query = document.querySelector('#search').value.trim().toLowerCase();
+      const digits = query.replace(/\D/g, '');
+      const source = document.querySelector('#source-filter').value;
+      return leads.filter((lead) => {
+        if (source && lead.source !== source) return false;
+        if (!query) return true;
+        const text = [lead.full_name, lead.business_name, lead.business_type, lead.city, lead.service, lead.source, lead.notes, lead.next_action, lead.feedback].join(' ').toLowerCase();
+        return text.includes(query) || (digits.length >= 3 && lead.phone.includes(digits));
+      });
+    }
+
+    // ---------- rendering ----------
+    function renderStats() {
+      const open = leads.filter((lead) => !CLOSED.includes(lead.status)).length;
+      const due = leads.filter(isDue).length;
+      const won = leads.filter((lead) => WON.includes(lead.status)).length;
+      const decided = leads.filter((lead) => WON.includes(lead.status) || lead.status === 'lost').length;
+      const collected = leads.reduce((sum, lead) => sum + lead.paid_amount, 0);
+      const pending = leads.filter((lead) => WON.includes(lead.status)).reduce((sum, lead) => sum + Math.max((lead.deal_amount || 0) - lead.paid_amount, 0), 0);
+      const rated = leads.filter((lead) => lead.rating);
+      const average = rated.length ? (rated.reduce((sum, lead) => sum + lead.rating, 0) / rated.length).toFixed(1) : '–';
+      document.querySelector('#stats').innerHTML = `
+        <div class="stat"><b>${leads.length}</b><span>${open} open leads</span></div>
+        <button type="button" class="stat ${due ? 'alert' : ''}" data-goto="followups"><b>${due}</b><span>Follow-ups due today</span></button>
+        <div class="stat"><b>${won}</b><span>Clients won${decided ? ` · ${Math.round((won / decided) * 100)}% of decided` : ''}</span></div>
+        <div class="stat"><b>${money(collected)}</b><span>Payments received</span></div>
+        <div class="stat ${pending ? 'alert' : ''}"><b>${money(pending)}</b><span>Still to collect</span></div>
+        <div class="stat"><b>${average}${rated.length ? ' ★' : ''}</b><span>${rated.length} feedback rating${rated.length === 1 ? '' : 's'}</span></div>`;
+    }
+
+    function card(lead) {
+      return `<article class="card" draggable="true" data-open="${lead.id}" data-id="${lead.id}">
+        <strong>${escapeHtml(leadName(lead))}</strong>
+        <div class="sub">${escapeHtml([lead.full_name && lead.business_name, lead.business_type, lead.city].filter(Boolean).join(' · ') || prettyPhone(lead.phone))}</div>
+        <div class="chips">${lead.service ? `<span class="chip">${escapeHtml(lead.service)}</span>` : ''}${followChip(lead)}${paymentChip(lead)}${lead.rating ? `<span class="chip">${'★'.repeat(lead.rating)}</span>` : ''}</div>
+        ${lead.next_action && !CLOSED.includes(lead.status) ? `<div class="sub" style="margin-top:6px">→ ${escapeHtml(lead.next_action)}</div>` : ''}
+        <div class="actions"><a href="tel:${escapeHtml(lead.phone)}">📞 Call</a><a class="wa" href="${escapeHtml(waLink(lead))}" target="_blank" rel="noopener" data-wa="${lead.id}">💬 WhatsApp</a></div>
+      </article>`;
+    }
+
+    function renderBoard(list) {
+      return `<div class="board">${STATUSES.map(([status, label]) => {
+        const items = list.filter((lead) => lead.status === status);
+        return `<div class="column" data-status="${status}"><h3>${label}<span>${items.length}</span></h3><div class="cards">${items.map(card).join('') || '<div class="empty">Drop here</div>'}</div></div>`;
+      }).join('')}</div>`;
+    }
+
+    function renderFollowups(list) {
+      const open = list.filter((lead) => !CLOSED.includes(lead.status));
+      const byDate = (a, b) => (a.follow_up_on || '').localeCompare(b.follow_up_on || '');
+      const groups = [
+        ['Late', open.filter((lead) => lead.follow_up_on && lead.follow_up_on < today()).sort(byDate)],
+        ['Today', open.filter((lead) => lead.follow_up_on === today())],
+        ['Next 7 days', open.filter((lead) => lead.follow_up_on > today() && lead.follow_up_on <= addDays(today(), 7)).sort(byDate)],
+        ['No follow-up date', open.filter((lead) => !lead.follow_up_on)],
+      ];
+      return groups.map(([title, items]) => `<h3 class="section-title">${title} <span>${items.length}</span></h3>
+        ${items.length ? `<div class="followups">${items.map(card).join('')}</div>` : '<p class="empty">Nothing here.</p>'}`).join('');
+    }
+
+    function renderList(list) {
+      if (!list.length) return '<p class="notice">No leads match.</p>';
+      return `<div class="table-wrap"><table><thead><tr><th>Lead</th><th>Phone</th><th>Wants</th><th>Status</th><th>Follow-up</th><th>Price</th><th>Received</th><th>Rating</th><th>Added</th></tr></thead><tbody>
+        ${list.map((lead) => `<tr class="row" data-open="${lead.id}">
+          <td><strong>${escapeHtml(leadName(lead))}</strong><div class="sub" style="color:var(--muted);font-size:12px">${escapeHtml([lead.business_type, lead.city, lead.source].filter(Boolean).join(' · '))}</div></td>
+          <td>${escapeHtml(prettyPhone(lead.phone))}</td>
+          <td>${escapeHtml(lead.service || '')}</td>
+          <td><select data-status-of="${lead.id}" aria-label="Status">${STATUSES.map(([value, label]) => `<option value="${value}" ${value === lead.status ? 'selected' : ''}>${label}</option>`).join('')}</select></td>
+          <td>${followChip(lead)}</td>
+          <td>${lead.deal_amount != null ? money(lead.deal_amount) : ''}</td>
+          <td>${lead.paid_amount ? money(lead.paid_amount) : ''}</td>
+          <td>${lead.rating ? '★'.repeat(lead.rating) : ''}</td>
+          <td>${new Date(lead.created_at).toLocaleDateString('en-IN', { timeZone: IST, day: 'numeric', month: 'short' })}</td>
+        </tr>`).join('')}
+      </tbody></table></div>`;
+    }
+
+    function renderSources() {
+      const select = document.querySelector('#source-filter');
+      const current = select.value;
+      const sources = [...new Set(leads.map((lead) => lead.source).filter(Boolean))].sort();
+      select.innerHTML = `<option value="">All sources</option>${sources.map((source) => `<option ${source === current ? 'selected' : ''}>${escapeHtml(source)}</option>`).join('')}`;
+    }
+
+    function render() {
+      renderStats();
+      renderSources();
+      document.querySelectorAll('[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === view));
+      const list = visibleLeads();
+      const content = document.querySelector('#content');
+      if (!leads.length) {
+        content.innerHTML = '<div class="notice"><strong>No leads yet.</strong> When someone messages you from an ad, tap <b>+ Add lead</b> and paste their number. Then track every call, payment and feedback here.</div>';
+        return;
+      }
+      content.innerHTML = view === 'board' ? renderBoard(list) : view === 'followups' ? renderFollowups(list) : renderList(list);
+    }
+
+    // ---------- lead drawer ----------
+    function closeDrawer() { openLeadId = null; quickOpen = null; document.querySelector('#drawer-root').innerHTML = ''; }
+
+    async function openDrawer(id) {
+      openLeadId = id;
+      quickOpen = null;
+      activities = [];
+      renderDrawer();
+      try {
+        activities = await api(`/${id}/activities`);
+        if (openLeadId === id) renderDrawer();
+      } catch (error) { showToast(error.message, true); }
+    }
+
+    function quickForm(lead) {
+      const item = QUICK.find(([id]) => id === quickOpen);
+      if (!item) return '';
+      const [, , kind, text, days] = item;
+      const isPayment = kind === 'payment';
+      const pending = Math.max((lead.deal_amount || 0) - lead.paid_amount, 0);
+      const follow = days == null ? '' : addDays(today(), days);
+      return `<form class="log-form" id="log-form" data-kind="${kind}">
+        ${isPayment ? `<label>Amount received (₹)<input name="amount" type="number" min="1" step="1" required inputmode="numeric" value="${pending || ''}"></label>` : ''}
+        <label>${isPayment ? 'Note (UPI / cash / advance…)' : 'What happened?'}<textarea name="text" maxlength="2000" ${isPayment ? '' : 'required'}>${escapeHtml(text)}</textarea></label>
+        <div class="when"><span style="color:var(--muted);font-size:12px;font-weight:700">Next follow-up:</span>
+          ${[['', 'Keep'], [addDays(today(), 1), 'Tomorrow'], [addDays(today(), 3), '3 days'], [addDays(today(), 7), '1 week']].map(([value, text]) => `<button type="button" data-when="${value}" class="${value === follow ? 'on' : ''}">${text}</button>`).join('')}
+          <input type="date" name="follow_up_on" value="${follow}" style="width:auto">
+        </div>
+        <div class="row-actions"><button type="button" class="btn small" data-quick-cancel>Cancel</button><button type="submit" class="btn primary small">Save</button></div>
+      </form>`;
+    }
+
+    function timeline() {
+      if (!activities.length) return '<p class="empty">No history yet. Log your first call or WhatsApp above.</p>';
+      return `<ul class="timeline">${activities.map((entry) => `<li>
+        <span class="icon">${KIND_ICON[entry.kind] || '•'}</span>
+        <div class="body">
+          ${entry.kind === 'payment' ? `<p><strong>Payment ${money(entry.amount)}</strong></p>` : ''}
+          ${entry.text ? `<p>${escapeHtml(entry.text)}</p>` : ''}
+          <small>${escapeHtml(formatWhen(entry.created_at))}${entry.created_by_name ? ` · ${escapeHtml(entry.created_by_name)}` : ''}</small>
+        </div>
+        ${entry.kind === 'status' ? '' : `<button type="button" class="remove" title="Delete entry" data-remove-activity="${entry.id}">×</button>`}
+      </li>`).join('')}</ul>`;
+    }
+
+    function renderDrawer() {
+      const lead = leads.find((item) => item.id === openLeadId);
+      const root = document.querySelector('#drawer-root');
+      if (!lead) { root.innerHTML = ''; return; }
+      const paidPercent = lead.deal_amount ? Math.min(100, Math.round((lead.paid_amount / lead.deal_amount) * 100)) : (lead.paid_amount ? 100 : 0);
+      const value = (field) => escapeHtml(lead[field] ?? '');
+      root.innerHTML = `<div class="drawer-back" data-close-drawer></div>
+      <aside class="drawer" role="dialog" aria-label="Lead details">
+        <div class="drawer-head">
+          <div><h2>${escapeHtml(leadName(lead))}</h2><div class="sub">${escapeHtml(prettyPhone(lead.phone))}${lead.source ? ` · from ${escapeHtml(lead.source)}` : ''} · added ${escapeHtml(formatWhen(lead.created_at))}</div>
+            <div class="contact"><a href="tel:${escapeHtml(lead.phone)}">📞 Call</a><a class="wa" href="${escapeHtml(waLink(lead))}" target="_blank" rel="noopener" data-wa="${lead.id}">💬 WhatsApp</a></div></div>
+          <button type="button" class="btn small" data-close-drawer aria-label="Close">✕</button>
+        </div>
+        <section><h4>Stage</h4><div class="steps">${STATUSES.map(([status, label]) => `<button type="button" data-set-status="${status}" class="${status === lead.status ? 'on' : ''} ${status === 'lost' ? 'lost' : ''}">${label}</button>`).join('')}</div></section>
+        <section><h4>Log follow-up</h4>
+          <div class="quick">${QUICK.map(([id, label]) => `<button type="button" data-quick="${id}" class="${quickOpen === id ? 'on' : ''}">${label}</button>`).join('')}</div>
+          ${quickForm(lead)}
+        </section>
+        <section><h4>Payment</h4>
+          <div class="money"><span>Received <strong>${money(lead.paid_amount)}</strong></span><span>${lead.deal_amount != null ? `of ${money(lead.deal_amount)}` : 'No price set'}</span></div>
+          <div class="bar"><i style="width:${paidPercent}%"></i></div>
+        </section>
+        <form id="lead-form">
+          <section><h4>Follow-up &amp; price</h4><div class="grid2">
+            <label>Follow up on<input type="date" name="follow_up_on" value="${value('follow_up_on')}"></label>
+            <label>Quoted price (₹)<input type="number" name="deal_amount" min="0" step="1" inputmode="numeric" value="${value('deal_amount')}"></label>
+            <label class="full">Next step<input name="next_action" maxlength="200" value="${value('next_action')}" placeholder="e.g. Share 3 poster samples, send quotation"></label>
+          </div></section>
+          <section><h4>Details</h4><div class="grid2">
+            <label>Name<input name="full_name" maxlength="120" value="${value('full_name')}"></label>
+            <label>Phone / WhatsApp<input name="phone" maxlength="30" inputmode="tel" value="${value('phone')}"></label>
+            <label>Business name<input name="business_name" maxlength="160" value="${value('business_name')}"></label>
+            <label>Business type<input name="business_type" list="business-types" maxlength="80" value="${value('business_type')}"></label>
+            <label>Wants<input name="service" list="services" maxlength="120" value="${value('service')}"></label>
+            <label>Came from<input name="source" list="sources" maxlength="80" value="${value('source')}"></label>
+            <label>City<input name="city" maxlength="100" value="${value('city')}"></label>
+            <label class="full">Notes<textarea name="notes" maxlength="4000">${value('notes')}</textarea></label>
+          </div></section>
+          <section><h4>Client feedback</h4>
+            <div class="stars" role="radiogroup" aria-label="Rating">${[1, 2, 3, 4, 5].map((star) => `<button type="button" data-star="${star}" class="${lead.rating >= star ? 'on' : ''}" aria-label="${star} star${star > 1 ? 's' : ''}">★</button>`).join('')}</div>
+            <input type="hidden" name="rating" value="${value('rating')}">
+            <label style="margin-top:8px">What did they say?<textarea name="feedback" maxlength="2000" placeholder="Ask after delivery: happy with the posters? Did the ads bring enquiries?">${value('feedback')}</textarea></label>
+            <div class="row-actions"><button type="button" class="btn danger small" data-delete-lead>Delete lead</button><button type="submit" class="btn primary">Save changes</button></div>
+          </section>
+        </form>
+        <section><h4>History</h4>${timeline()}</section>
+      </aside>`;
+    }
+
+    function formValues(form) {
+      const data = Object.fromEntries(new FormData(form).entries());
+      for (const key of Object.keys(data)) if (typeof data[key] === 'string') data[key] = data[key].trim() || null;
+      for (const key of ['deal_amount', 'rating', 'amount']) if (data[key] != null) data[key] = Number(data[key]);
+      return data;
+    }
+
+    async function setStatus(id, status) {
+      const lead = leads.find((item) => item.id === id);
+      if (!lead || lead.status === status) return;
+      try {
+        replaceLead(await api(`/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }));
+        showToast(`${leadName(lead)} → ${STATUS_LABEL[status]}`);
+        render();
+        if (openLeadId === id) await openDrawer(id);
+      } catch (error) { showToast(error.message, true); render(); }
+    }
+
+    async function logActivity(id, body) {
+      const result = await api(`/${id}/activities`, { method: 'POST', body: JSON.stringify(body) });
+      replaceLead(result.lead);
+      render();
+      return result;
+    }
+
+    // ---------- events ----------
+    document.querySelector('#content').addEventListener('change', (event) => {
+      const select = event.target.closest('[data-status-of]');
+      if (select) setStatus(select.dataset.statusOf, select.value);
+    });
+
+    document.addEventListener('click', async (event) => {
+      const goto = event.target.closest('[data-goto]');
+      if (goto) { view = goto.dataset.goto; render(); return; }
+      const wa = event.target.closest('[data-wa]');
+      if (wa) {
+        // Let the link open WhatsApp, and note the message in the history (a New lead becomes Called).
+        logActivity(wa.dataset.wa, { kind: 'whatsapp', text: 'Messaged on WhatsApp.' })
+          .then(() => { if (openLeadId === wa.dataset.wa) openDrawer(openLeadId); })
+          .catch((error) => showToast(error.message, true));
+        return;
+      }
+      if (event.target.closest('a, select, input, textarea')) return;
+      if (event.target.closest('[data-close-drawer]')) { closeDrawer(); return; }
+      const opener = event.target.closest('[data-open]');
+      if (opener) { openDrawer(opener.dataset.open); return; }
+      if (!openLeadId) return;
+      const lead = leads.find((item) => item.id === openLeadId);
+      const statusButton = event.target.closest('[data-set-status]');
+      if (statusButton) { setStatus(openLeadId, statusButton.dataset.setStatus); return; }
+      const quick = event.target.closest('[data-quick]');
+      if (quick) {
+        quickOpen = quickOpen === quick.dataset.quick ? null : quick.dataset.quick;
+        renderDrawer();
+        document.querySelector('#log-form [name=amount], #log-form textarea')?.focus();
+        return;
+      }
+      if (event.target.closest('[data-quick-cancel]')) { quickOpen = null; renderDrawer(); return; }
+      const when = event.target.closest('[data-when]');
+      if (when) {
+        document.querySelector('#log-form [name=follow_up_on]').value = when.dataset.when;
+        document.querySelectorAll('#log-form [data-when]').forEach((button) => button.classList.toggle('on', button === when));
+        return;
+      }
+      const star = event.target.closest('[data-star]');
+      if (star) {
+        const input = document.querySelector('#lead-form [name=rating]');
+        input.value = input.value === star.dataset.star ? '' : star.dataset.star;
+        document.querySelectorAll('[data-star]').forEach((button) => button.classList.toggle('on', Number(button.dataset.star) <= Number(input.value || 0)));
+        return;
+      }
+      const remove = event.target.closest('[data-remove-activity]');
+      if (remove) {
+        if (!await confirmAction('Delete this entry?', 'Use this to fix a mistake, e.g. a payment typed wrong.')) return;
+        try {
+          const result = await api(`/${openLeadId}/activities/${remove.dataset.removeActivity}`, { method: 'DELETE' });
+          replaceLead(result.lead);
+          activities = activities.filter((entry) => entry.id !== remove.dataset.removeActivity);
+          render();
+          renderDrawer();
+        } catch (error) { showToast(error.message, true); }
+        return;
+      }
+      if (event.target.closest('[data-delete-lead]')) {
+        if (!await confirmAction(`Delete ${leadName(lead)}?`, 'The lead and its whole history (calls, payments, feedback) are removed for good.')) return;
+        try {
+          await api(`/${lead.id}`, { method: 'DELETE' });
+          leads = leads.filter((item) => item.id !== lead.id);
+          closeDrawer();
+          render();
+          showToast('Lead deleted');
+        } catch (error) { showToast(error.message, true); }
+      }
+    });
+
+    document.addEventListener('submit', async (event) => {
+      if (event.target.id === 'log-form') {
+        event.preventDefault();
+        const form = event.target;
+        const data = formValues(form);
+        const body = { kind: form.dataset.kind, text: data.text, follow_up_on: data.follow_up_on };
+        if (form.dataset.kind === 'payment') body.amount = data.amount;
+        const button = form.querySelector('[type=submit]');
+        button.disabled = true;
+        try {
+          const id = openLeadId;
+          await logActivity(id, body);
+          showToast('Saved');
+          if (openLeadId === id) await openDrawer(id);
+        } catch (error) { showToast(error.message, true); button.disabled = false; }
+      }
+      if (event.target.id === 'lead-form') {
+        event.preventDefault();
+        const form = event.target;
+        const button = form.querySelector('[type=submit]');
+        button.disabled = true;
+        try {
+          replaceLead(await api(`/${openLeadId}`, { method: 'PATCH', body: JSON.stringify(formValues(form)) }));
+          showToast('Saved');
+          render();
+          renderDrawer();
+        } catch (error) { showToast(error.message, true); button.disabled = false; }
+      }
+    });
+
+    // Drag a card to another column to change its stage.
+    let dragId = null;
+    document.querySelector('#content').addEventListener('dragstart', (event) => {
+      const cardEl = event.target.closest('.card');
+      if (!cardEl) return;
+      dragId = cardEl.dataset.id;
+      cardEl.classList.add('dragging');
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', dragId);
+    });
+    document.querySelector('#content').addEventListener('dragend', (event) => { event.target.closest('.card')?.classList.remove('dragging'); });
+    document.querySelector('#content').addEventListener('dragover', (event) => {
+      const column = event.target.closest('.column');
+      if (!column || !dragId) return;
+      event.preventDefault();
+      document.querySelectorAll('.column.drop').forEach((item) => item !== column && item.classList.remove('drop'));
+      column.classList.add('drop');
+    });
+    document.querySelector('#content').addEventListener('dragleave', (event) => {
+      const column = event.target.closest('.column');
+      if (column && !column.contains(event.relatedTarget)) column.classList.remove('drop');
+    });
+    document.querySelector('#content').addEventListener('drop', (event) => {
+      const column = event.target.closest('.column');
+      if (!column || !dragId) return;
+      event.preventDefault();
+      column.classList.remove('drop');
+      const id = dragId;
+      dragId = null;
+      setStatus(id, column.dataset.status);
+    });
+
+    document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => { view = button.dataset.view; render(); }));
+    document.querySelector('#search').addEventListener('input', render);
+    document.querySelector('#source-filter').addEventListener('change', render);
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && openLeadId && !document.querySelector('dialog[open]')) closeDrawer(); });
+
+    // ---------- add lead ----------
+    const addDialog = document.querySelector('#add-dialog');
+    const addForm = document.querySelector('#add-form');
+    document.querySelector('#add-lead').addEventListener('click', () => {
+      addForm.reset();
+      addForm.follow_up_on.value = addDays(today(), 1);
+      document.querySelector('#add-error').textContent = '';
+      addDialog.showModal();
+      addForm.phone.focus();
+    });
+    document.querySelector('#add-cancel').addEventListener('click', () => addDialog.close());
+    addForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const errorBox = document.querySelector('#add-error');
+      const data = formValues(addForm);
+      if (!data.phone) { errorBox.textContent = 'Enter the phone number.'; return; }
+      const button = addForm.querySelector('[type=submit]');
+      button.disabled = true;
+      try {
+        const lead = await api('', { method: 'POST', body: JSON.stringify(data) });
+        replaceLead(lead);
+        addDialog.close();
+        render();
+        showToast('Lead added');
+        openDrawer(lead.id);
+      } catch (error) {
+        errorBox.textContent = error.message;
+      } finally { button.disabled = false; }
+    });
+
+    // ---------- export ----------
+    document.querySelector('#export').addEventListener('click', () => {
+      const columns = [['full_name', 'Name'], ['phone', 'Phone'], ['business_name', 'Business'], ['business_type', 'Business type'], ['city', 'City'], ['service', 'Wants'], ['source', 'Came from'],
+        ['status', 'Status'], ['deal_amount', 'Price (₹)'], ['paid_amount', 'Received (₹)'], ['follow_up_on', 'Follow up on'], ['next_action', 'Next step'], ['rating', 'Rating'], ['feedback', 'Feedback'], ['notes', 'Notes'], ['created_at', 'Added']];
+      const cell = (value) => {
+        let text = String(value ?? '');
+        // Stop Excel from running text that starts like a formula; phones keep their +.
+        if (/^[=\-@]/.test(text) || (/^\+/.test(text) && !/^\+\d+$/.test(text))) text = `'${text}`;
+        return `"${text.replace(/"/g, '""')}"`;
+      };
+      const rows = visibleLeads().map((lead) => columns.map(([key]) => cell(key === 'status' ? STATUS_LABEL[lead.status] : key === 'created_at' ? lead.created_at.slice(0, 10) : lead[key])).join(','));
+      const blob = new Blob([`\ufeff${columns.map(([, label]) => cell(label)).join(',')}\n${rows.join('\n')}`], { type: 'text/csv;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `rightconnect-marketing-leads-${today()}.csv`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    });
+
+    // ---------- startup ----------
+    document.querySelector('#console-link').href = location.pathname.replace(/\/marketing-leads\/?$/, '') || '/';
+    (async () => {
+      const content = document.querySelector('#content');
+      try {
+        const config = await (await fetch(`${apiBase}/auth/provider-config`)).json();
+        if (!config.supabase_url || !config.supabase_publishable_key) { content.innerHTML = '<p class="notice error">Supabase is not configured.</p>'; return; }
+        authClient = window.supabase.createClient(config.supabase_url, config.supabase_publishable_key);
+        const { data } = await authClient.auth.getSession();
+        if (!data.session) { content.innerHTML = '<p class="notice error">Sign in on the <a href="/pages/auth.html">RightConnect sign-in page</a> with your admin account, then reload this page.</p>'; return; }
+        document.querySelector('#whoami').textContent = data.session.user.email || '';
+        leads = await api('');
+        render();
+      } catch (error) {
+        content.innerHTML = `<p class="notice error">${escapeHtml(error.message || 'Could not reach the API.')}</p>`;
+      }
+    })();
+  </script>
+</body>
+</html>

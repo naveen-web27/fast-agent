@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>RightConnect Marketing — Posters, Ads &amp; Lead Tracking</title>
+  <meta name="description" content="RightConnect Marketing designs scroll-stopping posters, runs ads for your business and tracks every enquiry, so you know what brings customers.">
+  <meta name="theme-color" content="#05070d">
+  <meta property="og:title" content="RightConnect Marketing — Posters · Ads · Lead Tracking">
+  <meta property="og:description" content="Posters that stop the scroll. Ads that bring enquiries. Every lead tracked.">
+  <link rel="icon" href="../assets/rightconnect-mark.svg" type="image/svg+xml">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#05070d; --ink:#f3f6fb; --muted:#9aa6bd; --line:rgba(255,255,255,.12); --teal:#2ee6c8; --amber:#ffb547; --pink:#ff4f8b; --violet:#8b6cff; --scroll:0; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; color:var(--ink); background:var(--bg); font:16px/1.6 Manrope, system-ui, sans-serif; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+    a { color:inherit; }
+    h1, h2, h3 { font-family:Syne, Manrope, sans-serif; letter-spacing:-.02em; line-height:1.02; margin:0; }
+    [data-scene] { --p:0; }
+
+    /* ---------- cinematic backdrop ---------- */
+    #film { position:fixed; inset:0; z-index:-3; width:100%; height:100%; }
+    .grain { position:fixed; inset:-50%; z-index:-2; pointer-events:none; opacity:.09; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); animation:grain 1s steps(6) infinite; }
+    @keyframes grain { 0%,100% { transform:translate(0,0); } 20% { transform:translate(-4%,3%); } 40% { transform:translate(3%,-5%); } 60% { transform:translate(-6%,-2%); } 80% { transform:translate(5%,4%); } }
+    .vignette { position:fixed; inset:0; z-index:-1; pointer-events:none; background:radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,.75) 100%); }
+    .progress-line { position:fixed; top:0; left:0; z-index:50; height:2px; width:100%; transform-origin:0 50%; transform:scaleX(var(--scroll)); background:linear-gradient(90deg,var(--teal),var(--violet),var(--pink),var(--amber)); }
+
+    /* ---------- nav ---------- */
+    nav.top { position:fixed; top:14px; left:50%; z-index:40; display:flex; align-items:center; gap:22px; width:min(1120px,calc(100% - 24px)); padding:10px 12px 10px 16px; border:1px solid var(--line); border-radius:999px; background:rgba(10,13,22,.55); backdrop-filter:blur(16px) saturate(1.4); -webkit-backdrop-filter:blur(16px) saturate(1.4); transform:translateX(-50%); }
+    .brand { display:flex; align-items:center; gap:10px; font-weight:800; text-decoration:none; white-space:nowrap; }
+    .brand img { width:28px; height:28px; } .brand small { color:var(--teal); font-weight:700; }
+    nav.top .links { display:flex; gap:20px; margin-left:auto; font-size:14px; font-weight:600; color:var(--muted); }
+    nav.top .links a { text-decoration:none; } nav.top .links a:hover { color:var(--ink); }
+    .btn { position:relative; display:inline-flex; align-items:center; gap:10px; padding:14px 24px; border:0; border-radius:999px; font-weight:800; text-decoration:none; cursor:pointer; transition:transform .25s, box-shadow .25s; }
+    .btn:hover { transform:translateY(-2px); }
+    .btn.wa { color:#04110c; background:linear-gradient(120deg,#5dffb0,var(--teal)); box-shadow:0 10px 40px rgba(46,230,200,.35); }
+    .btn.ghost { color:var(--ink); border:1px solid var(--line); background:rgba(255,255,255,.04); }
+    nav.top .btn { padding:10px 18px; font-size:14px; }
+
+    /* ---------- hero (pinned) ---------- */
+    .hero { height:240vh; }
+    .sticky { position:sticky; top:0; height:100vh; height:100svh; overflow:hidden; }
+    .hero .sticky { display:grid; place-items:center; perspective:1400px; }
+    .hero-copy { position:relative; z-index:2; max-width:1100px; padding:0 22px; text-align:center; transform:translateY(calc(var(--p) * -28vh)) scale(calc(1 - var(--p) * .22)); opacity:calc(1 - var(--p) * 1.7); filter:blur(calc(var(--p) * 10px)); }
+    .eyebrow { display:inline-flex; gap:10px; align-items:center; padding:7px 14px; border:1px solid var(--line); border-radius:999px; background:rgba(255,255,255,.04); color:var(--muted); font-size:13px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+    .eyebrow i { width:8px; height:8px; border-radius:50%; background:var(--teal); box-shadow:0 0 12px var(--teal); animation:pulse 1.6s infinite; }
+    @keyframes pulse { 50% { opacity:.3; } }
+    .hero h1 { margin:26px 0 22px; font-size:clamp(44px,8.4vw,124px); font-weight:800; }
+    .hero h1 .line { display:block; overflow:hidden; padding-bottom:.06em; }
+    .hero h1 .line span { display:inline-block; transform:translateY(110%); animation:rise 1.1s cubic-bezier(.2,.8,.2,1) forwards; }
+    .hero h1 .line:nth-child(2) span { animation-delay:.15s; }
+    .grad { background:linear-gradient(100deg,var(--teal),var(--violet) 45%,var(--pink) 75%,var(--amber)); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:shine 6s linear infinite; }
+    @keyframes shine { to { background-position:-200% 0; } }
+    @keyframes rise { to { transform:none; } }
+    .hero p.lead { max-width:640px; margin:0 auto 34px; color:var(--muted); font-size:clamp(16px,1.6vw,20px); opacity:0; animation:fade 1s .6s forwards; }
+    .hero .ctas { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; opacity:0; animation:fade 1s .8s forwards; }
+    @keyframes fade { to { opacity:1; } }
+    .scroll-hint { position:absolute; bottom:26px; left:50%; display:grid; justify-items:center; gap:8px; color:var(--muted); font-size:12px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; transform:translateX(-50%); opacity:calc(1 - var(--p) * 5); }
+    .scroll-hint i { width:1px; height:46px; background:linear-gradient(var(--ink),transparent); animation:drip 1.8s infinite; transform-origin:top; }
+    @keyframes drip { 0% { transform:scaleY(0); } 50% { transform:scaleY(1); } 100% { transform:scaleY(1); opacity:0; } }
+
+    .fan { position:absolute; inset:0; z-index:1; transform-style:preserve-3d; transform:translateY(calc((1 - var(--p)) * 62vh)) rotateX(calc((1 - var(--p)) * 18deg)); pointer-events:none; }
+    .poster { position:absolute; top:42%; left:50%; width:min(250px,40vw); aspect-ratio:4 / 5; padding:18px; border-radius:18px; overflow:hidden; color:#fff; box-shadow:0 40px 80px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.14);
+      transform:translate(-50%,-50%) translateX(calc(var(--i) * var(--p) * min(225px, 21vw))) translateY(calc(var(--d) * var(--p) * 26px)) rotate(calc(var(--i) * var(--p) * 6deg)) rotateY(calc(var(--i) * var(--p) * -10deg)) translateZ(var(--z)); }
+    .poster::after { content:""; position:absolute; inset:0; background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.28) 45%,transparent 60%); transform:translateX(calc(-100% + var(--p) * 200%)); }
+    .poster small { display:block; font:700 10px Manrope; letter-spacing:.18em; text-transform:uppercase; opacity:.85; }
+    .poster b { display:block; margin-top:10px; font:800 clamp(22px,3.2vw,34px)/0.95 Syne; }
+    .poster .tag { position:absolute; left:18px; bottom:18px; padding:6px 12px; border-radius:999px; background:#fff; color:#111; font-size:11px; font-weight:800; }
+    .poster .blob { position:absolute; border-radius:50%; filter:blur(2px); }
+    .p1 { --i:-2; --d:2; --z:-60px; background:linear-gradient(160deg,#ff8a3d,#c51f4a); }
+    .p2 { --i:-1; --d:.6; --z:10px; background:linear-gradient(160deg,#8b6cff,#2c1a7a); }
+    .p3 { --i:0; --d:0; --z:60px; background:linear-gradient(160deg,#10c9a8,#0a4c6b); }
+    .p4 { --i:1; --d:.6; --z:10px; background:linear-gradient(160deg,#ff4f8b,#5b1240); }
+    .p5 { --i:2; --d:2; --z:-60px; background:linear-gradient(160deg,#ffc55a,#9a4a00); }
+    .fan-caption { position:absolute; left:50%; bottom:5vh; z-index:3; width:min(600px,90vw); color:var(--muted); font-weight:700; text-align:center; transform:translateX(-50%); opacity:calc((var(--p) - .65) * 3); }
+    .fan-caption strong { display:block; margin-bottom:4px; color:var(--ink); font:800 clamp(18px,2.2vw,26px)/1.15 Syne; }
+
+    /* ---------- marquee ---------- */
+    .marquee { position:relative; padding:34px 0; border-block:1px solid var(--line); overflow:hidden; background:rgba(5,7,13,.6); }
+    .marquee .row { display:flex; width:max-content; gap:48px; font:800 clamp(30px,5vw,64px) Syne; white-space:nowrap; animation:slide 30s linear infinite; transform:skewX(var(--skew, 0deg)); }
+    .marquee .row span:nth-child(even) { color:transparent; -webkit-text-stroke:1px rgba(255,255,255,.55); }
+    .marquee .row em { font-style:normal; color:var(--teal); }
+    @keyframes slide { to { translate:-50% 0; } }
+
+    /* ---------- generic sections ---------- */
+    section.block { position:relative; width:min(1180px,calc(100% - 40px)); margin:0 auto; padding:140px 0; }
+    .kicker { color:var(--teal); font-size:13px; font-weight:800; letter-spacing:.2em; text-transform:uppercase; }
+    h2.title { margin:14px 0 18px; font-size:clamp(38px,6vw,84px); font-weight:800; }
+    .sub { max-width:620px; color:var(--muted); font-size:18px; }
+    [data-reveal] { opacity:0; transform:translateY(40px); transition:opacity 1s cubic-bezier(.2,.8,.2,1), transform 1s cubic-bezier(.2,.8,.2,1); transition-delay:var(--delay, 0s); }
+    [data-reveal].in { opacity:1; transform:none; }
+
+    /* ---------- stacked service cards ---------- */
+    .stack { margin-top:60px; }
+    .stack-card { position:sticky; top:calc(110px + var(--n) * 26px); display:grid; grid-template-columns:1.1fr 1fr; gap:40px; min-height:min(560px,72vh); margin-bottom:14vh; padding:clamp(26px,4vw,56px); border:1px solid var(--line); border-radius:32px; overflow:hidden; background:linear-gradient(150deg,rgba(24,30,48,.92),rgba(10,12,22,.96)); box-shadow:0 -20px 60px rgba(0,0,0,.45); backdrop-filter:blur(10px); }
+    .stack-card::before { content:""; position:absolute; inset:-1px; border-radius:inherit; padding:1px; background:linear-gradient(140deg,var(--c1),transparent 40%,transparent 60%,var(--c2)); -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none; }
+    .stack-card .num { font:800 14px Syne; color:var(--c1); letter-spacing:.2em; }
+    .stack-card h3 { margin:16px 0; font-size:clamp(34px,4.6vw,62px); }
+    .stack-card p { color:var(--muted); font-size:17px; }
+    .stack-card ul { display:grid; gap:12px; margin:26px 0 0; padding:0; list-style:none; }
+    .stack-card li { display:flex; gap:12px; font-weight:600; }
+    .stack-card li::before { content:""; flex:none; width:22px; height:22px; margin-top:2px; border-radius:50%; background:radial-gradient(circle,var(--c1) 30%,transparent 32%), rgba(255,255,255,.06); }
+    .visual { position:relative; display:grid; place-items:center; min-height:300px; border-radius:24px; overflow:hidden; background:radial-gradient(circle at 30% 20%,color-mix(in srgb,var(--c1) 45%,transparent),transparent 60%), radial-gradient(circle at 80% 90%,color-mix(in srgb,var(--c2) 45%,transparent),transparent 55%), rgba(255,255,255,.03); }
+    .mini-posters { display:flex; gap:14px; transform:rotate(-8deg); }
+    .mini-posters span { width:110px; aspect-ratio:4/5; border-radius:12px; background:var(--g); box-shadow:0 20px 40px rgba(0,0,0,.5); animation:bob 5s ease-in-out infinite; animation-delay:var(--t); }
+    @keyframes bob { 50% { transform:translateY(-16px); } }
+    .ad-phone { width:210px; padding:14px; border-radius:30px; border:1px solid rgba(255,255,255,.2); background:#0c0f18; box-shadow:0 30px 60px rgba(0,0,0,.6); }
+    .ad-phone .bar { height:10px; width:40%; margin:0 auto 12px; border-radius:99px; background:#1f2433; }
+    .ad-phone .ad { height:200px; border-radius:16px; background:linear-gradient(160deg,var(--pink),var(--violet)); display:grid; place-items:end start; padding:14px; font:800 20px/1 Syne; }
+    .ad-phone .meta { display:flex; justify-content:space-between; margin-top:10px; color:var(--muted); font-size:11px; font-weight:700; }
+    .ad-phone .cta { margin-top:10px; padding:9px; border-radius:10px; background:#25d366; color:#04110c; text-align:center; font-size:12px; font-weight:800; }
+    .pipeline { display:grid; gap:10px; width:min(330px,90%); }
+    .pipeline div { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border:1px solid var(--line); border-radius:14px; background:rgba(5,7,13,.6); font-weight:700; animation:slidein .8s both; animation-delay:var(--t); }
+    .pipeline div span { padding:3px 10px; border-radius:999px; font-size:11px; color:#04110c; background:var(--s); }
+    @keyframes slidein { from { opacity:0; transform:translateX(30px); } }
+
+    /* ---------- horizontal process ---------- */
+    .hscroll { height:420vh; }
+    .hscroll .sticky { display:flex; flex-direction:column; justify-content:center; gap:44px; }
+    .hscroll header { width:min(1180px,calc(100% - 40px)); margin:0 auto; }
+    .track { display:flex; gap:28px; padding-left:max(20px,calc((100vw - 1180px) / 2)); will-change:transform; }
+    .step { position:relative; flex:none; width:min(460px,80vw); min-height:340px; padding:34px; border:1px solid var(--line); border-radius:28px; background:rgba(14,18,30,.75); backdrop-filter:blur(10px); }
+    .step .big { position:absolute; right:22px; top:6px; font:800 140px/1 Syne; color:transparent; -webkit-text-stroke:1px rgba(255,255,255,.14); }
+    .step .icon { display:grid; place-items:center; width:62px; height:62px; border-radius:18px; font-size:28px; background:linear-gradient(140deg,var(--c1),var(--c2)); box-shadow:0 14px 34px color-mix(in srgb,var(--c1) 40%,transparent); }
+    .step h3 { margin:28px 0 12px; font-size:32px; }
+    .step p { margin:0; color:var(--muted); }
+    .step.end { display:grid; place-items:center; text-align:center; background:linear-gradient(140deg,rgba(46,230,200,.16),rgba(139,108,255,.16)); }
+    .hprogress { width:min(1180px,calc(100% - 40px)); height:3px; margin:0 auto; border-radius:99px; background:var(--line); overflow:hidden; }
+    .hprogress i { display:block; height:100%; transform-origin:0 50%; transform:scaleX(var(--p)); background:linear-gradient(90deg,var(--teal),var(--violet)); }
+
+    /* ---------- statement word fill ---------- */
+    .statement { height:220vh; }
+    .statement .sticky { display:grid; place-items:center; }
+    .statement p { width:min(1100px,calc(100% - 40px)); margin:0; font:800 clamp(30px,5.2vw,72px)/1.1 Syne; letter-spacing:-.02em; }
+    .statement .w { opacity:.14; transition:opacity .2s, color .2s; }
+    .statement .w.hot { color:var(--teal); }
+
+    /* ---------- who ---------- */
+    .who { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-top:50px; }
+    .who div { --mx:50%; --my:50%; position:relative; padding:26px 22px; border:1px solid var(--line); border-radius:22px; background:radial-gradient(240px circle at var(--mx) var(--my),rgba(46,230,200,.16),transparent 60%), rgba(14,18,30,.7); font-weight:700; transition:transform .3s, border-color .3s; }
+    .who div:hover { transform:translateY(-6px); border-color:rgba(46,230,200,.5); }
+    .who span { display:block; margin-bottom:14px; font-size:30px; }
+    .who small { display:block; margin-top:6px; color:var(--muted); font-weight:500; }
+
+    /* ---------- why / promise ---------- */
+    .promise { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-top:50px; }
+    .promise div { padding:30px; border-radius:24px; border:1px solid var(--line); background:rgba(14,18,30,.7); }
+    .promise b { display:block; margin-bottom:10px; font:800 24px Syne; }
+    .promise p { margin:0; color:var(--muted); }
+
+    /* ---------- faq ---------- */
+    .faq { display:grid; gap:12px; max-width:860px; margin-top:44px; }
+    .faq details { border:1px solid var(--line); border-radius:18px; background:rgba(14,18,30,.7); overflow:hidden; }
+    .faq summary { display:flex; justify-content:space-between; gap:16px; padding:22px 24px; font-size:18px; font-weight:800; cursor:pointer; list-style:none; }
+    .faq summary::-webkit-details-marker { display:none; }
+    .faq summary::after { content:"+"; color:var(--teal); font-size:24px; line-height:1; transition:transform .3s; }
+    .faq details[open] summary::after { transform:rotate(45deg); }
+    .faq details p { margin:0; padding:0 24px 22px; color:var(--muted); }
+
+    /* ---------- final cta ---------- */
+    .final { position:relative; padding:160px 20px 120px; text-align:center; overflow:hidden; }
+    .final h2 { max-width:1100px; margin:0 auto 34px; font-size:clamp(44px,8vw,120px); font-weight:800; }
+    .final .ring { position:absolute; left:50%; top:50%; z-index:-1; width:min(900px,140vw); aspect-ratio:1; border-radius:50%; background:conic-gradient(from 0deg,var(--teal),var(--violet),var(--pink),var(--amber),var(--teal)); filter:blur(90px); opacity:.28; transform:translate(-50%,-50%); animation:spin 18s linear infinite; }
+    @keyframes spin { to { transform:translate(-50%,-50%) rotate(360deg); } }
+    footer { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; width:min(1180px,calc(100% - 40px)); margin:0 auto; padding:30px 0 50px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+    footer a { text-decoration:none; } footer a:hover { color:var(--ink); }
+
+    @media (max-width:900px) {
+      nav.top .links { display:none; } nav.top .btn { margin-left:auto; }
+      .stack-card { grid-template-columns:1fr; } .visual { min-height:220px; }
+      .who { grid-template-columns:repeat(2,minmax(0,1fr)); } .promise { grid-template-columns:1fr; }
+      section.block { padding:100px 0; }
+    }
+    @media (max-width:520px) { .brand small { display:none; } .poster { padding:12px; } .poster .tag { left:12px; bottom:12px; } }
+    @media (prefers-reduced-motion:reduce) {
+      *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition:none !important; }
+      .grain { display:none; }
+      .hero, .hscroll, .statement { height:auto; }
+      .sticky { position:relative; height:auto; min-height:100vh; padding:120px 0 60px; }
+      .hero-copy, .fan, .poster, .fan-caption { transform:none !important; opacity:1 !important; filter:none !important; }
+      .fan { position:relative; display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-top:40px; }
+      .poster { position:relative; top:auto; left:auto; }
+      .fan-caption { position:relative; left:auto; bottom:auto; margin:20px auto 0; }
+      .track { flex-wrap:wrap; padding:0 20px; transform:none !important; }
+      .statement .w { opacity:1; }
+      [data-reveal] { opacity:1; transform:none; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="film" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+  <div class="progress-line" aria-hidden="true"></div>
+
+  <nav class="top" aria-label="Main">
+    <a class="brand" href="#top"><img src="../assets/rightconnect-mark.svg" alt="">RightConnect <small>Marketing</small></a>
+    <div class="links"><a href="#services">Services</a><a href="#process">How it works</a><a href="#who">Who it's for</a><a href="#faq">FAQ</a></div>
+    <a class="btn wa" data-wa href="https://wa.me/916382595243" target="_blank" rel="noopener">WhatsApp us</a>
+  </nav>
+
+  <main>
+    <!-- HERO: pinned; copy lifts away while sample posters rise and fan out -->
+    <section class="hero" data-scene id="top">
+      <div class="sticky">
+        <div class="hero-copy">
+          <span class="eyebrow"><i></i>Poster design · Ads · Lead tracking</span>
+          <h1><span class="line"><span>Posters that stop</span></span><span class="line"><span class="grad">the scroll.</span></span></h1>
+          <p class="lead">We design posters for your business, run the ads, and track every enquiry that comes in, so you know exactly what turns into customers.</p>
+          <div class="ctas"><a class="btn wa" data-wa href="https://wa.me/916382595243" target="_blank" rel="noopener">💬 Start on WhatsApp</a><a class="btn ghost" href="#services">See what we do ↓</a></div>
+        </div>
+        <div class="fan" aria-hidden="true">
+          <div class="poster p1"><small>Grand opening</small><b>FLAT<br>50%<br>OFF</b><span class="blob" style="width:120px;height:120px;right:-30px;bottom:40px;background:#ffd36e55"></span><span class="tag">This Sunday</span></div>
+          <div class="poster p2"><small>Salon &amp; beauty</small><b>Festive<br>Glow<br>Package</b><span class="blob" style="width:140px;height:140px;right:-40px;top:30px;background:#ff8bd655"></span><span class="tag">Book now</span></div>
+          <div class="poster p3"><small>Now running</small><b>Your<br>Brand<br>Here.</b><span class="blob" style="width:160px;height:160px;left:-50px;bottom:-30px;background:#5dffb055"></span><span class="tag">Posters + Ads</span></div>
+          <div class="poster p4"><small>Admissions open</small><b>Batch<br>2027<br>Starts</b><span class="blob" style="width:130px;height:130px;right:-30px;bottom:-20px;background:#ffb54755"></span><span class="tag">Limited seats</span></div>
+          <div class="poster p5"><small>Restaurant</small><b>Biryani<br>Fest<br>Week</b><span class="blob" style="width:120px;height:120px;left:-30px;top:60px;background:#ff4f8b44"></span><span class="tag">Order on WhatsApp</span></div>
+        </div>
+        <div class="fan-caption"><strong>Made for your offer, your city, your customers.</strong>Sample poster styles. Yours are designed around your brand.</div>
+        <div class="scroll-hint"><i></i>Scroll</div>
+      </div>
+    </section>
+
+    <div class="marquee" aria-hidden="true">
+      <div class="row" id="marquee">
+        <span>Grand openings</span><em>✦</em><span>Festival offers</span><em>✦</em><span>Admissions</span><em>✦</em><span>Salon deals</span><em>✦</em><span>Restaurant menus</span><em>✦</em><span>New launches</span><em>✦</em>
+        <span>Grand openings</span><em>✦</em><span>Festival offers</span><em>✦</em><span>Admissions</span><em>✦</em><span>Salon deals</span><em>✦</em><span>Restaurant menus</span><em>✦</em><span>New launches</span><em>✦</em>
+      </div>
+    </div>
+
+    <!-- SERVICES: sticky cards that stack on top of each other -->
+    <section class="block" id="services">
+      <div data-reveal><div class="kicker">What we do</div><h2 class="title">Three things.<br><span class="grad">Done properly.</span></h2><p class="sub">We keep it focused: great creatives, ads that reach the right people, and a clear record of every lead they bring.</p></div>
+      <div class="stack">
+        <article class="stack-card" style="--n:0;--c1:var(--amber);--c2:var(--pink)">
+          <div><div class="num">01 — POSTER DESIGN</div><h3>Posters people actually stop for.</h3><p>Offer posters, festival greetings, launch announcements and menu cards, designed for Instagram, Facebook, WhatsApp status and print.</p>
+            <ul><li>Designed around your brand colours and logo</li><li>Sized for feed, story, status and print</li><li>Tamil, English or both</li><li>Changes until you're happy</li></ul></div>
+          <div class="visual"><div class="mini-posters"><span style="--g:linear-gradient(160deg,#ff8a3d,#c51f4a);--t:0s"></span><span style="--g:linear-gradient(160deg,#8b6cff,#2c1a7a);--t:.6s"></span><span style="--g:linear-gradient(160deg,#ffc55a,#9a4a00);--t:1.2s"></span></div></div>
+        </article>
+        <article class="stack-card" style="--n:1;--c1:var(--pink);--c2:var(--violet)">
+          <div><div class="num">02 — ADS THAT RUN</div><h3>Ads in front of the right people.</h3><p>We set up and run your ads on Facebook and Instagram and target your area, your customers and your budget, with a "Message on WhatsApp" button so enquiries come straight to you.</p>
+            <ul><li>Targeting by location, age and interests</li><li>Budget planned with you before anything runs</li><li>We watch results and adjust what isn't working</li><li>Enquiries land directly on your WhatsApp</li></ul></div>
+          <div class="visual"><div class="ad-phone"><div class="bar"></div><div class="ad">Festive<br>Offer ✦</div><div class="meta"><span>Sponsored</span><span>♥ ✉ ↗</span></div><div class="cta">Send WhatsApp message</div></div></div>
+        </article>
+        <article class="stack-card" style="--n:2;--c1:var(--teal);--c2:var(--violet)">
+          <div><div class="num">03 — EVERY LEAD TRACKED</div><h3>Know what turned into customers.</h3><p>Every enquiry from your ads is recorded and followed up: called, interested, converted. You see what the ads really brought, not just likes.</p>
+            <ul><li>Each lead logged with name, number and need</li><li>Follow-ups on time, nobody forgotten</li><li>Clear count of enquiries vs. customers</li><li>Next campaign planned on real results</li></ul></div>
+          <div class="visual"><div class="pipeline"><div style="--t:0s;--s:#9aa6bd">Priya · Salon <span>New</span></div><div style="--t:.2s;--s:#ffb547">Karthik · Café <span>Called</span></div><div style="--t:.4s;--s:#8b6cff">Anu · Boutique <span>Interested</span></div><div style="--t:.6s;--s:#2ee6c8">Ravi · Tuition <span>Converted ✓</span></div></div></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- PROCESS: vertical scroll drives a horizontal track -->
+    <section class="hscroll" data-scene id="process">
+      <div class="sticky">
+        <header data-reveal><div class="kicker">How it works</div><h2 class="title">From hello to customers.</h2></header>
+        <div class="track" id="track">
+          <div class="step" style="--c1:#5dffb0;--c2:var(--teal)"><span class="big">1</span><div class="icon">💬</div><h3>Say hi on WhatsApp</h3><p>Tell us about your business, your offer and who your customers are. No forms, no meetings needed.</p></div>
+          <div class="step" style="--c1:var(--amber);--c2:var(--pink)"><span class="big">2</span><div class="icon">🎨</div><h3>We design your posters</h3><p>You get poster drafts on WhatsApp. Tell us what to change, and we polish them until they feel right.</p></div>
+          <div class="step" style="--c1:var(--pink);--c2:var(--violet)"><span class="big">3</span><div class="icon">🚀</div><h3>We run your ads</h3><p>Your posters go live as ads to people near you, within the budget you agree, with a button to message you.</p></div>
+          <div class="step" style="--c1:var(--violet);--c2:var(--teal)"><span class="big">4</span><div class="icon">📈</div><h3>Every lead, tracked</h3><p>Each enquiry is logged and followed up. You see how many people asked, how many became customers, and what to do next.</p></div>
+          <div class="step end"><div><h3 style="margin-top:0">Ready when you are.</h3><p style="margin-bottom:22px">It starts with one message.</p><a class="btn wa" data-wa href="https://wa.me/916382595243" target="_blank" rel="noopener">💬 Message us</a></div></div>
+        </div>
+        <div class="hprogress"><i></i></div>
+      </div>
+    </section>
+
+    <!-- STATEMENT: words light up as you scroll -->
+    <section class="statement" data-scene>
+      <div class="sticky"><p id="statement">You run your business. We make sure the *right* *people* see it, *message* *you*, and become *customers.*</p></div>
+    </section>
+
+    <section class="block" id="who">
+      <div data-reveal><div class="kicker">Who it's for</div><h2 class="title">Local businesses<br>that want to <span class="grad">grow.</span></h2><p class="sub">If your customers are nearby and on their phones, we can help them find you.</p></div>
+      <div class="who" id="who-grid">
+        <div data-reveal style="--delay:0s"><span>🛍️</span>Shops &amp; retail<small>Offers, new arrivals, sales</small></div>
+        <div data-reveal style="--delay:.06s"><span>💇</span>Salons &amp; beauty<small>Packages, bridal, festive deals</small></div>
+        <div data-reveal style="--delay:.12s"><span>🍛</span>Restaurants &amp; cafés<small>Menus, combos, launches</small></div>
+        <div data-reveal style="--delay:.18s"><span>🏥</span>Clinics &amp; health<small>Camps, services, timings</small></div>
+        <div data-reveal style="--delay:.24s"><span>🎓</span>Schools &amp; tuition<small>Admissions, batches, results</small></div>
+        <div data-reveal style="--delay:.3s"><span>🏠</span>Real estate<small>Projects, site visits</small></div>
+        <div data-reveal style="--delay:.36s"><span>🏋️</span>Gyms &amp; fitness<small>Memberships, transformations</small></div>
+        <div data-reveal style="--delay:.42s"><span>🧰</span>Service businesses<small>Repairs, events, consultants</small></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div data-reveal><div class="kicker">Why RightConnect Marketing</div><h2 class="title">Not just pretty posters.</h2></div>
+      <div class="promise">
+        <div data-reveal style="--delay:0s"><b>One team, start to finish</b><p>Design, ads and follow-up in one place. No passing your work between three different people.</p></div>
+        <div data-reveal style="--delay:.1s"><b>Clear numbers</b><p>You see how many people enquired and how many became customers, not just views and likes.</p></div>
+        <div data-reveal style="--delay:.2s"><b>Talk on WhatsApp</b><p>Drafts, updates and reports come where you already are. Reply when it suits you.</p></div>
+      </div>
+    </section>
+
+    <section class="block" id="faq">
+      <div data-reveal><div class="kicker">Questions</div><h2 class="title">Good to know.</h2></div>
+      <div class="faq">
+        <details data-reveal><summary>Do I need a website to run ads?</summary><p>No. Your ads can open a WhatsApp chat with you directly, so customers can message you in one tap.</p></details>
+        <details data-reveal><summary>Where do the ads run?</summary><p>Mainly Facebook and Instagram, where most local customers spend their time. Ask us if you want something else and we'll tell you honestly whether it fits your business.</p></details>
+        <details data-reveal><summary>How much does it cost?</summary><p>It depends on how many posters you need and how much you want to spend on ads. Message us with your business and goal and we'll share a clear plan and price before anything starts.</p></details>
+        <details data-reveal><summary>What do you need from me?</summary><p>Your logo (if you have one), a few photos of your shop, product or work, the offer you want to promote and your area. We'll handle the rest.</p></details>
+        <details data-reveal><summary>How will I know if the ads are working?</summary><p>Every enquiry from your ads is tracked: who asked, whether they were called, and whether they became a customer. You get a simple summary so the next campaign can do better.</p></details>
+      </div>
+    </section>
+
+    <section class="final">
+      <div class="ring" aria-hidden="true"></div>
+      <h2 data-reveal>Let's make your business <span class="grad">impossible to scroll past.</span></h2>
+      <a class="btn wa" data-wa data-reveal href="https://wa.me/916382595243" target="_blank" rel="noopener" style="font-size:18px;padding:18px 30px">💬 Chat on WhatsApp</a>
+      <p data-reveal style="margin-top:18px;color:var(--muted)">+91 63825 95243</p>
+    </section>
+  </main>
+
+  <footer>
+    <span>© <span id="year"></span> RightConnect Marketing · A RightConnect service</span>
+    <span><a href="/">RightConnect</a> · <a href="services.html">All services</a> · <a href="privacy.html">Privacy</a></span>
+  </footer>
+
+  <script>
+    (() => {
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const root = document.documentElement;
+      document.querySelector('#year').textContent = new Date().getFullYear();
+
+      // Pre-filled WhatsApp message on every CTA.
+      const waText = encodeURIComponent('Hi RightConnect Marketing! I want posters and ads for my business.');
+      document.querySelectorAll('[data-wa]').forEach((link) => { link.href = `https://wa.me/916382595243?text=${waText}`; });
+
+      // Statement: split into words; *word* marks the highlighted ones.
+      const statement = document.querySelector('#statement');
+      statement.innerHTML = statement.textContent.trim().split(/\s+/)
+        .map((word) => word.startsWith('*') ? `<span class="w hot">${word.replaceAll('*', '')}</span>` : `<span class="w">${word}</span>`)
+        .join(' ');
+      const words = [...statement.querySelectorAll('.w')];
+
+      // ---------- moving "film" background ----------
+      const canvas = document.querySelector('#film');
+      const ctx = canvas.getContext('2d');
+      const blobs = [
+        { x: .18, y: .25, r: .55, hue: 168, sx: .11, sy: .07, ph: 0, depth: .35 },
+        { x: .82, y: .2, r: .5, hue: 255, sx: .08, sy: .12, ph: 2, depth: .6 },
+        { x: .7, y: .85, r: .6, hue: 330, sx: .06, sy: .09, ph: 4, depth: .25 },
+        { x: .25, y: .9, r: .45, hue: 38, sx: .1, sy: .05, ph: 1, depth: .5 },
+      ];
+      let width = 0;
+      let height = 0;
+      function resize() {
+        // Half resolution: the gradients are soft anyway, and it keeps phones cool.
+        width = canvas.width = Math.ceil(innerWidth / 2);
+        height = canvas.height = Math.ceil(innerHeight / 2);
+      }
+      function paint(time, scroll) {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = '#05070d';
+        ctx.fillRect(0, 0, width, height);
+        ctx.globalCompositeOperation = 'lighter';
+        const t = time / 1000;
+        for (const blob of blobs) {
+          const cx = (blob.x + Math.sin(t * blob.sx + blob.ph) * .16) * width;
+          const cy = (blob.y + Math.cos(t * blob.sy + blob.ph) * .14 - scroll * blob.depth) * height;
+          const radius = blob.r * Math.max(width, height) * (1 + Math.sin(t * .3 + blob.ph) * .08);
+          const hue = (blob.hue + scroll * 90) % 360;
+          const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+          gradient.addColorStop(0, `hsla(${hue},85%,55%,.42)`);
+          gradient.addColorStop(.45, `hsla(${hue},85%,45%,.14)`);
+          gradient.addColorStop(1, 'hsla(0,0%,0%,0)');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, width, height);
+        }
+        // Slow light sweep, like a projector beam.
+        const sweep = ((t * .05) % 1.6 - .3) * width;
+        const beam = ctx.createLinearGradient(sweep - width * .2, 0, sweep + width * .2, height);
+        beam.addColorStop(0, 'rgba(255,255,255,0)');
+        beam.addColorStop(.5, 'rgba(255,255,255,.035)');
+        beam.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = beam;
+        ctx.fillRect(0, 0, width, height);
+      }
+
+      // ---------- scroll scenes ----------
+      const scenes = [...document.querySelectorAll('[data-scene]')];
+      const track = document.querySelector('#track');
+      const marquee = document.querySelector('#marquee');
+      let scrollProgress = 0;
+      let lastY = scrollY;
+      let skew = 0;
+      const clamp = (value) => Math.min(1, Math.max(0, value));
+
+      function updateScenes() {
+        const viewport = innerHeight;
+        const max = Math.max(1, root.scrollHeight - viewport);
+        scrollProgress = clamp(scrollY / max);
+        root.style.setProperty('--scroll', scrollProgress.toFixed(4));
+        for (const scene of scenes) {
+          const rect = scene.getBoundingClientRect();
+          const distance = rect.height - viewport;
+          const progress = distance > 0 ? clamp(-rect.top / distance) : clamp((viewport - rect.top) / (viewport + rect.height));
+          scene.style.setProperty('--p', progress.toFixed(4));
+          if (scene.id === 'process' && !reduced) {
+            const shift = Math.max(0, track.scrollWidth - innerWidth + 40);
+            track.style.transform = `translate3d(${(-progress * shift).toFixed(1)}px,0,0)`;
+          }
+          if (scene.contains(statement)) {
+            const lit = progress * 1.25 * words.length;
+            words.forEach((word, index) => { word.style.opacity = reduced ? 1 : (.14 + clamp(lit - index) * .86).toFixed(3); });
+          }
+        }
+      }
+
+      function frame(time) {
+        // Marquee leans with scroll speed.
+        const velocity = scrollY - lastY;
+        lastY = scrollY;
+        skew += (Math.max(-12, Math.min(12, velocity * .4)) - skew) * .12;
+        marquee.style.setProperty('--skew', `${skew.toFixed(2)}deg`);
+        updateScenes();
+        paint(time, scrollProgress);
+        requestAnimationFrame(frame);
+      }
+
+      resize();
+      addEventListener('resize', () => { resize(); updateScenes(); if (reduced) paint(0, scrollProgress); });
+      if (reduced) {
+        updateScenes();
+        paint(0, 0);
+        addEventListener('scroll', updateScenes, { passive: true });
+      } else {
+        requestAnimationFrame(frame);
+      }
+
+      // ---------- reveal on view ----------
+      const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) if (entry.isIntersecting) { entry.target.classList.add('in'); observer.unobserve(entry.target); }
+      }, { threshold: .15, rootMargin: '0px 0px -8% 0px' });
+      document.querySelectorAll('[data-reveal]').forEach((element) => observer.observe(element));
+
+      // Spotlight follows the pointer on the business-type tiles.
+      document.querySelector('#who-grid').addEventListener('pointermove', (event) => {
+        const tile = event.target.closest('#who-grid > div');
+        if (!tile) return;
+        const rect = tile.getBoundingClientRect();
+        tile.style.setProperty('--mx', `${event.clientX - rect.left}px`);
+        tile.style.setProperty('--my', `${event.clientY - rect.top}px`);
+      });
+    })();
+  </script>
+  <script src="../assets/mobile-install.js" defer></script>
+</body>
+</html>

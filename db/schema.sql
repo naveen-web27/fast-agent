@@ -629,6 +629,46 @@ CREATE INDEX leads_created_idx ON leads(created_at DESC);
 REVOKE ALL ON leads FROM anon, authenticated;
 GRANT ALL ON leads TO service_role;
 
+-- RightConnect Marketing leads (migration 033): agency clients for posters/ads, with follow-ups, payments and feedback.
+CREATE TABLE marketing_leads (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    full_name TEXT,
+    phone TEXT NOT NULL,
+    business_name TEXT,
+    business_type TEXT,
+    city TEXT,
+    service TEXT,
+    source TEXT,
+    status TEXT NOT NULL DEFAULT 'new'
+        CHECK (status IN ('new', 'called', 'interested', 'converted', 'in_progress', 'completed', 'lost')),
+    deal_amount INTEGER CHECK (deal_amount IS NULL OR deal_amount >= 0),
+    follow_up_on DATE,
+    next_action TEXT,
+    rating SMALLINT CHECK (rating IS NULL OR rating BETWEEN 1 AND 5),
+    feedback TEXT,
+    notes TEXT,
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX marketing_leads_phone_idx ON marketing_leads(phone);
+CREATE INDEX marketing_leads_status_idx ON marketing_leads(status, follow_up_on);
+CREATE INDEX marketing_leads_created_idx ON marketing_leads(created_at DESC);
+
+CREATE TABLE marketing_lead_activities (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    lead_id UUID NOT NULL REFERENCES marketing_leads(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL CHECK (kind IN ('note', 'call', 'whatsapp', 'meeting', 'payment', 'status')),
+    text TEXT,
+    amount INTEGER CHECK (amount IS NULL OR amount > 0),
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT marketing_lead_activities_payment_amount CHECK ((kind = 'payment') = (amount IS NOT NULL))
+);
+CREATE INDEX marketing_lead_activities_lead_idx ON marketing_lead_activities(lead_id, created_at DESC);
+REVOKE ALL ON marketing_leads, marketing_lead_activities FROM anon, authenticated;
+GRANT ALL ON marketing_leads, marketing_lead_activities TO service_role;
+
 -- PIN code directory (migration 026); rows loaded by db/scripts/import_pincodes.py.
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 

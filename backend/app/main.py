@@ -54,6 +54,7 @@ async def load_reference_data() -> None:
     asyncio.get_running_loop().create_task(ensure_directory_loaded(engine))
 
 admin_page = Path(__file__).resolve().parents[1] / "admin" / "index.html"
+marketing_leads_page = Path(__file__).resolve().parents[1] / "admin" / "marketing-leads.html"
 admin_basic = HTTPBasic(realm="RightConnect admin")
 
 
@@ -74,6 +75,11 @@ if settings.admin_path.startswith("/") and len(settings.admin_path) > 1 and sett
     @app.get(settings.admin_path.rstrip("/"), include_in_schema=False, dependencies=[Depends(_require_admin_basic)])
     async def admin_console() -> FileResponse:
         return FileResponse(admin_page, headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow"})
+
+    # RightConnect Marketing (posters + ads agency) lead pipeline, behind the same Basic auth.
+    @app.get(f"{settings.admin_path.rstrip('/')}/marketing-leads", include_in_schema=False, dependencies=[Depends(_require_admin_basic)])
+    async def marketing_leads_console() -> FileResponse:
+        return FileResponse(marketing_leads_page, headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow"})
 
 
 @app.get("/.well-known/assetlinks.json", include_in_schema=False)
